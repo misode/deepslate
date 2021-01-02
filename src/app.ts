@@ -1,4 +1,5 @@
 import { mat4 } from 'gl-matrix'
+import { BlockAtlas } from './BlockAtlas'
 
 let TEX_ATLAS_SIZE = 4
 let TEX_SIZE = 1 / TEX_ATLAS_SIZE
@@ -96,46 +97,21 @@ function main() {
 }
 
 async function loadAtlas(gl: GL, blocks: string[]) {
-  const minWidth = Math.sqrt(blocks.length)
-  TEX_ATLAS_SIZE = Math.pow(2, Math.ceil(Math.log(minWidth)/Math.log(2)))
-  TEX_SIZE = 1 / TEX_ATLAS_SIZE
-  return Promise.all(blocks.map(b => loadImage(`/assets/minecraft/textures/block/${b}.png`))).then((blockImages) => {
-    const atlasCanvas = document.querySelector('#atlas') as HTMLCanvasElement;
-    atlasCanvas.width = TEX_ATLAS_SIZE * 16
-    atlasCanvas.height = TEX_ATLAS_SIZE * 16
-    const atlasCtx = atlasCanvas.getContext('2d')!;
-    blockImages.forEach((img, i) => {
-      const dx = 16 * (i % TEX_ATLAS_SIZE)
-      const dy = 16 * Math.floor(i / TEX_ATLAS_SIZE)
-      if (img) {
-        atlasCtx.drawImage(img, dx, dy)
-      } else {
-        atlasCtx.fillStyle = 'black'
-        atlasCtx.fillRect(dx, dy, 16, 16)
-        atlasCtx.fillStyle = `rgb(255, 0, 255)`
-        atlasCtx.fillRect(dx, dy, 8, 8)
-        atlasCtx.fillRect(dx + 8, dy + 8, 8, 8)
-      }
-    })
-    const atlasImage = atlasCtx.getImageData(0, 0, atlasCanvas.width, atlasCanvas.height)
+  const urls = blocks.map(b => `/assets/minecraft/textures/block/${b}.png`)
+  const blockAtlas = await BlockAtlas.fromUrls(urls)
+  const atlasCanvas = document.querySelector('#atlas') as HTMLCanvasElement;
+  const ctx = atlasCanvas.getContext('2d')!;
+  atlasCanvas.width = blockAtlas.pixelWidth
+  atlasCanvas.height = blockAtlas.pixelWidth
+  ctx.putImageData(blockAtlas.getImageData(), 0, 0)
 
-    const atlas = gl.createTexture();
-    gl.bindTexture(gl.TEXTURE_2D, atlas);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, atlasImage);
-    gl.generateMipmap(gl.TEXTURE_2D);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+  const atlas = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, atlas);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, blockAtlas.getImageData());
+  gl.generateMipmap(gl.TEXTURE_2D);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 
-    return atlas
-  })
-}
-
-async function loadImage(url: string): Promise<HTMLImageElement | null> {
-  const img = new Image()
-  return new Promise((res, rej) => {
-    img.onload = () => res(img)
-    img.onerror = () => res(null)
-    img.src = url
-  })
+  return atlas
 }
 
 function initShaderProgram(gl: GL, vsSource: string, fsSource: string) {
