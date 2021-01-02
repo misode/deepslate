@@ -1,13 +1,17 @@
-const TEX_ATLAS_SIZE = 4
-const TEX_SIZE = 1 / TEX_ATLAS_SIZE
+import { mat4 } from 'gl-matrix'
 
-const blocks = [
+let TEX_ATLAS_SIZE = 4
+let TEX_SIZE = 1 / TEX_ATLAS_SIZE
+
+const blocksTextures = [
   'stone',
   'dirt',
   'sand',
   'cobblestone',
-  'oak_planks'
+  'oak_planks',
 ]
+
+type GL = WebGLRenderingContext
 
 var xRotation = 0.5;
 var yRotation = 0.0;
@@ -22,7 +26,7 @@ const structure = {
     { pos: [0, 0, 0], state: 0 },
     { pos: [0, 1, 0], state: 2 },
     { pos: [1, 0, 0], state: 1 },
-    { pos: [1, 0, 1], state: 1 },
+    { pos: [1, 0, 1], state: 4 },
   ]
 }
 
@@ -44,17 +48,17 @@ const vsSource = `
 const fsSource = `
   varying highp vec2 vTexCoord;
 
-  uniform sampler2D uSampler;
+  uniform sampler2D sampler;
 
   void main(void) {
-    gl_FragColor = texture2D(uSampler, vTexCoord);
+    gl_FragColor = texture2D(sampler, vTexCoord);
   }
 `;
 
 main();
 
 function main() {
-  const canvas = document.querySelector('#glcanvas');
+  const canvas = document.querySelector('#glcanvas') as HTMLCanvasElement;
   const gl = canvas.getContext('webgl');
 
   if (!gl) {
@@ -67,18 +71,21 @@ function main() {
     return
   }
 
-  const buffers = initBuffers(gl);
-
+  
   Promise.all([
-    loadAtlas(gl, blocks)
-  ]).then(([atlas, ]) => {
+    loadAtlas(gl, blocksTextures)
+  ]).then(([atlas]) => {
+    const { vertexCount } = initGl(gl, shaderProgram)
+
+    const viewMatrixLoc = gl.getUniformLocation(shaderProgram, 'mView')!
+
     var then = 0;
-    function render(now) {
+    function render(now: number) {
       now *= 0.001;
       const deltaTime = now - then;
       then = now;
 
-      drawScene(gl, shaderProgram, buffers, atlas);
+      drawScene(gl!, viewMatrixLoc, vertexCount, atlas!);
 
       yRotation += deltaTime
 
@@ -88,10 +95,15 @@ function main() {
   })
 }
 
-async function loadAtlas(gl, blocks) {
-  return Promise.all(blocks.map(b => loadImage(`/textures/${b}.png`))).then((blockImages) => {
-    const atlasCanvas = document.querySelector('#atlas');
-    const atlasCtx = atlasCanvas.getContext('2d')
+async function loadAtlas(gl: GL, blocks: string[]) {
+  const minWidth = Math.sqrt(blocks.length)
+  TEX_ATLAS_SIZE = Math.pow(2, Math.ceil(Math.log(minWidth)/Math.log(2)))
+  TEX_SIZE = 1 / TEX_ATLAS_SIZE
+  return Promise.all(blocks.map(b => loadImage(`/assets/minecraft/textures/block/${b}.png`))).then((blockImages) => {
+    const atlasCanvas = document.querySelector('#atlas') as HTMLCanvasElement;
+    atlasCanvas.width = TEX_ATLAS_SIZE * 16
+    atlasCanvas.height = TEX_ATLAS_SIZE * 16
+    const atlasCtx = atlasCanvas.getContext('2d')!;
     blockImages.forEach((img, i) => {
       const dx = 16 * (i % TEX_ATLAS_SIZE)
       const dy = 16 * Math.floor(i / TEX_ATLAS_SIZE)
@@ -117,7 +129,7 @@ async function loadAtlas(gl, blocks) {
   })
 }
 
-async function loadImage(url) {
+async function loadImage(url: string): Promise<HTMLImageElement | null> {
   const img = new Image()
   return new Promise((res, rej) => {
     img.onload = () => res(img)
@@ -126,11 +138,11 @@ async function loadImage(url) {
   })
 }
 
-function initShaderProgram(gl, vsSource, fsSource) {
-  const vertexShader = loadShader(gl, gl.VERTEX_SHADER, vsSource);
-  const fragmentShader = loadShader(gl, gl.FRAGMENT_SHADER, fsSource);
+function initShaderProgram(gl: GL, vsSource: string, fsSource: string) {
+  const vertexShader = loadShader(gl, gl.VERTEX_SHADER, vsSource)!;
+  const fragmentShader = loadShader(gl, gl.FRAGMENT_SHADER, fsSource)!;
 
-  const shaderProgram = gl.createProgram();
+  const shaderProgram = gl.createProgram()!;
   gl.attachShader(shaderProgram, vertexShader);
   gl.attachShader(shaderProgram, fragmentShader);
   gl.linkProgram(shaderProgram);
@@ -143,8 +155,8 @@ function initShaderProgram(gl, vsSource, fsSource) {
   return shaderProgram;
 }
 
-function loadShader(gl, type, source) {
-  const shader = gl.createShader(type);
+function loadShader(gl: GL, type: number, source: string) {
+  const shader = gl.createShader(type)!;
 
   gl.shaderSource(shader, source);
   gl.compileShader(shader);
@@ -158,7 +170,7 @@ function loadShader(gl, type, source) {
   return shader;
 }
 
-function getCubeBuffers(i, xo, yo, zo, id) {
+function getCubeBuffers(i: number, xo: number, yo: number, zo: number, id: number) {
   const positions = [
     0.0 + xo, 0.0 + yo, 1.0 + zo, // Front
     1.0 + xo, 0.0 + yo, 1.0 + zo,
@@ -226,14 +238,14 @@ function getCubeBuffers(i, xo, yo, zo, id) {
   return { positions, textureCoordinates, indices }
 }
 
-function createBuffer(gl, type, array) {
+function createBuffer(gl: GL, type: number, array: ArrayBuffer) {
   const buffer = gl.createBuffer();
   gl.bindBuffer(type, buffer);
   gl.bufferData(type, array, gl.STATIC_DRAW);
   return buffer
 }
 
-function initBuffers(gl) {
+function initBuffers(gl: GL) {
   const positions = []
   const textureCoordinates = []
   const indices = []
@@ -255,24 +267,20 @@ function initBuffers(gl) {
   };
 }
 
-function drawScene(gl, shaderProgram, buffers, atlas) {
+function initGl(gl: GL, shaderProgram: WebGLProgram) {
+  const buffers = initBuffers(gl)
+  
   gl.clearColor(0.0, 0.0, 0.0, 1.0);
   gl.clearDepth(1.0);
   gl.enable(gl.DEPTH_TEST);
   gl.depthFunc(gl.LEQUAL);
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-  
+
   const fieldOfView = 70 * Math.PI / 180;
-  const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
+  const aspect = (gl.canvas as HTMLCanvasElement).clientWidth / (gl.canvas as HTMLCanvasElement).clientHeight;
   const projMatrix = mat4.create();
   mat4.perspective(projMatrix, fieldOfView, aspect, 0.1, 100.0);
-  
-  const viewMatrix = mat4.create();
-  mat4.translate(viewMatrix, viewMatrix, [0.0, 0.5, -5.0]);
-  mat4.rotate(viewMatrix, viewMatrix, xRotation, [1, 0, 0]);
-  mat4.rotate(viewMatrix, viewMatrix, yRotation, [0, 1, 0]);
-  mat4.translate(viewMatrix, viewMatrix, [-structure.size[0] / 2, -structure.size[1] / 2, -structure.size[2] / 2]);
-  
+
   const vertLoc = gl.getAttribLocation(shaderProgram, 'vertPos')
   gl.bindBuffer(gl.ARRAY_BUFFER, buffers.position);
   gl.vertexAttribPointer(vertLoc, 3, gl.FLOAT, false, 0, 0);
@@ -286,13 +294,24 @@ function drawScene(gl, shaderProgram, buffers, atlas) {
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffers.indices);
 
   gl.useProgram(shaderProgram);
+  
+  gl.uniformMatrix4fv(gl.getUniformLocation(shaderProgram, 'mProj'), false, projMatrix);
+
+  return {
+    vertexCount: buffers.length
+  }
+}
+
+function drawScene(gl: GL, viewMatrixLoc: WebGLUniformLocation, vertexCount: number, atlas: WebGLTexture) {
+  const viewMatrix = mat4.create();
+  mat4.translate(viewMatrix, viewMatrix, [0.0, 0.5, -5.0]);
+  mat4.rotate(viewMatrix, viewMatrix, xRotation, [1, 0, 0]);
+  mat4.rotate(viewMatrix, viewMatrix, yRotation, [0, 1, 0]);
+  mat4.translate(viewMatrix, viewMatrix, [-structure.size[0] / 2, -structure.size[1] / 2, -structure.size[2] / 2]);
+  gl.uniformMatrix4fv(viewMatrixLoc, false, viewMatrix);
 
   gl.activeTexture(gl.TEXTURE0);
   gl.bindTexture(gl.TEXTURE_2D, atlas);
-  gl.uniform1i(gl.getUniformLocation(shaderProgram, 'uSampler'), 0);
 
-  gl.uniformMatrix4fv(gl.getUniformLocation(shaderProgram, 'mProj'), false, projMatrix);
-  gl.uniformMatrix4fv(gl.getUniformLocation(shaderProgram, 'mView'), false, viewMatrix);
-
-  gl.drawElements(gl.TRIANGLES, buffers.length, gl.UNSIGNED_SHORT, 0);
+  gl.drawElements(gl.TRIANGLES, vertexCount, gl.UNSIGNED_SHORT, 0);
 }
