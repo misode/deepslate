@@ -5,7 +5,7 @@ export class BlockAtlas {
   private img: ImageData
   private ctx: OffscreenCanvasRenderingContext2D
 
-  private constructor(width: number) {
+  constructor(width: number) {
     this.width = Math.pow(2, Math.ceil(Math.log(width)/Math.log(2)))
     this.pixelWidth = this.width * 16
     this.part = 1 / this.width
@@ -16,6 +16,15 @@ export class BlockAtlas {
 
   public getImageData() {
     return this.img
+  }
+
+  public createTexture(gl: WebGLRenderingContext) {
+    const texture = gl.createTexture()!;
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, this.img);
+    gl.generateMipmap(gl.TEXTURE_2D);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    return texture
   }
 
   public static async fromUrls(urls: string[]): Promise<BlockAtlas> {
