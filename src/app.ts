@@ -1,6 +1,7 @@
 import { mat4 } from 'gl-matrix'
 import { BlockAtlas } from './BlockAtlas'
 import { ModelManager } from './ModelManager';
+import { mergeFloat32Arrays } from './Util';
 
 const blocksTextureIds = [
   'block/crafting_table_front',
@@ -74,8 +75,8 @@ let blockAtlas = new BlockAtlas(1)
 let modelManager = new ModelManager({})
 
 let xTime = 0.0;
-let xRotation = 0.6;
-let yRotation = 3.14;
+let xRotation = 0.8;
+let yRotation = 0.5;
 
 main();
 
@@ -120,8 +121,8 @@ async function main() {
     then = now;
 
     yRotation += deltaTime
-    xTime += deltaTime / 2
-    xRotation = Math.sin(xTime) / 2 + 0.4
+    // xTime += deltaTime / 2
+    // xRotation = Math.sin(xTime) / 2 + 0.4
 
     drawScene(gl!, viewMatrixLoc, vertexCount, atlasTexture!);
 
@@ -179,14 +180,14 @@ function initBuffers(gl: GL) {
     const blockState = structure.palette[b.state]
     const model = modelManager.getModel(`block/${blockState.Name}`)
     const buffers = model.getBuffers(blockAtlas, indexOffset, b.pos[0], b.pos[1], b.pos[2])
-    positions.push(...buffers.position)
+    positions.push(buffers.position)
     textureCoordinates.push(...buffers.texCoord)
     indices.push(...buffers.index)
     indexOffset += buffers.texCoord.length / 2
   }
 
   return {
-    position: createBuffer(gl, gl.ARRAY_BUFFER, new Float32Array(positions)),
+    position: createBuffer(gl, gl.ARRAY_BUFFER, mergeFloat32Arrays(...positions)),
     textureCoord: createBuffer(gl, gl.ARRAY_BUFFER, new Float32Array(textureCoordinates)),
     indices: createBuffer(gl, gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices)),
     length: indices.length
@@ -194,8 +195,11 @@ function initBuffers(gl: GL) {
 }
 
 function initGl(gl: GL, shaderProgram: WebGLProgram) {
+  const p0 = performance.now()
   const buffers = initBuffers(gl)
-  
+  const p1 = performance.now()
+  console.log("Initializing buffers took", (p1-p0).toFixed(3), "ms")
+
   gl.clearColor(0.0, 0.0, 0.0, 1.0);
   gl.clearDepth(1.0);
   gl.enable(gl.DEPTH_TEST);
