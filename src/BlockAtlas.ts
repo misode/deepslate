@@ -21,7 +21,7 @@ export class BlockAtlas {
   }
 
   public getUV(id: string) {
-    return this.idMap[id]
+    return this.idMap[id] ?? [0, 0]
   }
 
   public createTexture(gl: WebGLRenderingContext) {
@@ -34,25 +34,26 @@ export class BlockAtlas {
   }
 
   public static async fromIds(ids: string[]): Promise<BlockAtlas> {
-    const atlas = new BlockAtlas(Math.sqrt(ids.length))
+    const atlas = new BlockAtlas(Math.sqrt(ids.length + 1))
+    atlas.ctx.fillStyle = 'black'
+    atlas.ctx.fillRect(0, 0, 16, 16)
+    atlas.ctx.fillStyle = 'magenta'
+    atlas.ctx.fillRect(0, 0, 8, 8)
+    atlas.ctx.fillRect(8, 8, 8, 8)
+
+    let index = 1
+
     await Promise.all(ids
       .map(b => `/assets/minecraft/textures/${b}.png`)
       .map(u => BlockAtlas.loadImage(u)
       )).then((blockImages) => {
       blockImages.forEach((img, i) => {
-        const uv = [atlas.part * (i % atlas.width), atlas.part * (Math.floor(i / atlas.width))]
-        atlas.idMap[ids[i]] = uv
-        const dx = 16 * (i % atlas.width)
-        const dy = 16 * Math.floor(i / atlas.width)
-        if (img) {
-          atlas.ctx.drawImage(img, dx, dy)
-        } else {
-          atlas.ctx.fillStyle = 'black'
-          atlas.ctx.fillRect(dx, dy, 16, 16)
-          atlas.ctx.fillStyle = `rgb(255, 0, 255)`
-          atlas.ctx.fillRect(dx, dy, 8, 8)
-          atlas.ctx.fillRect(dx + 8, dy + 8, 8, 8)
-        }
+        if (!img) return
+        const u = (index % atlas.width)
+        const v = Math.floor(index / atlas.width)
+        atlas.idMap[ids[i]] = [atlas.part * u, atlas.part * v]
+        atlas.ctx.drawImage(img, 16 * u, 16 * v)
+        index += 1
       })
       atlas.img = atlas.ctx.getImageData(0, 0, atlas.pixelWidth, atlas.pixelWidth)
     })

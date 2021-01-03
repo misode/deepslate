@@ -1,15 +1,21 @@
 {
+  "textures": {
+    "bottom": "block/oak_planks",
+    "top": "block/crafting_table_top",
+    "front": "block/crafting_table_front",
+    "side": "block/crafting_table_side"
+  },
   "elements": [
     {
       "from": [0, 0, 0],
       "to": [16, 16, 16],
       "faces": {
-        "up": { "texture": "block/crafting_table_top" },
-        "down": { "texture": "block/oak_planks" },
-        "south": { "texture": "block/crafting_table_front" },
-        "north": { "texture": "block/crafting_table_front" },
-        "east": { "texture": "block/crafting_table_side" },
-        "west": { "texture": "block/crafting_table_side" }
+        "up": { "texture": "#top" },
+        "down": { "texture": "#bottom" },
+        "south": { "texture": "#front" },
+        "north": { "texture": "#front" },
+        "east": { "texture": "#side" },
+        "west": { "texture": "#side" }
       }
     }
   ]

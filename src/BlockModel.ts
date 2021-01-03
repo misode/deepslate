@@ -61,7 +61,7 @@ export class BlockModel {
     let u = 0
     let v = 0
     if ((face = element.faces?.up) && face?.texture) {
-      [u, v] = atlas.getUV(face.texture)
+      [u, v] = atlas.getUV(this.getTexture(face.texture))
       position.push(
         x + x0,  y + y1,  z + z0,
         x + x0,  y + y1,  z + z1,
@@ -78,7 +78,7 @@ export class BlockModel {
     }
 
     if ((face = element.faces?.down) && face?.texture) {
-      [u, v] = atlas.getUV(face.texture)
+      [u, v] = atlas.getUV(this.getTexture(face.texture))
       position.push(
         x + x0,  y + y0,  z + z0,
         x + x1,  y + y0,  z + z0,
@@ -95,7 +95,7 @@ export class BlockModel {
     }
 
     if ((face = element.faces?.south) && face?.texture) {
-      [u, v] = atlas.getUV(face.texture)
+      [u, v] = atlas.getUV(this.getTexture(face.texture))
       position.push(
         x + x0,  y + y0,  z + z1,
         x + x1,  y + y0,  z + z1,
@@ -111,7 +111,7 @@ export class BlockModel {
       i += 4
     }
     if ((face = element.faces?.north) && face?.texture) {
-      [u, v] = atlas.getUV(face.texture)
+      [u, v] = atlas.getUV(this.getTexture(face.texture))
       position.push(
         x + x0,  y + y0,  z + z0,
         x + x0,  y + y1,  z + z0,
@@ -127,7 +127,7 @@ export class BlockModel {
       i += 4
     }
     if ((face = element.faces?.east) && face?.texture) {
-      [u, v] = atlas.getUV(face.texture)
+      [u, v] = atlas.getUV(this.getTexture(face.texture))
       position.push(
         x + x1,  y + y0,  z + z0,
         x + x1,  y + y1,  z + z0,
@@ -143,7 +143,7 @@ export class BlockModel {
       i += 4
     }
     if ((face = element.faces?.west) && face?.texture) {
-      [u, v] = atlas.getUV(face.texture)
+      [u, v] = atlas.getUV(this.getTexture(face.texture))
       position.push(
         x + x0,  y + y0,  z + z0,
         x + x0,  y + y0,  z + z1,
@@ -160,6 +160,10 @@ export class BlockModel {
     }
 
     return { position, texCoord, index }
+  }
+
+  private getTexture(textureRef: string) {
+    return this.textures[textureRef.slice(1)]
   }
 
   public static async fromUrl(url: string) {
