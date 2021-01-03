@@ -16,6 +16,7 @@ const blocksTextureIds = [
   'block/hopper_outside',
   'block/hopper_top',
   'block/lantern',
+  'block/oak_sapling',
 ]
 
 const blockModelIds = [
@@ -25,6 +26,8 @@ const blockModelIds = [
   'block/cube',
   'block/hopper',
   'block/hanging_lantern',
+  'block/cross',
+  'block/oak_sapling',
 ]
 
 type GL = WebGLRenderingContext
@@ -36,6 +39,7 @@ const structure = {
     { Name: 'crafting_table' },
     { Name: 'hopper' },
     { Name: 'hanging_lantern' },
+    { Name: 'oak_sapling' },
   ],
   blocks: [
     { pos: [1, 0, 0], state: 0 },
@@ -43,6 +47,7 @@ const structure = {
     { pos: [2, 1, 0], state: 1 },
     { pos: [0, 1, 0], state: 2 },
     { pos: [0, 0, 0], state: 3 },
+    { pos: [1, 1, 0], state: 4 },
   ]
 }
 
@@ -121,8 +126,8 @@ async function main() {
     then = now;
 
     yRotation += deltaTime
-    // xTime += deltaTime / 2
-    // xRotation = Math.sin(xTime) / 2 + 0.4
+    xTime += deltaTime / 2
+    xRotation = Math.sin(xTime) / 2 + 0.4
 
     drawScene(gl!, viewMatrixLoc, vertexCount, atlasTexture!);
 
@@ -201,12 +206,15 @@ function initGl(gl: GL, shaderProgram: WebGLProgram) {
   console.log("Initializing buffers took", (p1-p0).toFixed(3), "ms")
 
   gl.clearColor(0.0, 0.0, 0.0, 1.0);
-  gl.clearDepth(1.0);
-  gl.enable(gl.DEPTH_TEST);
-  gl.depthFunc(gl.LEQUAL);
-  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-  gl.enable(gl.BLEND);  
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+  gl.enable(gl.DEPTH_TEST)
+  gl.depthFunc(gl.LEQUAL)
+  gl.enable(gl.BLEND)
+  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
+
+  gl.enable(gl.CULL_FACE);
+  gl.cullFace(gl.BACK);
 
   const fieldOfView = 70 * Math.PI / 180;
   const aspect = (gl.canvas as HTMLCanvasElement).clientWidth / (gl.canvas as HTMLCanvasElement).clientHeight;
