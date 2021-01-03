@@ -3,31 +3,28 @@ import { BlockAtlas } from './BlockAtlas'
 import { BlockModel } from './BlockModel';
 
 const blocksTextureIds = [
-  'stone',
-  'oak_planks',
-  'dirt',
-  'sand',
-  'cobblestone',
+  'block/crafting_table_front',
+  'block/crafting_table_side',
+  'block/crafting_table_top',
+  'block/oak_planks',
+  'block/dirt',
+  'block/sand',
+  'block/cobblestone',
 ]
 
 const blockModelIds = [
-  'stone',
-  'oak_planks'
+  'crafting_table'
 ]
 
 type GL = WebGLRenderingContext
 
 const structure = {
-  size: [1, 2, 1],
+  size: [1, 1, 1],
   palette: [
-    { Name: 'stone' },
-    { Name: 'oak_planks' },
+    { Name: 'crafting_table' },
   ],
   blocks: [
     { pos: [0, 0, 0], state: 0 },
-    { pos: [0, 1, 0], state: 1 },
-    // { pos: [1, 0, 0], state: 0 },
-    // { pos: [1, 0, 1], state: 0 },
   ]
 }
 
@@ -81,8 +78,7 @@ async function main() {
   }
 
   // Fetch block textures
-  const urls = blocksTextureIds.map(b => `/assets/minecraft/textures/block/${b}.png`)
-  blockAtlas = await BlockAtlas.fromUrls(urls)
+  blockAtlas = await BlockAtlas.fromIds(blocksTextureIds)
   // Create atlas texture
   const atlasTexture = blockAtlas.createTexture(gl)
   // Display preview of atlas
@@ -113,6 +109,7 @@ async function main() {
     drawScene(gl!, viewMatrixLoc, vertexCount, atlasTexture!);
 
     yRotation += deltaTime
+    xRotation -= deltaTime / 2
     requestAnimationFrame(render);
   }
   requestAnimationFrame(render);

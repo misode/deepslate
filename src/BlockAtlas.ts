@@ -3,6 +3,7 @@ export class BlockAtlas {
   public readonly part: number
   public readonly pixelWidth: number
   private img: ImageData
+  private idMap: { [id: string]: number[] }
   private ctx: OffscreenCanvasRenderingContext2D
 
   constructor(width: number) {
@@ -12,10 +13,15 @@ export class BlockAtlas {
     const canvas = new OffscreenCanvas(this.pixelWidth, this.pixelWidth)
     this.ctx = canvas.getContext('2d')!
     this.img = this.ctx.getImageData(0, 0, this.pixelWidth, this.pixelWidth)
+    this.idMap = {}
   }
 
   public getImageData() {
     return this.img
+  }
+
+  public getUV(id: string) {
+    return this.idMap[id]
   }
 
   public createTexture(gl: WebGLRenderingContext) {
@@ -27,10 +33,15 @@ export class BlockAtlas {
     return texture
   }
 
-  public static async fromUrls(urls: string[]): Promise<BlockAtlas> {
-    const atlas = new BlockAtlas(Math.sqrt(urls.length))
-    await Promise.all(urls.map(u => BlockAtlas.loadImage(u))).then((blockImages) => {
+  public static async fromIds(ids: string[]): Promise<BlockAtlas> {
+    const atlas = new BlockAtlas(Math.sqrt(ids.length))
+    await Promise.all(ids
+      .map(b => `/assets/minecraft/textures/${b}.png`)
+      .map(u => BlockAtlas.loadImage(u)
+      )).then((blockImages) => {
       blockImages.forEach((img, i) => {
+        const uv = [atlas.part * (i % atlas.width), atlas.part * (Math.floor(i / atlas.width))]
+        atlas.idMap[ids[i]] = uv
         const dx = 16 * (i % atlas.width)
         const dy = 16 * Math.floor(i / atlas.width)
         if (img) {

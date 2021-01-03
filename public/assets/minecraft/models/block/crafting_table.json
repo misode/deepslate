@@ -1,0 +1,16 @@
+{
+  "elements": [
+    {
+      "from": [0, 0, 0],
+      "to": [16, 16, 16],
+      "faces": {
+        "up": { "texture": "block/crafting_table_top" },
+        "down": { "texture": "block/oak_planks" },
+        "south": { "texture": "block/crafting_table_front" },
+        "north": { "texture": "block/crafting_table_front" },
+        "east": { "texture": "block/crafting_table_side" },
+        "west": { "texture": "block/crafting_table_side" }
+      }
+    }
+  ]
+}
