@@ -10,21 +10,34 @@ const blocksTextureIds = [
   'block/dirt',
   'block/sand',
   'block/cobblestone',
+  'block/stone',
+  'block/hopper_inside',
+  'block/hopper_outside',
+  'block/hopper_top',
 ]
 
 const blockModelIds = [
-  'crafting_table'
+  'block/stone',
+  'block/crafting_table',
+  'block/cube_all',
+  'block/cube',
+  'block/hopper',
 ]
 
 type GL = WebGLRenderingContext
 
 const structure = {
-  size: [1, 1, 1],
+  size: [3, 2, 3],
   palette: [
+    { Name: 'stone' },
     { Name: 'crafting_table' },
+    { Name: 'hopper' },
   ],
   blocks: [
-    { pos: [0, 0, 0], state: 0 },
+    { pos: [1, 0, 1], state: 0 },
+    { pos: [2, 0, 1], state: 0 },
+    { pos: [1, 1, 1], state: 1 },
+    { pos: [0, 1, 1], state: 2 },
   ]
 }
 
@@ -103,8 +116,8 @@ async function main() {
     then = now;
 
     yRotation += deltaTime
-    xTime += deltaTime
-    xRotation = Math.sin(xTime) + 0.2
+    xTime += deltaTime / 2
+    xRotation = Math.sin(xTime) / 2 + 0.4
 
     drawScene(gl!, viewMatrixLoc, vertexCount, atlasTexture!);
 
@@ -160,8 +173,8 @@ function initBuffers(gl: GL) {
 
   for (const b of structure.blocks) {
     const blockState = structure.palette[b.state]
-    const model = modelManager.getModel(blockState.Name)
-    const buffers = model.getBuffers(blockAtlas, indexOffset, b.pos[0], b.pos[1], b.pos[2], b.state)
+    const model = modelManager.getModel(`block/${blockState.Name}`)
+    const buffers = model.getBuffers(blockAtlas, indexOffset, b.pos[0], b.pos[1], b.pos[2])
     positions.push(...buffers.position)
     textureCoordinates.push(...buffers.texCoord)
     indices.push(...buffers.index)
@@ -213,7 +226,7 @@ function initGl(gl: GL, shaderProgram: WebGLProgram) {
 
 function drawScene(gl: GL, viewMatrixLoc: WebGLUniformLocation, vertexCount: number, atlas: WebGLTexture) {
   const viewMatrix = mat4.create();
-  mat4.translate(viewMatrix, viewMatrix, [0.0, 0.0, -2.0]);
+  mat4.translate(viewMatrix, viewMatrix, [0.0, 0.4, -3.0]);
   mat4.rotate(viewMatrix, viewMatrix, xRotation, [1, 0, 0]);
   mat4.rotate(viewMatrix, viewMatrix, yRotation, [0, 1, 0]);
   mat4.translate(viewMatrix, viewMatrix, [-structure.size[0] / 2, -structure.size[1] / 2, -structure.size[2] / 2]);

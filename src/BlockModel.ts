@@ -1,4 +1,5 @@
 import { BlockAtlas } from "./BlockAtlas";
+import { ModelManager } from "./ModelManager";
 
 type Direction = 'up' | 'down' | 'north' | 'east' | 'south' | 'west'
 
@@ -13,19 +14,23 @@ type BlockModelElement = {
 }
 
 export class BlockModel {
+  private flattened: boolean
   constructor(
-    private elements: BlockModelElement[],
-    public textures: { [key: string]: string }
-  ) {}
+    private parent: string | undefined,
+    private textures: { [key: string]: string } | undefined,
+    private elements: BlockModelElement[] | undefined,
+  ) {
+    this.flattened = false
+  }
 
-  public getBuffers(atlas: BlockAtlas, i: number, xOffset: number, yOffset: number, zOffset: number, tex: number) {
+  public getBuffers(atlas: BlockAtlas, i: number, xOffset: number, yOffset: number, zOffset: number) {
     const position: number[] = []
     const texCoord: number[] = []
     const index: number[] = []
     let indexOffset = i
 
-    for (const element of this.elements) {
-      const buffers = this.getElementBuffers(atlas, indexOffset, element, xOffset, yOffset, zOffset, tex)
+    for (const element of this.elements ?? []) {
+      const buffers = this.getElementBuffers(atlas, indexOffset, element, xOffset, yOffset, zOffset)
       position.push(...buffers.position)
       texCoord.push(...buffers.texCoord)
       index.push(...buffers.index)
@@ -35,7 +40,7 @@ export class BlockModel {
     return { position, texCoord, index }
   }
 
-  private getElementBuffers(atlas: BlockAtlas, i: number, element: BlockModelElement, x: number, y: number, z: number, tex: number) {
+  private getElementBuffers(atlas: BlockAtlas, i: number, element: BlockModelElement, x: number, y: number, z: number) {
     const p = atlas.part
     const x0 = element.from[0] / 16
     const y0 = element.from[1] / 16
@@ -163,6 +168,28 @@ export class BlockModel {
   }
 
   private getTexture(textureRef: string) {
-    return this.textures[textureRef.slice(1)]
+    while (textureRef.startsWith('#')) {
+      textureRef = this.textures?.[textureRef.slice(1)] ?? ''
+    }
+    return textureRef
+  }
+
+  public flatten(manager: ModelManager) {
+    if (!this.flattened && this.parent) {
+      const parent = manager.getModel(this.parent)
+      parent.flatten(manager)
+      if (!this.elements) {
+        this.elements = parent.elements
+      }
+      if (!this.textures) {
+        this.textures = {}
+      }
+      Object.keys(parent.textures ?? {}).forEach(t => {
+        if (!this.textures![t]) {
+          this.textures![t] = parent.textures![t]
+        }
+      })
+      this.flattened = true
+    }
   }
 }
