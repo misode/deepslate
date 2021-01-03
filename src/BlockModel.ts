@@ -9,6 +9,7 @@ type BlockModelElement = {
   faces?: {
     [key in Direction]: {
       texture: string
+      uv?: number[]
     }
   }
 }
@@ -40,127 +41,108 @@ export class BlockModel {
     return { position, texCoord, index }
   }
 
-  private getElementBuffers(atlas: BlockAtlas, i: number, element: BlockModelElement, x: number, y: number, z: number) {
+  private getElementBuffers(atlas: BlockAtlas, i: number, e: BlockModelElement, x: number, y: number, z: number) {
     const p = atlas.part
-    const x0 = element.from[0] / 16
-    const y0 = element.from[1] / 16
-    const z0 = element.from[2] / 16
-    const x1 = element.to[0] / 16
-    const y1 = element.to[1] / 16
-    const z1 = element.to[2] / 16
-    const xp0 = x0 * p
-    const xq0 = (1 - x1) * p
-    const yp0 = (1 - y0) * p
-    const zp0 = z0 * p
-    const zq0 = (1 - z1) * p
-    const xp1 = x1 * p
-    const xq1 = (1 - x0) * p
-    const yp1 = (1 - y1) * p
-    const zp1 = z1 * p
-    const zq1 = (1 - z0) * p
+    const x0 = e.from[0] / 16
+    const y0 = e.from[1] / 16
+    const z0 = e.from[2] / 16
+    const x1 = e.to[0] / 16
+    const y1 = e.to[1] / 16
+    const z1 = e.to[2] / 16
 
     const position = []
-    const texCoord = []
+    const texCoord: number[] = []
     const index = []
+
     let face
-    let u = 0
-    let v = 0
-    if ((face = element.faces?.up) && face?.texture) {
-      [u, v] = atlas.getUV(this.getTexture(face.texture))
+    let u0 = 0
+    let v0 = 0
+    let uv = [0, 0, 0, 0]
+
+    function transformUV(uv: number[]) {
+      return uv.map(e => p * e / 16)
+    }
+
+    function pushTexCoord() {
+      texCoord.push(
+        u0 + uv[0], v0 + uv[3],
+        u0 + uv[2], v0 + uv[3],
+        u0 + uv[2], v0 + uv[1],
+        u0 + uv[0], v0 + uv[1])
+    }
+
+    if ((face = e.faces?.up) && face?.texture) {
+      [u0, v0] = atlas.getUV(this.getTexture(face.texture))
       position.push(
         x + x0,  y + y1,  z + z0,
         x + x0,  y + y1,  z + z1,
         x + x1,  y + y1,  z + z1,
         x + x1,  y + y1,  z + z0)
-      texCoord.push(
-        u + zp0, v + xq1,
-        u + zp1, v + xq1,
-        u + zp1, v + xq0,
-        u + zp0, v + xq0)
-      index.push(
-        i+0, i+1, i+2, i+0, i+2, i+3)
+      uv = transformUV(face.uv ?? [e.from[2], 16-e.from[0], e.to[2], 16-e.to[0]])
+      pushTexCoord()
+      index.push(i+0, i+1, i+2, i+0, i+2, i+3)
       i += 4
     }
 
-    if ((face = element.faces?.down) && face?.texture) {
-      [u, v] = atlas.getUV(this.getTexture(face.texture))
+    if ((face = e.faces?.down) && face?.texture) {
+      [u0, v0] = atlas.getUV(this.getTexture(face.texture))
       position.push(
         x + x0,  y + y0,  z + z0,
         x + x1,  y + y0,  z + z0,
         x + x1,  y + y0,  z + z1,
         x + x0,  y + y0,  z + z1)
-      texCoord.push(
-        u + zq1, v + xq1,
-        u + zq1, v + xq0,
-        u + zq0, v + xq0,
-        u + zq0, v + xq1)
-      index.push(
-        i+0, i+1, i+2, i+0, i+2, i+3)
+      uv = transformUV(face.uv ?? [16-e.from[2], 16-e.from[0], 16-e.to[2], 16-e.to[0]])
+      pushTexCoord()
+      index.push(i+0, i+1, i+2, i+0, i+2, i+3)
       i += 4
     }
 
-    if ((face = element.faces?.south) && face?.texture) {
-      [u, v] = atlas.getUV(this.getTexture(face.texture))
+    if ((face = e.faces?.south) && face?.texture) {
+      [u0, v0] = atlas.getUV(this.getTexture(face.texture))
       position.push(
         x + x0,  y + y0,  z + z1,
         x + x1,  y + y0,  z + z1,
         x + x1,  y + y1,  z + z1,
         x + x0,  y + y1,  z + z1)
-      texCoord.push(
-        u + xp0, v + yp0,
-        u + xp1, v + yp0,
-        u + xp1, v + yp1,
-        u + xp0, v + yp1)
-      index.push(
-        i+0, i+1, i+2, i+0, i+2, i+3)
+      uv = transformUV(face.uv ?? [e.from[0], 16-e.to[1], e.to[0], 16-e.from[1]])
+      pushTexCoord()
+      index.push(i+0, i+1, i+2, i+0, i+2, i+3)
       i += 4
     }
-    if ((face = element.faces?.north) && face?.texture) {
-      [u, v] = atlas.getUV(this.getTexture(face.texture))
-      position.push(
-        x + x0,  y + y0,  z + z0,
-        x + x0,  y + y1,  z + z0,
-        x + x1,  y + y1,  z + z0,
-        x + x1,  y + y0,  z + z0)
-      texCoord.push(
-        u + xq1, v + yp0,
-        u + xq1, v + yp1,
-        u + xq0, v + yp1,
-        u + xq0, v + yp0)
-      index.push(
-        i+0, i+1, i+2, i+0, i+2, i+3)
-      i += 4
-    }
-    if ((face = element.faces?.east) && face?.texture) {
-      [u, v] = atlas.getUV(this.getTexture(face.texture))
+    if ((face = e.faces?.north) && face?.texture) {
+      [u0, v0] = atlas.getUV(this.getTexture(face.texture))
       position.push(
         x + x1,  y + y0,  z + z0,
-        x + x1,  y + y1,  z + z0,
-        x + x1,  y + y1,  z + z1,
-        x + x1,  y + y0,  z + z1)
-      texCoord.push(
-        u + zq1, v + yp0,
-        u + zq1, v + yp1,
-        u + zq0, v + yp1,
-        u + zq0, v + yp0)
-      index.push(
-        i+0, i+1, i+2, i+0, i+2, i+3)
+        x + x0,  y + y0,  z + z0,
+        x + x0,  y + y1,  z + z0,
+        x + x1,  y + y1,  z + z0)
+      uv = transformUV(face.uv ?? [16-e.to[0], 16-e.to[1], 16-e.from[0], 16-e.from[1]])
+      pushTexCoord()
+      index.push(i+0, i+1, i+2, i+0, i+2, i+3)
       i += 4
     }
-    if ((face = element.faces?.west) && face?.texture) {
-      [u, v] = atlas.getUV(this.getTexture(face.texture))
+    if ((face = e.faces?.east) && face?.texture) {
+      [u0, v0] = atlas.getUV(this.getTexture(face.texture))
+      position.push(
+        x + x1,  y + y0,  z + z1,
+        x + x1,  y + y0,  z + z0,
+        x + x1,  y + y1,  z + z0,
+        x + x1,  y + y1,  z + z1)
+      uv = transformUV(face.uv ?? [16-e.to[2], 16-e.to[1], 16-e.from[2], 16-e.from[1]])
+      pushTexCoord()
+      index.push(i+0, i+1, i+2, i+0, i+2, i+3)
+      i += 4
+    }
+    if ((face = e.faces?.west) && face?.texture) {
+      [u0, v0] = atlas.getUV(this.getTexture(face.texture))
       position.push(
         x + x0,  y + y0,  z + z0,
         x + x0,  y + y0,  z + z1,
         x + x0,  y + y1,  z + z1,
         x + x0,  y + y1,  z + z0)
-      texCoord.push(
-        u + zp0, v + yp0,
-        u + zp1, v + yp0,
-        u + zp1, v + yp1,
-        u + zp0, v + yp1)
-      index.push(
-        i+0, i+1, i+2, i+0, i+2, i+3)
+      uv = transformUV(face.uv ?? [e.to[2], 16-e.to[1], e.from[2], 16-e.from[1]])
+      pushTexCoord()
+      index.push(i+0, i+1, i+2, i+0, i+2, i+3)
       i += 4
     }
 

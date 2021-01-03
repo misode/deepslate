@@ -14,6 +14,7 @@ const blocksTextureIds = [
   'block/hopper_inside',
   'block/hopper_outside',
   'block/hopper_top',
+  'block/lantern',
 ]
 
 const blockModelIds = [
@@ -22,22 +23,25 @@ const blockModelIds = [
   'block/cube_all',
   'block/cube',
   'block/hopper',
+  'block/hanging_lantern',
 ]
 
 type GL = WebGLRenderingContext
 
 const structure = {
-  size: [3, 2, 3],
+  size: [3, 2, 1],
   palette: [
     { Name: 'stone' },
     { Name: 'crafting_table' },
     { Name: 'hopper' },
+    { Name: 'hanging_lantern' },
   ],
   blocks: [
-    { pos: [1, 0, 1], state: 0 },
-    { pos: [2, 0, 1], state: 0 },
-    { pos: [1, 1, 1], state: 1 },
-    { pos: [0, 1, 1], state: 2 },
+    { pos: [1, 0, 0], state: 0 },
+    { pos: [2, 0, 0], state: 0 },
+    { pos: [2, 1, 0], state: 1 },
+    { pos: [0, 1, 0], state: 2 },
+    { pos: [0, 0, 0], state: 3 },
   ]
 }
 
@@ -71,7 +75,7 @@ let modelManager = new ModelManager({})
 
 let xTime = 0.0;
 let xRotation = 0.6;
-let yRotation = 0.0;
+let yRotation = 3.14;
 
 main();
 
@@ -226,7 +230,7 @@ function initGl(gl: GL, shaderProgram: WebGLProgram) {
 
 function drawScene(gl: GL, viewMatrixLoc: WebGLUniformLocation, vertexCount: number, atlas: WebGLTexture) {
   const viewMatrix = mat4.create();
-  mat4.translate(viewMatrix, viewMatrix, [0.0, 0.4, -3.0]);
+  mat4.translate(viewMatrix, viewMatrix, [0.0, 0.5, -4.0]);
   mat4.rotate(viewMatrix, viewMatrix, xRotation, [1, 0, 0]);
   mat4.rotate(viewMatrix, viewMatrix, yRotation, [0, 1, 0]);
   mat4.translate(viewMatrix, viewMatrix, [-structure.size[0] / 2, -structure.size[1] / 2, -structure.size[2] / 2]);

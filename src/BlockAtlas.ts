@@ -52,7 +52,7 @@ export class BlockAtlas {
         const u = (index % atlas.width)
         const v = Math.floor(index / atlas.width)
         atlas.idMap[ids[i]] = [atlas.part * u, atlas.part * v]
-        atlas.ctx.drawImage(img, 16 * u, 16 * v)
+        atlas.ctx.drawImage(img, 0, 0, 16, 16, 16 * u, 16 * v, 16, 16)
         index += 1
       })
       atlas.img = atlas.ctx.getImageData(0, 0, atlas.pixelWidth, atlas.pixelWidth)
