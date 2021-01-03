@@ -79,7 +79,7 @@ const fsSource = `
 let blockAtlas = new BlockAtlas(1)
 let modelManager = new ModelManager({})
 
-let xTime = 0.0;
+let viewDist = 4;
 let xRotation = 0.8;
 let yRotation = 0.5;
 
@@ -119,21 +119,33 @@ async function main() {
 
   const viewMatrixLoc = gl.getUniformLocation(shaderProgram,'mView')!
 
-  let then = 0
-  function render(now: number) {
-    now *= 0.001;
-    const deltaTime = now - then;
-    then = now;
-
-    yRotation += deltaTime
-    xTime += deltaTime / 2
-    xRotation = Math.sin(xTime) / 2 + 0.4
-
+  function render() {
+    yRotation = yRotation % (Math.PI * 2)
+    xRotation = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, xRotation))
+    viewDist = Math.max(1, Math.min(20, viewDist))
     drawScene(gl!, viewMatrixLoc, vertexCount, atlasTexture!);
-
-    requestAnimationFrame(render);
   }
   requestAnimationFrame(render);
+
+  let dragPos: [number, number] | null = null
+  canvas.addEventListener('mousedown', evt => {
+    dragPos = [evt.clientX, evt.clientY]
+  })
+  canvas.addEventListener('mousemove', evt => {
+    if (dragPos) {
+      yRotation += (evt.clientX - dragPos[0]) / 100
+      xRotation += (evt.clientY - dragPos[1]) / 100
+      dragPos = [evt.clientX, evt.clientY]
+      requestAnimationFrame(render);
+    }
+  })
+  canvas.addEventListener('mouseup', () => {
+    dragPos = null
+  })
+  canvas.addEventListener('wheel', evt => {
+    viewDist += evt.deltaY / 100
+    requestAnimationFrame(render);
+  })
 }
 
 function initShaderProgram(gl: GL, vsSource: string, fsSource: string) {
@@ -244,7 +256,7 @@ function initGl(gl: GL, shaderProgram: WebGLProgram) {
 
 function drawScene(gl: GL, viewMatrixLoc: WebGLUniformLocation, vertexCount: number, atlas: WebGLTexture) {
   const viewMatrix = mat4.create();
-  mat4.translate(viewMatrix, viewMatrix, [0.0, 0.5, -4.0]);
+  mat4.translate(viewMatrix, viewMatrix, [0, 0, -viewDist]);
   mat4.rotate(viewMatrix, viewMatrix, xRotation, [1, 0, 0]);
   mat4.rotate(viewMatrix, viewMatrix, yRotation, [0, 1, 0]);
   mat4.translate(viewMatrix, viewMatrix, [-structure.size[0] / 2, -structure.size[1] / 2, -structure.size[2] / 2]);
