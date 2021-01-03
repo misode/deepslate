@@ -165,10 +165,4 @@ export class BlockModel {
   private getTexture(textureRef: string) {
     return this.textures[textureRef.slice(1)]
   }
-
-  public static async fromUrl(url: string) {
-    const res = await fetch(url)
-    const data = await res.json()
-    return new BlockModel(data.elements ?? [], data.textures ?? {})
-  }
 }

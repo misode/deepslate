@@ -1,6 +1,6 @@
 import { mat4 } from 'gl-matrix'
 import { BlockAtlas } from './BlockAtlas'
-import { BlockModel } from './BlockModel';
+import { ModelManager } from './ModelManager';
 
 const blocksTextureIds = [
   'block/crafting_table_front',
@@ -54,10 +54,9 @@ const fsSource = `
 `;
 
 let blockAtlas = new BlockAtlas(1)
-let blockModels: {
-  [id: string]: BlockModel
-} = {}
+let modelManager = new ModelManager({})
 
+let xTime = 0.0;
 let xRotation = 0.6;
 let yRotation = 0.0;
 
@@ -89,12 +88,9 @@ async function main() {
   ctx.putImageData(blockAtlas.getImageData(), 0, 0)
 
   // Fetch block models
-  const blockModelData = await Promise.all(blockModelIds.map(b => BlockModel.fromUrl(`/assets/minecraft/models/block/${b}.json`)))
-  blockModelData.forEach((model, i) => {
-    blockModels[blockModelIds[i]] = model
-  })
+  modelManager = await ModelManager.fromIds(blockModelIds)
 
-  console.log(blockModels)
+  console.log(modelManager)
 
   const { vertexCount } = initGl(gl, shaderProgram)
 
@@ -106,10 +102,12 @@ async function main() {
     const deltaTime = now - then;
     then = now;
 
+    yRotation += deltaTime
+    xTime += deltaTime
+    xRotation = Math.sin(xTime) + 0.2
+
     drawScene(gl!, viewMatrixLoc, vertexCount, atlasTexture!);
 
-    yRotation += deltaTime
-    xRotation -= deltaTime / 2
     requestAnimationFrame(render);
   }
   requestAnimationFrame(render);
@@ -162,7 +160,7 @@ function initBuffers(gl: GL) {
 
   for (const b of structure.blocks) {
     const blockState = structure.palette[b.state]
-    const model = blockModels[blockState.Name]
+    const model = modelManager.getModel(blockState.Name)
     const buffers = model.getBuffers(blockAtlas, indexOffset, b.pos[0], b.pos[1], b.pos[2], b.state)
     positions.push(...buffers.position)
     textureCoordinates.push(...buffers.texCoord)
