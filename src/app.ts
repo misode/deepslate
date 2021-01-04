@@ -1,55 +1,24 @@
-import { mat4 } from 'gl-matrix'
 import { BlockAtlas } from './BlockAtlas'
-import { ModelManager } from './ModelManager';
+import { ResourceManager } from './ResourceManager';
 import { ShaderProgram } from './ShaderProgram';
 import { StructureRenderer } from './StructureRenderer';
-import { mergeFloat32Arrays } from './Util';
-
-const blocksTextureIds = [
-  'block/crafting_table_front',
-  'block/crafting_table_side',
-  'block/crafting_table_top',
-  'block/oak_planks',
-  'block/dirt',
-  'block/sand',
-  'block/cobblestone',
-  'block/stone',
-  'block/hopper_inside',
-  'block/hopper_outside',
-  'block/hopper_top',
-  'block/lantern',
-  'block/oak_sapling',
-]
-
-const blockModelIds = [
-  'block/stone',
-  'block/crafting_table',
-  'block/cube_all',
-  'block/cube',
-  'block/hopper',
-  'block/hanging_lantern',
-  'block/cross',
-  'block/oak_sapling',
-]
-
-type GL = WebGLRenderingContext
 
 const structure = {
   size: [3, 2, 1],
   palette: [
-    { Name: 'stone' },
-    { Name: 'crafting_table' },
-    { Name: 'hopper' },
-    { Name: 'hanging_lantern' },
-    { Name: 'oak_sapling' },
+    { Name: 'minecraft:stone' },
+    { Name: 'minecraft:crafting_table' },
+    // { Name: 'minecraft:hopper' },
+    // { Name: 'hanging_lantern' },
+    // { Name: 'oak_sapling' },
   ],
   blocks: [
     { pos: [1, 0, 0], state: 0 },
     { pos: [2, 0, 0], state: 0 },
     { pos: [2, 1, 0], state: 1 },
-    { pos: [0, 1, 0], state: 2 },
-    { pos: [0, 0, 0], state: 3 },
-    { pos: [1, 1, 0], state: 4 },
+    // { pos: [0, 1, 0], state: 2 },
+    // { pos: [0, 0, 0], state: 3 },
+    // { pos: [1, 1, 0], state: 4 },
   ]
 }
 
@@ -98,8 +67,12 @@ async function main() {
     return
   }
 
+  const resources = new ResourceManager()
+  await resources.loadFromZip('/assets.zip')
+  console.log(resources)
+
   // Fetch block textures
-  const blockAtlas = await BlockAtlas.fromIds(blocksTextureIds)
+  const blockAtlas = resources.getBlockAtlas()
   // Display preview of atlas
   const atlasCanvas = document.querySelector('#atlas') as HTMLCanvasElement;
   const ctx = atlasCanvas.getContext('2d')!;
@@ -107,11 +80,8 @@ async function main() {
   atlasCanvas.height = blockAtlas.pixelWidth
   ctx.putImageData(blockAtlas.getImageData(), 0, 0)
 
-  // Fetch block models
-  const modelManager = await ModelManager.fromIds(blockModelIds)
-
   // Create structure renderer
-  const renderer = new StructureRenderer(gl, shaderProgram, blockAtlas, modelManager, structure)
+  const renderer = new StructureRenderer(gl, shaderProgram, resources, resources, blockAtlas, structure)
 
   function render() {
     yRotation = yRotation % (Math.PI * 2)

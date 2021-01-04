@@ -12,6 +12,11 @@ export class BlockAtlas {
     this.part = 1 / this.width
     const canvas = new OffscreenCanvas(this.pixelWidth, this.pixelWidth)
     this.ctx = canvas.getContext('2d')!
+    this.ctx.fillStyle = 'black'
+    this.ctx.fillRect(0, 0, 16, 16)
+    this.ctx.fillStyle = 'magenta'
+    this.ctx.fillRect(0, 0, 8, 8)
+    this.ctx.fillRect(8, 8, 8, 8)
     this.img = this.ctx.getImageData(0, 0, this.pixelWidth, this.pixelWidth)
     this.idMap = {}
   }
@@ -33,39 +38,20 @@ export class BlockAtlas {
     return texture
   }
 
-  public static async fromIds(ids: string[]): Promise<BlockAtlas> {
-    const atlas = new BlockAtlas(Math.sqrt(ids.length + 1))
-    atlas.ctx.fillStyle = 'black'
-    atlas.ctx.fillRect(0, 0, 16, 16)
-    atlas.ctx.fillStyle = 'magenta'
-    atlas.ctx.fillRect(0, 0, 8, 8)
-    atlas.ctx.fillRect(8, 8, 8, 8)
+  public static async fromBlobs(textures: { [id: string]: Blob }): Promise<BlockAtlas> {
+    const textureCount = Object.keys(textures).length
+    const atlas = new BlockAtlas(Math.sqrt(textureCount + 1))
 
     let index = 1
-
-    await Promise.all(ids
-      .map(b => `/assets/minecraft/textures/${b}.png`)
-      .map(u => BlockAtlas.loadImage(u)
-      )).then((blockImages) => {
-      blockImages.forEach((img, i) => {
-        if (!img) return
-        const u = (index % atlas.width)
-        const v = Math.floor(index / atlas.width)
-        atlas.idMap[ids[i]] = [atlas.part * u, atlas.part * v]
-        atlas.ctx.drawImage(img, 0, 0, 16, 16, 16 * u, 16 * v, 16, 16)
-        index += 1
-      })
+    await Promise.all(Object.keys(textures).map(async (id) => {
+      const u = (index % atlas.width)
+      const v = Math.floor(index / atlas.width)
+      index += 1
+      atlas.idMap[id] = [atlas.part * u, atlas.part * v]
+      const img = await createImageBitmap(textures[id])
       atlas.img = atlas.ctx.getImageData(0, 0, atlas.pixelWidth, atlas.pixelWidth)
-    })
+      atlas.ctx.drawImage(img, 0, 0, 16, 16, 16 * u, 16 * v, 16, 16)
+    }))
     return atlas
-  }
-
-  private static async loadImage(url: string): Promise<HTMLImageElement | null> {
-    const img = new Image()
-    return new Promise((res, rej) => {
-      img.onload = () => res(img)
-      img.onerror = () => res(null)
-      img.src = url
-    })
   }
 }

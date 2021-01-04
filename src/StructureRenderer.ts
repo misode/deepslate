@@ -1,24 +1,27 @@
 import { mat4 } from "gl-matrix";
 import { BlockAtlas } from "./BlockAtlas";
-import { ModelManager } from "./ModelManager";
+import { BlockModelProvider } from "./BlockModel";
+import { BlockStateProvider } from "./BlockState";
 import { mergeFloat32Arrays } from "./Util";
 
 export class StructureRenderer {
   private gl: WebGLRenderingContext
   private shaderProgram: WebGLProgram
+  private blockStateProvider: BlockStateProvider
+  private blockModelProvider: BlockModelProvider
   private blockAtlas: BlockAtlas
-  private modelManager: ModelManager
   private structure: any
 
   private atlasTexture: WebGLTexture
   private viewMatrixLoc: WebGLUniformLocation
   private vertexCount: number
   
-  constructor(gl: WebGLRenderingContext, shaderProgram: WebGLProgram, blockAtlas: BlockAtlas, modelManager: ModelManager, structure: any) {
+  constructor(gl: WebGLRenderingContext, shaderProgram: WebGLProgram, blockStateProvider: BlockStateProvider, blockModelProvider: BlockModelProvider, blockAtlas: BlockAtlas, structure: any) {
     this.gl = gl
     this.shaderProgram = shaderProgram
+    this.blockStateProvider = blockStateProvider
+    this.blockModelProvider = blockModelProvider
     this.blockAtlas = blockAtlas
-    this.modelManager = modelManager
     this.structure = structure
 
     this.atlasTexture = blockAtlas.createTexture(gl)
@@ -72,9 +75,14 @@ export class StructureRenderer {
     const indices = []
     let indexOffset = 0
   
+    console.log('start drawing')
+
     for (const b of this.structure.blocks) {
       const blockState = this.structure.palette[b.state]
-      const model = this.modelManager.getModel(`block/${blockState.Name}`)
+      const blockStateModel = this.blockStateProvider.getBlockState(blockState.Name)!
+      const modelVariant = blockStateModel.getModel(blockState.Properties ?? {})
+      const model = this.blockModelProvider.getBlockModel(modelVariant.model)!
+      console.log(blockState, blockStateModel, model)
       const buffers = model.getBuffers(this.blockAtlas, indexOffset, b.pos[0], b.pos[1], b.pos[2])
       positions.push(buffers.position)
       textureCoordinates.push(...buffers.texCoord)

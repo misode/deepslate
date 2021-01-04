@@ -1,6 +1,5 @@
 import { glMatrix, mat4, vec3 } from "gl-matrix";
 import { BlockAtlas } from "./BlockAtlas";
-import { ModelManager } from "./ModelManager";
 import { mergeFloat32Arrays } from "./Util";
 
 type Direction = 'up' | 'down' | 'north' | 'east' | 'south' | 'west'
@@ -19,6 +18,10 @@ type BlockModelElement = {
       uv?: number[]
     }
   }
+}
+
+export interface BlockModelProvider {
+  getBlockModel(id: string): BlockModel | null
 }
 
 export class BlockModel {
@@ -161,10 +164,15 @@ export class BlockModel {
     return textureRef
   }
 
-  public flatten(manager: ModelManager) {
+  public flatten(accessor: BlockModelProvider) {
     if (!this.flattened && this.parent) {
-      const parent = manager.getModel(this.parent)
-      parent.flatten(manager)
+      const parent = accessor.getBlockModel(this.parent)
+      if (!parent) {
+        console.warn(`parent ${this.parent} does not exist!`)
+        this.flattened = true
+        return
+      }
+      parent.flatten(accessor)
       if (!this.elements) {
         this.elements = parent.elements
       }
@@ -178,5 +186,18 @@ export class BlockModel {
       })
       this.flattened = true
     }
+  }
+
+  public textureReferences() {
+    return Object.values(this.textures ?? {})
+      .filter(t => !t.startsWith('#'))
+  }
+
+  public static fromJson(data: any) {
+    let parent = data.parent as string | undefined
+    if (parent && !parent.startsWith('minecraft:')) {
+      parent = 'minecraft:' + parent
+    }
+    return new BlockModel(parent, data.textures, data.elements)
   }
 }
