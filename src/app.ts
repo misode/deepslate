@@ -1,4 +1,3 @@
-import { BlockAtlas } from './BlockAtlas'
 import { ResourceManager } from './ResourceManager';
 import { ShaderProgram } from './ShaderProgram';
 import { StructureRenderer } from './StructureRenderer';
@@ -66,7 +65,7 @@ async function main() {
   }
 
   const resources = new ResourceManager()
-  await resources.loadFromZip('/assets.zip')
+  await resources.loadFromZip('./assets.zip')
 
   // Fetch block textures
   const blockAtlas = resources.getBlockAtlas()

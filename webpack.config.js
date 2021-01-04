@@ -1,3 +1,5 @@
+var CopyWebpackPlugin = require('copy-webpack-plugin')
+
 module.exports = (env, argv) => ({
   entry: './src/app.ts',
   devtool: 'source-map',
@@ -12,5 +14,12 @@ module.exports = (env, argv) => ({
     rules: [
       { test: /\.ts$/, loader: 'ts-loader' }
     ]
-  }
+  },
+  plugins: [
+    new CopyWebpackPlugin({
+      patterns: [
+        { from: 'public', to: '' }
+      ]
+    })
+  ]
 })

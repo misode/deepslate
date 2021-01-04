@@ -5,6 +5,7 @@
     "start": "webpack-dev-server -d --content-base ./public"
   },
   "dependencies": {
+    "copy-webpack-plugin": "^6.4.1",
     "gl-matrix": "^3.3.0",
     "jszip": "^3.5.0",
     "ts-loader": "^7.0.4",
