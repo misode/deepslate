@@ -8,17 +8,15 @@ const structure = {
   palette: [
     { Name: 'minecraft:stone' },
     { Name: 'minecraft:crafting_table' },
-    // { Name: 'minecraft:hopper' },
-    // { Name: 'hanging_lantern' },
-    // { Name: 'oak_sapling' },
+    { Name: 'minecraft:hopper', Properties: { facing: 'down' } },
+    { Name: 'minecraft:barrel', Properties: { facing: 'up', open: 'false' } },
   ],
   blocks: [
     { pos: [1, 0, 0], state: 0 },
     { pos: [2, 0, 0], state: 0 },
     { pos: [2, 1, 0], state: 1 },
-    // { pos: [0, 1, 0], state: 2 },
-    // { pos: [0, 0, 0], state: 3 },
-    // { pos: [1, 1, 0], state: 4 },
+    { pos: [0, 1, 0], state: 2 },
+    { pos: [0, 0, 0], state: 3 },
   ]
 }
 
@@ -69,7 +67,6 @@ async function main() {
 
   const resources = new ResourceManager()
   await resources.loadFromZip('/assets.zip')
-  console.log(resources)
 
   // Fetch block textures
   const blockAtlas = resources.getBlockAtlas()

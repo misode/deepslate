@@ -34,10 +34,12 @@ export class ResourceManager implements BlockModelProvider {
     const assetsBuffer = await (await fetch(url)).arrayBuffer()
     const assets = await jszip.loadAsync(assetsBuffer)
     await this.loadFromFolderJson(assets.folder('minecraft/blockstates')!, async (id, data) => {
-      this.blockStates['minecraft:' + id] = BlockState.fromJson(data)
+      id = 'minecraft:' + id
+      this.blockStates[id] = BlockState.fromJson(id, data)
     })
     await this.loadFromFolderJson(assets.folder('minecraft/models/block')!, async (id, data) => {
-      this.blockModels['minecraft:block/' + id] = BlockModel.fromJson(data)
+      id = 'minecraft:block/' + id
+      this.blockModels[id] = BlockModel.fromJson(id, data)
     })
     const textures: { [id: string]: Blob } = {}
     await this.loadFromFolderPng(assets.folder('minecraft/textures/block')!, async (id, data) => {

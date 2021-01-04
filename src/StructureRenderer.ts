@@ -74,16 +74,19 @@ export class StructureRenderer {
     const textureCoordinates = []
     const indices = []
     let indexOffset = 0
-  
-    console.log('start drawing')
 
+    let buffers
     for (const b of this.structure.blocks) {
-      const blockState = this.structure.palette[b.state]
-      const blockStateModel = this.blockStateProvider.getBlockState(blockState.Name)!
-      const modelVariant = blockStateModel.getModel(blockState.Properties ?? {})
-      const model = this.blockModelProvider.getBlockModel(modelVariant.model)!
-      console.log(blockState, blockStateModel, model)
-      const buffers = model.getBuffers(this.blockAtlas, indexOffset, b.pos[0], b.pos[1], b.pos[2])
+      try {
+        const blockState = this.structure.palette[b.state]
+        const blockStateModel = this.blockStateProvider.getBlockState(blockState.Name)!
+        const modelVariant = blockStateModel.getModel(blockState.Properties ?? {})
+        const model = this.blockModelProvider.getBlockModel(modelVariant.model)!
+        buffers = model.getBuffers(this.blockAtlas, indexOffset, b.pos[0], b.pos[1], b.pos[2])
+      } catch(e) {
+        console.error(e)
+        continue
+      }
       positions.push(buffers.position)
       textureCoordinates.push(...buffers.texCoord)
       indices.push(...buffers.index)

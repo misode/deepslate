@@ -27,6 +27,7 @@ export interface BlockModelProvider {
 export class BlockModel {
   private flattened: boolean
   constructor(
+    private id: string,
     private parent: string | undefined,
     private textures: { [key: string]: string } | undefined,
     private elements: BlockModelElement[] | undefined,
@@ -161,6 +162,9 @@ export class BlockModel {
     while (textureRef.startsWith('#')) {
       textureRef = this.textures?.[textureRef.slice(1)] ?? ''
     }
+    if (!textureRef.startsWith('minecraft:')) {
+      textureRef = 'minecraft:' + textureRef
+    }
     return textureRef
   }
 
@@ -193,11 +197,11 @@ export class BlockModel {
       .filter(t => !t.startsWith('#'))
   }
 
-  public static fromJson(data: any) {
+  public static fromJson(id: string, data: any) {
     let parent = data.parent as string | undefined
     if (parent && !parent.startsWith('minecraft:')) {
       parent = 'minecraft:' + parent
     }
-    return new BlockModel(parent, data.textures, data.elements)
+    return new BlockModel(id, parent, data.textures, data.elements)
   }
 }
