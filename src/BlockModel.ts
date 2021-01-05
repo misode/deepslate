@@ -1,23 +1,33 @@
 import { glMatrix, mat4, vec3 } from "gl-matrix";
-import { BlockAtlas } from "./BlockAtlas";
+import { TextureUVProvider } from "./BlockAtlas";
 import { mergeFloat32Arrays } from "./Util";
 
 type Direction = 'up' | 'down' | 'north' | 'east' | 'south' | 'west'
+
+type BlockModelFace = {
+  texture: string
+  uv?: number[]
+  rotation?: 0 | 90 | 180 | 270
+}
 
 type BlockModelElement = {
   from: number[]
   to: number[]
   rotation?: {
     origin: [number, number, number]
-    axis: 'x' | 'y' | 'z',
+    axis: 'x' | 'y' | 'z'
     angle: number
   }
   faces?: {
-    [key in Direction]: {
-      texture: string
-      uv?: number[]
-    }
+    [key in Direction]: BlockModelFace
   }
+}
+
+const faceRotations = {
+  0: [0, 3, 2, 3, 2, 1, 0, 1],
+  90: [2, 3, 2, 1, 0, 1, 0, 3],
+  180: [2, 1, 0, 1, 0, 3, 2, 3],
+  270: [0, 1, 0, 3, 2, 3, 2, 1],
 }
 
 export interface BlockModelProvider {
@@ -35,27 +45,27 @@ export class BlockModel {
     this.flattened = false
   }
 
-  public getBuffers(atlas: BlockAtlas, offset: number, xOffset: number, yOffset: number, zOffset: number) {
-    const positions: Float32Array[] = []
+  public getBuffers(uvProvider: TextureUVProvider, offset: number) {
+    const position: number[] = []
     const texCoord: number[] = []
     const index: number[] = []
 
     for (const element of this.elements ?? []) {
-      const buffers = this.getElementBuffers(atlas, offset, element, xOffset, yOffset, zOffset)
-      positions.push(buffers.position)
+      const buffers = this.getElementBuffers(element, offset, uvProvider)
+      position.push(...buffers.position)
       texCoord.push(...buffers.texCoord)
       index.push(...buffers.index)
       offset += buffers.texCoord.length / 2
     }
 
     return {
-      position: mergeFloat32Arrays(...positions),
+      position,
       texCoord,
       index
     }
   }
 
-  private getElementBuffers(atlas: BlockAtlas, i: number, e: BlockModelElement, x: number, y: number, z: number) {
+  private getElementBuffers(e: BlockModelElement, i: number, uvProvider: TextureUVProvider) {
     const x0 = e.from[0]
     const y0 = e.from[1]
     const z0 = e.from[2]
@@ -63,99 +73,67 @@ export class BlockModel {
     const y1 = e.to[1]
     const z1 = e.to[2]
 
-    const pos: number[] = []
-    const texCoord: number[] = []
-    const index = []
+    const positions: number[] = []
+    const texCoords: number[] = []
+    const indices: number[] = []
 
-    let face
-    let u0 = 0
-    let v0 = 0
-    let uv = [0, 0, 0, 0]
+    const p = uvProvider.part / 16
 
-    function readUv(inUv: number[]) {
-      inUv.forEach((e, i) => uv[i] = atlas.part * e / 16)
-    }
-
-    function pushTexCoord() {
-      texCoord.push(
-        u0 + uv[0], v0 + uv[3],
-        u0 + uv[2], v0 + uv[3],
-        u0 + uv[2], v0 + uv[1],
-        u0 + uv[0], v0 + uv[1])
-    }
-
-    if ((face = e.faces?.up) && face?.texture) {
-      [u0, v0] = atlas.getUV(this.getTexture(face.texture))
-      pos.push(x0, y1, z0,  x0, y1, z1,  x1, y1, z1,  x1, y1, z0)
-      readUv(face.uv ?? [z0, 16 - x0, z1, 16 - x1])
-      pushTexCoord()
-      index.push(i+0, i+1, i+2, i+0, i+2, i+3)
+    const addFace = (face: BlockModelFace, uv: number[], pos: number[]) => {
+      const [u0, v0] = uvProvider.getUV(this.getTexture(face.texture))
+      ;(face.uv ?? uv).forEach((e, i) => uv[i] = p * e)
+      const r = faceRotations[face.rotation ?? 0]
+      texCoords.push(
+        u0 + uv[r[0]], v0 + uv[r[1]],
+        u0 + uv[r[2]], v0 + uv[r[3]],
+        u0 + uv[r[4]], v0 + uv[r[5]],
+        u0 + uv[r[6]], v0 + uv[r[7]])
+      positions.push(...pos)
+      indices.push(i, i+1, i+2,  i, i+2, i+3)
       i += 4
     }
 
-    if ((face = e.faces?.down) && face?.texture) {
-      [u0, v0] = atlas.getUV(this.getTexture(face.texture))
-      pos.push(x0, y0, z0,  x1, y0, z0,  x1, y0, z1,  x0, y0, z1)
-      readUv(face.uv ?? [16 - z0, 16 - x0, 16 - z1, 16 - x1])
-      pushTexCoord()
-      index.push(i+0, i+1, i+2, i+0, i+2, i+3)
-      i += 4
+    if (e.faces?.up?.texture) {
+      addFace(e.faces.up, [16 - x1, z1, 16 - x0, z0],
+        [x0, y1, z1,  x1, y1, z1,  x1, y1, z0,  x0, y1, z0])
+    }
+    if (e.faces?.down?.texture) {
+      addFace(e.faces.down, [16 - z1, 16 - x1, 16 - z0, 16 - x0],
+        [x0, y0, z0,  x1, y0, z0,  x1, y0, z1,  x0, y0, z1])
+    }
+    if (e.faces?.south?.texture) {
+      addFace(e.faces.south, [x0, 16 - y1, x1, 16 - y0], 
+        [x0, y0, z1,  x1, y0, z1,  x1, y1, z1,  x0, y1, z1])
+    }
+    if (e.faces?.north?.texture) {
+      addFace(e.faces.north, [16 - x1, 16 - y1, 16 - x0, 16 - y0], 
+        [x1, y0, z0,  x0, y0, z0,  x0, y1, z0,  x1, y1, z0])
+    }
+    if (e.faces?.east?.texture) {
+      addFace(e.faces.east, [16 - z1, 16 - y1, 16 - z0, 16 - y0], 
+        [x1, y0, z1,  x1, y0, z0,  x1, y1, z0,  x1, y1, z1])
+    }
+    if (e.faces?.west?.texture) {
+      addFace(e.faces.west, [z0, 16 - y1, z1, 16 - y0], 
+        [x0, y0, z0,  x0, y0, z1,  x0, y1, z1,  x0, y1, z0])
     }
 
-    if ((face = e.faces?.south) && face?.texture) {
-      [u0, v0] = atlas.getUV(this.getTexture(face.texture))
-      pos.push(x0, y0, z1,  x1, y0, z1,  x1, y1, z1,  x0, y1, z1)
-      readUv(face.uv ?? [x0, 16 - y1, x1, 16 - y0])
-      pushTexCoord()
-      index.push(i+0, i+1, i+2, i+0, i+2, i+3)
-      i += 4
-    }
-    if ((face = e.faces?.north) && face?.texture) {
-      [u0, v0] = atlas.getUV(this.getTexture(face.texture))
-      pos.push(x1, y0, z0,  x0, y0, z0,  x0, y1, z0,  x1, y1, z0)
-      readUv(face.uv ?? [16 - x1, 16 - y1, 16 - x0, 16 - y0])
-      pushTexCoord()
-      index.push(i+0, i+1, i+2, i+0, i+2, i+3)
-      i += 4
-    }
-    if ((face = e.faces?.east) && face?.texture) {
-      [u0, v0] = atlas.getUV(this.getTexture(face.texture))
-      pos.push(x1, y0, z1,  x1, y0, z0,  x1, y1, z0,  x1, y1, z1)
-      readUv(face.uv ?? [16 - z1, 16 - y1, 16 - z0, 16 - y0])
-      pushTexCoord()
-      index.push(i+0, i+1, i+2, i+0, i+2, i+3)
-      i += 4
-    }
-    if ((face = e.faces?.west) && face?.texture) {
-      [u0, v0] = atlas.getUV(this.getTexture(face.texture))
-      pos.push(x0, y0, z0,  x0, y0, z1,  x0, y1, z1,  x0, y1, z0)
-      readUv(face.uv ?? [z1, 16 - y1, z0, 16 - y0])
-      pushTexCoord()
-      index.push(i+0, i+1, i+2, i+0, i+2, i+3)
-      i += 4
-    }
-
-    const mPos = mat4.create()
-    mat4.identity(mPos)
-    mat4.translate(mPos, mPos, [x, y, z])
-    mat4.scale(mPos, mPos, [0.0625, 0.0625, 0.0625])
+    const t = mat4.create()
+    mat4.identity(t)
     if (e.rotation) {
       const origin = vec3.fromValues(...e.rotation.origin)
-      mat4.translate(mPos, mPos, origin)
-      mat4.rotate(mPos, mPos, glMatrix.toRadian(e.rotation.angle),
+      mat4.translate(t, t, origin)
+      mat4.rotate(t, t, glMatrix.toRadian(e.rotation.angle),
         e.rotation.axis === 'y' ? [0, 1, 0] : e.rotation.axis === 'x' ? [1, 0, 0] : [0, 0, 1])
       vec3.negate(origin, origin)
-      mat4.translate(mPos, mPos, origin)
+      mat4.translate(t, t, origin)
     }
 
-    const position = new Float32Array(pos)
-    let a = vec3.create()
-    for(let i = 0; i < position.length; i += 3) {
-      vec3.transformMat4(a, position.slice(i, i + 3), mPos)
-      position.set(a, i)
+    return {
+      position: positions,
+      texCoord: texCoords,
+      index: indices
     }
-
-    return { position, texCoord, index }
   }
 
   private getTexture(textureRef: string) {

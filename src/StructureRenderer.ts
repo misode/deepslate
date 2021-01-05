@@ -1,8 +1,8 @@
-import { mat4 } from "gl-matrix";
+import { mat4, vec3 } from "gl-matrix";
 import { BlockAtlas } from "./BlockAtlas";
 import { BlockModelProvider } from "./BlockModel";
 import { BlockStateProvider } from "./BlockState";
-import { mergeFloat32Arrays } from "./Util";
+import { mergeFloat32Arrays, transformVectors } from "./Util";
 
 export class StructureRenderer {
   private gl: WebGLRenderingContext
@@ -80,9 +80,10 @@ export class StructureRenderer {
       try {
         const blockState = this.structure.palette[b.state]
         const blockStateModel = this.blockStateProvider.getBlockState(blockState.Name)!
-        const modelVariant = blockStateModel.getModel(blockState.Properties ?? {})
-        const model = this.blockModelProvider.getBlockModel(modelVariant.model)!
-        buffers = model.getBuffers(this.blockAtlas, indexOffset, b.pos[0], b.pos[1], b.pos[2])
+        buffers = blockStateModel.getBuffers(blockState.Properties ?? {}, this.blockAtlas, this.blockModelProvider, indexOffset)
+        const transform = mat4.create()
+        mat4.translate(transform, transform, b.pos)
+        transformVectors(buffers.position, transform)
       } catch(e) {
         console.error(e)
         continue

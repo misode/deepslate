@@ -1,3 +1,7 @@
+import { glMatrix, mat4 } from "gl-matrix"
+import { TextureUVProvider } from "./BlockAtlas"
+import { BlockModel, BlockModelProvider } from "./BlockModel"
+import { transformVectors } from "./Util"
 
 type ModelVariant = {
   model: string
@@ -32,17 +36,35 @@ export class BlockState {
       ))
   }
 
-  public getModel(props: { [key: string]: string }): ModelVariant {
+  public getModelVariant(props: { [key: string]: string }): ModelVariant {
     const matches = Object.keys(this.variants).filter(v => this.matchesVariant(v, props))
     if (matches.length === 0) {
       throw new Error(`Cannot find a blockstate match for ${this.id} using properties ${JSON.stringify(props)}`)
     }
     const variant = this.variants[matches[0]]
-    if (Array.isArray(variant)) {
-      // TODO: return random variant
-      return variant[0]
-    } else {
-      return variant
+    return Array.isArray(variant) ? variant[0] : variant
+  }
+
+  public getBuffers(props: { [key: string]: string }, textureUVProvider: TextureUVProvider, blockModelProvider: BlockModelProvider, offset: number) {
+    const variant = this.getModelVariant(props)
+    const buffers = blockModelProvider.getBlockModel(variant.model)!.getBuffers(textureUVProvider, offset)
+
+    const t = mat4.create()
+    mat4.identity(t)
+    mat4.scale(t, t, [0.0625, 0.0625, 0.0625])
+    if (variant.x || variant.y) {
+      mat4.translate(t, t, [8, 8, 8])
+      mat4.rotateX(t, t, -glMatrix.toRadian(variant.x ?? 0))
+      mat4.rotateY(t, t, -glMatrix.toRadian(variant.y ?? 0))
+      mat4.translate(t, t, [-8, -8, -8])
+    }
+    const positions = new Float32Array(buffers.position)
+    transformVectors(positions, t)
+
+    return {
+      position: positions,
+      texCoord: buffers.texCoord,
+      index: buffers.index
     }
   }
 

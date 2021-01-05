@@ -1,9 +1,14 @@
-export class BlockAtlas {
+export interface TextureUVProvider {
+  part: number
+  getUV(texture: string): [number, number]
+}
+
+export class BlockAtlas implements TextureUVProvider {
   public readonly width: number
   public readonly part: number
   public readonly pixelWidth: number
   private img: ImageData
-  private idMap: { [id: string]: number[] }
+  private idMap: { [id: string]: [number, number] }
   private ctx: OffscreenCanvasRenderingContext2D
 
   constructor(width: number) {

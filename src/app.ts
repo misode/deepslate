@@ -3,19 +3,26 @@ import { ShaderProgram } from './ShaderProgram';
 import { StructureRenderer } from './StructureRenderer';
 
 const structure = {
-  size: [3, 2, 1],
+  size: [3, 1, 3],
   palette: [
-    { Name: 'minecraft:stone' },
+    { Name: 'minecraft:white_carpet' },
+    { Name: 'minecraft:red_carpet' },
+    { Name: 'minecraft:blue_carpet' },
+    { Name: 'minecraft:hopper', Properties: { facing: 'south' } },
+    { Name: 'minecraft:piston', Properties: { extended: 'false', facing: 'west' } },
     { Name: 'minecraft:crafting_table' },
-    { Name: 'minecraft:hopper', Properties: { facing: 'down' } },
-    { Name: 'minecraft:barrel', Properties: { facing: 'up', open: 'false' } },
+    { Name: 'minecraft:lantern', Properties: { hanging: 'false' } },
   ],
   blocks: [
-    { pos: [1, 0, 0], state: 0 },
-    { pos: [2, 0, 0], state: 0 },
-    { pos: [2, 1, 0], state: 1 },
-    { pos: [0, 1, 0], state: 2 },
-    { pos: [0, 0, 0], state: 3 },
+    { pos: [0, 0, 0], state: 0 },
+    { pos: [1, 0, 0], state: 1 },
+    { pos: [2, 0, 0], state: 1 },
+    { pos: [0, 0, 1], state: 2 },
+    { pos: [0, 0, 2], state: 2 },
+    { pos: [2, 0, 1], state: 3 },
+    { pos: [1, 0, 1], state: 4 },
+    { pos: [2, 0, 2], state: 5 },
+    { pos: [1, 0, 2], state: 6 },
   ]
 }
 
