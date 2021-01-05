@@ -35,7 +35,7 @@ export class ShaderProgram {
     this.gl.compileShader(shader);
 
     if (!this.gl.getShaderParameter(shader, this.gl.COMPILE_STATUS)) {
-      console.error('An error occurred compiling the shaders: ' + this.gl.getShaderInfoLog(shader));
+      console.error(`An error occurred compiling ${type === this.gl.VERTEX_SHADER ? 'vertex' : 'fragment'} shaders ${this.gl.getShaderInfoLog(shader)}`);
       this.gl.deleteShader(shader);
       return null;
     }

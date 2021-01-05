@@ -5,51 +5,57 @@ import { StructureRenderer } from './StructureRenderer';
 const structure = {
   size: [3, 2, 3],
   palette: [
-    { Name: 'minecraft:white_carpet' },
-    { Name: 'minecraft:red_carpet' },
-    { Name: 'minecraft:blue_carpet' },
+    { Name: 'minecraft:crafting_table' },
     { Name: 'minecraft:hopper', Properties: { facing: 'south' } },
     { Name: 'minecraft:piston', Properties: { extended: 'false', facing: 'west' } },
-    { Name: 'minecraft:crafting_table' },
+    { Name: 'minecraft:grass_block', Properties: { snowy: 'false' } },
     { Name: 'minecraft:lantern', Properties: { hanging: 'false' } },
+    { Name: 'minecraft:cauldron', Properties: { level: '2' } },
     { Name: 'minecraft:cobweb' },
+    { Name: 'minecraft:vine', Properties: { east: 'false', north: 'true', south: 'false', west: 'false', up: 'false' } },
+    { Name: 'minecraft:lily_pad' },
   ],
   blocks: [
     { pos: [0, 0, 0], state: 0 },
-    { pos: [1, 0, 0], state: 1 },
-    { pos: [2, 0, 0], state: 1 },
-    { pos: [0, 0, 1], state: 2 },
-    { pos: [0, 0, 2], state: 2 },
-    { pos: [2, 0, 1], state: 3 },
-    { pos: [1, 0, 1], state: 4 },
-    { pos: [2, 0, 2], state: 5 },
-    { pos: [1, 0, 2], state: 6 },
-    { pos: [1, 1, 1], state: 7 },
+    { pos: [2, 0, 1], state: 1 },
+    { pos: [1, 0, 1], state: 2 },
+    { pos: [2, 0, 2], state: 3 },
+    { pos: [2, 1, 2], state: 4 },
+    { pos: [2, 0, 0], state: 5 },
+    { pos: [1, 1, 1], state: 6 },
+    { pos: [0, 0, 1], state: 7 },
+    { pos: [0, 0, 2], state: 8 },
   ]
 }
 
 const vsSource = `
   attribute vec4 vertPos;
   attribute vec2 texCoord;
+  attribute vec3 tintColor;
 
   uniform mat4 mView;
   uniform mat4 mProj;
 
   varying highp vec2 vTexCoord;
+  varying highp vec3 vTintColor;
 
   void main(void) {
     gl_Position = mProj * mView * vertPos;
     vTexCoord = texCoord;
+    vTintColor = tintColor;
   }
 `;
 
 const fsSource = `
+  precision highp float;
   varying highp vec2 vTexCoord;
+  varying highp vec3 vTintColor;
 
   uniform sampler2D sampler;
 
   void main(void) {
-    gl_FragColor = texture2D(sampler, vTexCoord);
+    vec4 texColor = texture2D(sampler, vTexCoord);
+    gl_FragColor = vec4(texColor.xyz * vTintColor, texColor.a);
   }
 `;
 

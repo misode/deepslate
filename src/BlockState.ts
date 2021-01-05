@@ -45,9 +45,9 @@ export class BlockState {
     return Array.isArray(variant) ? variant[0] : variant
   }
 
-  public getBuffers(props: { [key: string]: string }, textureUVProvider: TextureUVProvider, blockModelProvider: BlockModelProvider, offset: number) {
+  public getBuffers(name: string, props: { [key: string]: string }, textureUVProvider: TextureUVProvider, blockModelProvider: BlockModelProvider, offset: number) {
     const variant = this.getModelVariant(props)
-    const buffers = blockModelProvider.getBlockModel(variant.model)!.getBuffers(textureUVProvider, offset)
+    const buffers = blockModelProvider.getBlockModel(variant.model)!.getBuffers(name, props, textureUVProvider, offset)
 
     const t = mat4.create()
     mat4.identity(t)
@@ -64,6 +64,7 @@ export class BlockState {
     return {
       position: positions,
       texCoord: buffers.texCoord,
+      tintColor: buffers.tintColor,
       index: buffers.index
     }
   }

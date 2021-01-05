@@ -59,6 +59,11 @@ export class StructureRenderer {
     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, buffers.textureCoord);
     this.gl.vertexAttribPointer(texCoordLoc, 2, this.gl.FLOAT, false, 0, 0);
     this.gl.enableVertexAttribArray(texCoordLoc);
+    
+    const tintColorLoc = this.gl.getAttribLocation(this.shaderProgram, 'tintColor')
+    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, buffers.tintColor);
+    this.gl.vertexAttribPointer(tintColorLoc, 3, this.gl.FLOAT, false, 0, 0);
+    this.gl.enableVertexAttribArray(tintColorLoc);
   
     this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, buffers.indices);
   
@@ -72,6 +77,7 @@ export class StructureRenderer {
   private initBuffers() {
     const positions = []
     const textureCoordinates = []
+    const tintColors = []
     const indices = []
     let indexOffset = 0
 
@@ -80,7 +86,7 @@ export class StructureRenderer {
       try {
         const blockState = this.structure.palette[b.state]
         const blockStateModel = this.blockStateProvider.getBlockState(blockState.Name)!
-        buffers = blockStateModel.getBuffers(blockState.Properties ?? {}, this.blockAtlas, this.blockModelProvider, indexOffset)
+        buffers = blockStateModel.getBuffers(blockState.Name, blockState.Properties ?? {}, this.blockAtlas, this.blockModelProvider, indexOffset)
         const t = mat4.create()
         mat4.translate(t, t, b.pos)
         transformVectors(buffers.position, t)
@@ -90,13 +96,15 @@ export class StructureRenderer {
       }
       positions.push(buffers.position)
       textureCoordinates.push(...buffers.texCoord)
+      tintColors.push(...buffers.tintColor)
       indices.push(...buffers.index)
       indexOffset += buffers.texCoord.length / 2
     }
-  
+
     return {
       position: this.createBuffer(this.gl.ARRAY_BUFFER, mergeFloat32Arrays(...positions)),
       textureCoord: this.createBuffer(this.gl.ARRAY_BUFFER, new Float32Array(textureCoordinates)),
+      tintColor: this.createBuffer(this.gl.ARRAY_BUFFER, new Float32Array(tintColors)),
       indices: this.createBuffer(this.gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices)),
       length: indices.length
     };

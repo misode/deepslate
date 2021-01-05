@@ -1,5 +1,6 @@
 import { glMatrix, mat4, ReadonlyVec3, vec3 } from "gl-matrix";
 import { TextureUVProvider } from "./BlockAtlas";
+import { BlockColors } from "./BlockColors";
 import { mergeFloat32Arrays, transformVectors } from "./Util";
 
 type Direction = 'up' | 'down' | 'north' | 'east' | 'south' | 'west'
@@ -10,6 +11,7 @@ type BlockModelFace = {
   texture: string
   uv?: number[]
   rotation?: 0 | 90 | 180 | 270
+  tintindex?: number
 }
 
 type BlockModelElement = {
@@ -62,15 +64,17 @@ export class BlockModel {
     this.flattened = false
   }
 
-  public getBuffers(uvProvider: TextureUVProvider, offset: number) {
+  public getBuffers(name: string, props: {[key: string]: string}, uvProvider: TextureUVProvider, offset: number) {
     const position: Float32Array[] = []
     const texCoord: number[] = []
+    const tintColor: number[] = []
     const index: number[] = []
 
     for (const element of this.elements ?? []) {
-      const buffers = this.getElementBuffers(element, offset, uvProvider)
+      const buffers = this.getElementBuffers(name, props, element, offset, uvProvider)
       position.push(buffers.position)
       texCoord.push(...buffers.texCoord)
+      tintColor.push(...buffers.tintColor)
       index.push(...buffers.index)
       offset += buffers.texCoord.length / 2
     }
@@ -78,11 +82,12 @@ export class BlockModel {
     return {
       position: mergeFloat32Arrays(...position),
       texCoord,
+      tintColor,
       index
     }
   }
 
-  private getElementBuffers(e: BlockModelElement, i: number, uvProvider: TextureUVProvider) {
+  private getElementBuffers(name: string, props: {[key: string]: string}, e: BlockModelElement, i: number, uvProvider: TextureUVProvider) {
     const x0 = e.from[0]
     const y0 = e.from[1]
     const z0 = e.from[2]
@@ -92,6 +97,7 @@ export class BlockModel {
 
     const positions: number[] = []
     const texCoords: number[] = []
+    const tintColors: number[] = []
     const indices: number[] = []
 
     const p = uvProvider.part / 16
@@ -105,6 +111,8 @@ export class BlockModel {
         u0 + uv[r[2]], v0 + uv[r[3]],
         u0 + uv[r[4]], v0 + uv[r[5]],
         u0 + uv[r[6]], v0 + uv[r[7]])
+      const tint = (face.tintindex ?? -1) >= 0 ? BlockColors[name.slice(10)]?.(props) : [1, 1, 1]
+      tintColors.push(...tint, ...tint, ...tint, ...tint)
       positions.push(...pos)
       indices.push(i, i+1, i+2,  i, i+2, i+3)
       i += 4
@@ -154,6 +162,7 @@ export class BlockModel {
     return {
       position: posArray,
       texCoord: texCoords,
+      tintColor: tintColors,
       index: indices
     }
   }
