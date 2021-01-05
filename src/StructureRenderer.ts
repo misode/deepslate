@@ -1,4 +1,4 @@
-import { mat4, vec3 } from "gl-matrix";
+import { mat4 } from "gl-matrix";
 import { BlockAtlas } from "./BlockAtlas";
 import { BlockModelProvider } from "./BlockModel";
 import { BlockStateProvider } from "./BlockState";
@@ -81,9 +81,9 @@ export class StructureRenderer {
         const blockState = this.structure.palette[b.state]
         const blockStateModel = this.blockStateProvider.getBlockState(blockState.Name)!
         buffers = blockStateModel.getBuffers(blockState.Properties ?? {}, this.blockAtlas, this.blockModelProvider, indexOffset)
-        const transform = mat4.create()
-        mat4.translate(transform, transform, b.pos)
-        transformVectors(buffers.position, transform)
+        const t = mat4.create()
+        mat4.translate(t, t, b.pos)
+        transformVectors(buffers.position, t)
       } catch(e) {
         console.error(e)
         continue

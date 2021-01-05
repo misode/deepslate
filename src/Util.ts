@@ -17,7 +17,12 @@ export function mergeFloat32Arrays(...arrays: Float32Array[]) {
 export function transformVectors(array: Float32Array, transformation: mat4) {
   let a = vec3.create()
   for(let i = 0; i < array.length; i += 3) {
-    vec3.transformMat4(a, array.slice(i, i + 3), transformation)
-    array.set(a, i)
+    a[0] = array[i]
+    a[1] = array[i+1]
+    a[2] = array[i+2]
+    vec3.transformMat4(a, a, transformation)
+    array[i] = a[0]
+    array[i+1] = a[1]
+    array[i+2] = a[2]
   }
 }

@@ -3,7 +3,7 @@ import { ShaderProgram } from './ShaderProgram';
 import { StructureRenderer } from './StructureRenderer';
 
 const structure = {
-  size: [3, 1, 3],
+  size: [3, 2, 3],
   palette: [
     { Name: 'minecraft:white_carpet' },
     { Name: 'minecraft:red_carpet' },
@@ -12,6 +12,7 @@ const structure = {
     { Name: 'minecraft:piston', Properties: { extended: 'false', facing: 'west' } },
     { Name: 'minecraft:crafting_table' },
     { Name: 'minecraft:lantern', Properties: { hanging: 'false' } },
+    { Name: 'minecraft:cobweb' },
   ],
   blocks: [
     { pos: [0, 0, 0], state: 0 },
@@ -23,6 +24,7 @@ const structure = {
     { pos: [1, 0, 1], state: 4 },
     { pos: [2, 0, 2], state: 5 },
     { pos: [1, 0, 2], state: 6 },
+    { pos: [1, 1, 1], state: 7 },
   ]
 }
 

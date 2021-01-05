@@ -1,8 +1,10 @@
-import { glMatrix, mat4, vec3 } from "gl-matrix";
+import { glMatrix, mat4, ReadonlyVec3, vec3 } from "gl-matrix";
 import { TextureUVProvider } from "./BlockAtlas";
-import { mergeFloat32Arrays } from "./Util";
+import { mergeFloat32Arrays, transformVectors } from "./Util";
 
 type Direction = 'up' | 'down' | 'north' | 'east' | 'south' | 'west'
+
+type Axis = 'x' | 'y' | 'z'
 
 type BlockModelFace = {
   texture: string
@@ -15,8 +17,9 @@ type BlockModelElement = {
   to: number[]
   rotation?: {
     origin: [number, number, number]
-    axis: 'x' | 'y' | 'z'
+    axis: Axis
     angle: number
+    rescale?: boolean
   }
   faces?: {
     [key in Direction]: BlockModelFace
@@ -28,6 +31,20 @@ const faceRotations = {
   90: [2, 3, 2, 1, 0, 1, 0, 3],
   180: [2, 1, 0, 1, 0, 3, 2, 3],
   270: [0, 1, 0, 3, 2, 3, 2, 1],
+}
+
+const rotationAxis: {[key in Axis] : ReadonlyVec3} = {
+  x: [1, 0, 0],
+  y: [0, 1, 0],
+  z: [0, 0, 1]
+}
+
+const SQRT2 = 1.41421356237
+
+const rescaleAxis: {[key in Axis] : ReadonlyVec3} = {
+  x: [1, SQRT2, SQRT2],
+  y: [SQRT2, 1, SQRT2],
+  z: [SQRT2, SQRT2, 1]
 }
 
 export interface BlockModelProvider {
@@ -46,20 +63,20 @@ export class BlockModel {
   }
 
   public getBuffers(uvProvider: TextureUVProvider, offset: number) {
-    const position: number[] = []
+    const position: Float32Array[] = []
     const texCoord: number[] = []
     const index: number[] = []
 
     for (const element of this.elements ?? []) {
       const buffers = this.getElementBuffers(element, offset, uvProvider)
-      position.push(...buffers.position)
+      position.push(buffers.position)
       texCoord.push(...buffers.texCoord)
       index.push(...buffers.index)
       offset += buffers.texCoord.length / 2
     }
 
     return {
-      position,
+      position: mergeFloat32Arrays(...position),
       texCoord,
       index
     }
@@ -123,14 +140,19 @@ export class BlockModel {
     if (e.rotation) {
       const origin = vec3.fromValues(...e.rotation.origin)
       mat4.translate(t, t, origin)
-      mat4.rotate(t, t, glMatrix.toRadian(e.rotation.angle),
-        e.rotation.axis === 'y' ? [0, 1, 0] : e.rotation.axis === 'x' ? [1, 0, 0] : [0, 0, 1])
+      mat4.rotate(t, t, glMatrix.toRadian(e.rotation.angle), rotationAxis[e.rotation.axis])
+      if (e.rotation.rescale) {
+        mat4.scale(t, t, rescaleAxis[e.rotation.axis])
+      }
       vec3.negate(origin, origin)
       mat4.translate(t, t, origin)
     }
 
+    const posArray = new Float32Array(positions)
+    transformVectors(posArray, t)
+
     return {
-      position: positions,
+      position: posArray,
       texCoord: texCoords,
       index: indices
     }

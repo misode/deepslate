@@ -1,6 +1,6 @@
 import { glMatrix, mat4 } from "gl-matrix"
 import { TextureUVProvider } from "./BlockAtlas"
-import { BlockModel, BlockModelProvider } from "./BlockModel"
+import { BlockModelProvider } from "./BlockModel"
 import { transformVectors } from "./Util"
 
 type ModelVariant = {
