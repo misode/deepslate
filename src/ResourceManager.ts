@@ -1,21 +1,21 @@
 import jszip from 'jszip'
 import { BlockAtlas } from './BlockAtlas'
 import { BlockModel, BlockModelProvider } from './BlockModel'
-import { BlockState } from './BlockState'
+import { BlockDefinition } from './BlockDefinition'
 
 export class ResourceManager implements BlockModelProvider {
-  private blockStates: { [id: string]: BlockState }
+  private blockDefinitions: { [id: string]: BlockDefinition }
   private blockModels: { [id: string]: BlockModel }
   private blockAtlas: BlockAtlas
 
   constructor() {
-    this.blockStates = {}
+    this.blockDefinitions = {}
     this.blockModels = {}
     this.blockAtlas = new BlockAtlas(1)
   }
 
-  public getBlockState(id: string) {
-    return this.blockStates[id]
+  public getBlockDefinition(id: string) {
+    return this.blockDefinitions[id]
   }
 
   public getBlockModel(id: string) {
@@ -35,7 +35,7 @@ export class ResourceManager implements BlockModelProvider {
     const assets = await jszip.loadAsync(assetsBuffer)
     await this.loadFromFolderJson(assets.folder('minecraft/blockstates')!, async (id, data) => {
       id = 'minecraft:' + id
-      this.blockStates[id] = BlockState.fromJson(id, data)
+      this.blockDefinitions[id] = BlockDefinition.fromJson(id, data)
     })
     await this.loadFromFolderJson(assets.folder('minecraft/models/block')!, async (id, data) => {
       id = 'minecraft:block/' + id

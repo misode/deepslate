@@ -16,11 +16,11 @@ type WeightedModelVariant = ModelVariant & {
 
 type ModelVariantEntry = ModelVariant | WeightedModelVariant[]
 
-export interface BlockStateProvider {
-  getBlockState(id: string): BlockState | null
+export interface BlockDefinitionProvider {
+  getBlockDefinition(id: string): BlockDefinition | null
 }
 
-export class BlockState {
+export class BlockDefinition {
   constructor(
     private id: string,
     private variants: { [key: string]: ModelVariantEntry }
@@ -39,7 +39,7 @@ export class BlockState {
   public getModelVariant(props: { [key: string]: string }): ModelVariant {
     const matches = Object.keys(this.variants).filter(v => this.matchesVariant(v, props))
     if (matches.length === 0) {
-      throw new Error(`Cannot find a blockstate match for ${this.id} using properties ${JSON.stringify(props)}`)
+      throw new Error(`Cannot find a variant for ${this.id} using properties ${JSON.stringify(props)}`)
     }
     const variant = this.variants[matches[0]]
     return Array.isArray(variant) ? variant[0] : variant
@@ -77,6 +77,6 @@ export class BlockState {
   }
 
   public static fromJson(id: string, data: any) {
-    return new BlockState(id, data.variants)
+    return new BlockDefinition(id, data.variants)
   }
 }

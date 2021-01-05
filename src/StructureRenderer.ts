@@ -1,13 +1,13 @@
 import { mat4 } from "gl-matrix";
 import { BlockAtlas } from "./BlockAtlas";
 import { BlockModelProvider } from "./BlockModel";
-import { BlockStateProvider } from "./BlockState";
+import { BlockDefinitionProvider } from "./BlockDefinition";
 import { mergeFloat32Arrays, transformVectors } from "./Util";
 
 export class StructureRenderer {
   private gl: WebGLRenderingContext
   private shaderProgram: WebGLProgram
-  private blockStateProvider: BlockStateProvider
+  private blockDefinitionProvider: BlockDefinitionProvider
   private blockModelProvider: BlockModelProvider
   private blockAtlas: BlockAtlas
   private structure: any
@@ -16,10 +16,10 @@ export class StructureRenderer {
   private viewMatrixLoc: WebGLUniformLocation
   private vertexCount: number
   
-  constructor(gl: WebGLRenderingContext, shaderProgram: WebGLProgram, blockStateProvider: BlockStateProvider, blockModelProvider: BlockModelProvider, blockAtlas: BlockAtlas, structure: any) {
+  constructor(gl: WebGLRenderingContext, shaderProgram: WebGLProgram, blockDefinitionProvider: BlockDefinitionProvider, blockModelProvider: BlockModelProvider, blockAtlas: BlockAtlas, structure: any) {
     this.gl = gl
     this.shaderProgram = shaderProgram
-    this.blockStateProvider = blockStateProvider
+    this.blockDefinitionProvider = blockDefinitionProvider
     this.blockModelProvider = blockModelProvider
     this.blockAtlas = blockAtlas
     this.structure = structure
@@ -85,8 +85,8 @@ export class StructureRenderer {
     for (const b of this.structure.blocks) {
       try {
         const blockState = this.structure.palette[b.state]
-        const blockStateModel = this.blockStateProvider.getBlockState(blockState.Name)!
-        buffers = blockStateModel.getBuffers(blockState.Name, blockState.Properties ?? {}, this.blockAtlas, this.blockModelProvider, indexOffset)
+        const blockDefinition = this.blockDefinitionProvider.getBlockDefinition(blockState.Name)!
+        buffers = blockDefinition.getBuffers(blockState.Name, blockState.Properties ?? {}, this.blockAtlas, this.blockModelProvider, indexOffset)
         const t = mat4.create()
         mat4.translate(t, t, b.pos)
         transformVectors(buffers.position, t)
