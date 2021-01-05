@@ -1,8 +1,9 @@
-import { mat4 } from "gl-matrix";
+import { mat4, ReadonlyVec3 } from "gl-matrix";
 import { BlockAtlas } from "./BlockAtlas";
 import { BlockModelProvider } from "./BlockModel";
 import { BlockDefinitionProvider } from "./BlockDefinition";
 import { mergeFloat32Arrays, transformVectors } from "./Util";
+import { Structure } from "./Structure";
 
 export class StructureRenderer {
   private gl: WebGLRenderingContext
@@ -10,13 +11,13 @@ export class StructureRenderer {
   private blockDefinitionProvider: BlockDefinitionProvider
   private blockModelProvider: BlockModelProvider
   private blockAtlas: BlockAtlas
-  private structure: any
+  private structure: Structure
 
   private atlasTexture: WebGLTexture
   private viewMatrixLoc: WebGLUniformLocation
   private vertexCount: number
   
-  constructor(gl: WebGLRenderingContext, shaderProgram: WebGLProgram, blockDefinitionProvider: BlockDefinitionProvider, blockModelProvider: BlockModelProvider, blockAtlas: BlockAtlas, structure: any) {
+  constructor(gl: WebGLRenderingContext, shaderProgram: WebGLProgram, blockDefinitionProvider: BlockDefinitionProvider, blockModelProvider: BlockModelProvider, blockAtlas: BlockAtlas, structure: Structure) {
     this.gl = gl
     this.shaderProgram = shaderProgram
     this.blockDefinitionProvider = blockDefinitionProvider
@@ -82,11 +83,10 @@ export class StructureRenderer {
     let indexOffset = 0
 
     let buffers
-    for (const b of this.structure.blocks) {
+    for (const b of this.structure.getBlocks()) {
       try {
-        const blockState = this.structure.palette[b.state]
-        const blockDefinition = this.blockDefinitionProvider.getBlockDefinition(blockState.Name)!
-        buffers = blockDefinition.getBuffers(blockState.Name, blockState.Properties ?? {}, this.blockAtlas, this.blockModelProvider, indexOffset)
+        const blockDefinition = this.blockDefinitionProvider.getBlockDefinition(b.state.getName())!
+        buffers = blockDefinition.getBuffers(b.state.getName(), b.state.getProperties(), this.blockAtlas, this.blockModelProvider, indexOffset)
         const t = mat4.create()
         mat4.translate(t, t, b.pos)
         transformVectors(buffers.position, t)
@@ -118,7 +118,7 @@ export class StructureRenderer {
   }
 
   public drawStructure(xRotation: number, yRotation: number, viewDistance: number) {
-    const size = this.structure.size
+    const size = this.structure.getSize()
     const viewMatrix = mat4.create();
     mat4.translate(viewMatrix, viewMatrix, [0, 0, -viewDistance]);
     mat4.rotate(viewMatrix, viewMatrix, xRotation, [1, 0, 0]);

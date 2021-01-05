@@ -1,32 +1,18 @@
 import { ResourceManager } from './ResourceManager';
 import { ShaderProgram } from './ShaderProgram';
+import { Structure } from './Structure';
 import { StructureRenderer } from './StructureRenderer';
 
-const structure = {
-  size: [3, 2, 3],
-  palette: [
-    { Name: 'minecraft:crafting_table' },
-    { Name: 'minecraft:hopper', Properties: { facing: 'south' } },
-    { Name: 'minecraft:piston', Properties: { extended: 'false', facing: 'west' } },
-    { Name: 'minecraft:grass_block', Properties: { snowy: 'false' } },
-    { Name: 'minecraft:lantern', Properties: { hanging: 'false' } },
-    { Name: 'minecraft:cauldron', Properties: { level: '2' } },
-    { Name: 'minecraft:cobweb' },
-    { Name: 'minecraft:vine', Properties: { east: 'false', north: 'true', south: 'false', west: 'false', up: 'false' } },
-    { Name: 'minecraft:lily_pad' },
-  ],
-  blocks: [
-    { pos: [0, 0, 0], state: 0 },
-    { pos: [2, 0, 1], state: 1 },
-    { pos: [1, 0, 1], state: 2 },
-    { pos: [2, 0, 2], state: 3 },
-    { pos: [2, 1, 2], state: 4 },
-    { pos: [2, 0, 0], state: 5 },
-    { pos: [1, 1, 1], state: 6 },
-    { pos: [0, 0, 1], state: 7 },
-    { pos: [0, 0, 2], state: 8 },
-  ]
-}
+const structure = new Structure([3, 2, 3])
+  .addBlock([0, 0, 0], 'minecraft:crafting_table')
+  .addBlock([2, 0, 1], 'minecraft:hopper', { facing: 'south' })
+  .addBlock([1, 0, 1], 'minecraft:piston', { extended: 'false', facing: 'west' })
+  .addBlock([2, 0, 2], 'minecraft:grass_block', { snowy: 'false' })
+  .addBlock([2, 1, 2], 'minecraft:lantern', { hanging: 'false' })
+  .addBlock([2, 0, 0], 'minecraft:cauldron', { level: '2' })
+  .addBlock([1, 1, 1], 'minecraft:cobweb')
+  .addBlock([0, 0, 1], 'minecraft:vine', { east: 'false', north: 'true', south: 'false', west: 'false', up: 'false' })
+  .addBlock([0, 0, 2], 'minecraft:lily_pad')
 
 const vsSource = `
   attribute vec4 vertPos;
