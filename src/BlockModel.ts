@@ -201,11 +201,6 @@ export class BlockModel {
     }
   }
 
-  public textureReferences() {
-    return Object.values(this.textures ?? {})
-      .filter(t => !t.startsWith('#'))
-  }
-
   public static fromJson(id: string, data: any) {
     let parent = data.parent as string | undefined
     if (parent && !parent.startsWith('minecraft:')) {

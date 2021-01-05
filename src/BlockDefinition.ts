@@ -1,7 +1,7 @@
 import { glMatrix, mat4 } from "gl-matrix"
 import { TextureUVProvider } from "./BlockAtlas"
 import { BlockModelProvider } from "./BlockModel"
-import { transformVectors } from "./Util"
+import { mergeFloat32Arrays, transformVectors } from "./Util"
 
 type ModelVariant = {
   model: string
@@ -10,11 +10,20 @@ type ModelVariant = {
   uvlock?: boolean
 }
 
-type WeightedModelVariant = ModelVariant & {
+type ModelVariantEntry = ModelVariant | (ModelVariant & {
   weight?: number
+})[]
+
+type ModelMultiPartCondition = {
+  OR: ModelMultiPartCondition[]
+} | {
+  [key: string]: string
 }
 
-type ModelVariantEntry = ModelVariant | WeightedModelVariant[]
+type ModelMultiPart = {
+  when?: ModelMultiPartCondition
+  apply: ModelVariantEntry
+}
 
 export interface BlockDefinitionProvider {
   getBlockDefinition(id: string): BlockDefinition | null
@@ -23,49 +32,64 @@ export interface BlockDefinitionProvider {
 export class BlockDefinition {
   constructor(
     private id: string,
-    private variants: { [key: string]: ModelVariantEntry }
+    private variants: { [key: string]: ModelVariantEntry } | undefined,
+    private multipart: ModelMultiPart[] | undefined,
   ) {
     this.variants = variants
   }
 
-  public allModels(): ModelVariant[] {
-    return Array.from(new Set(
-      Object.values(this.variants)
-        .map(v => Array.isArray(v) ? v : [v])
-        .reduce((x, y) => [...x, ...y], [])
-      ))
-  }
-
-  public getModelVariant(props: { [key: string]: string }): ModelVariant {
-    const matches = Object.keys(this.variants).filter(v => this.matchesVariant(v, props))
-    if (matches.length === 0) {
-      throw new Error(`Cannot find a variant for ${this.id} using properties ${JSON.stringify(props)}`)
+  public getModelVariants(props: { [key: string]: string }): ModelVariant[] {
+    if (this.variants) {
+      const matches = Object.keys(this.variants).filter(v => this.matchesVariant(v, props))
+      if (matches.length === 0) return []
+      const variant = this.variants[matches[0]]
+      return [Array.isArray(variant) ? variant[0] : variant]
+    } else if (this.multipart) {
+      const matches = this.multipart.filter(p => p.when ? this.matchesCase(p.when, props) : true)
+      return matches.map(p => Array.isArray(p.apply) ? p.apply[0] : p.apply) 
     }
-    const variant = this.variants[matches[0]]
-    return Array.isArray(variant) ? variant[0] : variant
+    return []
   }
 
   public getBuffers(name: string, props: { [key: string]: string }, textureUVProvider: TextureUVProvider, blockModelProvider: BlockModelProvider, offset: number) {
-    const variant = this.getModelVariant(props)
-    const buffers = blockModelProvider.getBlockModel(variant.model)!.getBuffers(name, props, textureUVProvider, offset)
+    const variants = this.getModelVariants(props)
+
+    const position: Float32Array[] = []
+    const texCoord: number[] = []
+    const tintColor: number[] = []
+    const index: number[] = []
+
+    for (const variant of variants) {
+      const buffers = blockModelProvider.getBlockModel(variant.model)!.getBuffers(name, props, textureUVProvider, offset)
+
+      if (variant.x || variant.y) {
+        const t = mat4.create()
+        mat4.identity(t)
+        mat4.translate(t, t, [8, 8, 8])
+        mat4.rotateX(t, t, -glMatrix.toRadian(variant.x ?? 0))
+        mat4.rotateY(t, t, -glMatrix.toRadian(variant.y ?? 0))
+        mat4.translate(t, t, [-8, -8, -8])
+        transformVectors(buffers.position, t)
+      }
+
+      position.push(buffers.position)
+      texCoord.push(...buffers.texCoord)
+      tintColor.push(...buffers.tintColor)
+      index.push(...buffers.index)
+      offset += buffers.texCoord.length / 2
+    }
 
     const t = mat4.create()
     mat4.identity(t)
     mat4.scale(t, t, [0.0625, 0.0625, 0.0625])
-    if (variant.x || variant.y) {
-      mat4.translate(t, t, [8, 8, 8])
-      mat4.rotateX(t, t, -glMatrix.toRadian(variant.x ?? 0))
-      mat4.rotateY(t, t, -glMatrix.toRadian(variant.y ?? 0))
-      mat4.translate(t, t, [-8, -8, -8])
-    }
-    const positions = new Float32Array(buffers.position)
+    const positions = mergeFloat32Arrays(...position)
     transformVectors(positions, t)
 
     return {
       position: positions,
-      texCoord: buffers.texCoord,
-      tintColor: buffers.tintColor,
-      index: buffers.index
+      texCoord,
+      tintColor,
+      index
     }
   }
 
@@ -76,7 +100,18 @@ export class BlockDefinition {
     })
   }
 
+  private matchesCase(condition: ModelMultiPartCondition, props: { [key: string]: string }): boolean {
+    if (Array.isArray(condition.OR)) {
+      return condition.OR.some(c => this.matchesCase(c, props))
+    }
+    const states = condition as {[key: string]: string}
+    return Object.keys(states).every(k => {
+      const values = states[k].split('|')
+      return values.includes(props[k])
+    })
+  }
+
   public static fromJson(id: string, data: any) {
-    return new BlockDefinition(id, data.variants)
+    return new BlockDefinition(id, data.variants, data.multipart)
   }
 }

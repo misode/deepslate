@@ -20,11 +20,12 @@ export class BlockState {
     if (this.name !== other.name) {
       return false
     }
-    Object.keys(this.properties).forEach(p => {
-      if (other.properties[p] !== this.properties[p]) {
-        return false
-      }
+    return Object.keys(this.properties).every(p => {
+      return other.properties[p] === this.properties[p]
     })
-    return true
+  }
+
+  toString() {
+    return `${this.name}[${Object.entries(this.properties).map(([k, v]) => k + '=' + v).join(',')}]`
   }
 }
