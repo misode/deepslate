@@ -8,6 +8,7 @@
     "copy-webpack-plugin": "^6.4.1",
     "gl-matrix": "^3.3.0",
     "jszip": "^3.5.0",
+    "nbt": "^0.8.1",
     "ts-loader": "^7.0.4",
     "typescript": "^4.1.3",
     "webpack": "^4.44.2",

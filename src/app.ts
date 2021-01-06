@@ -3,20 +3,6 @@ import { ShaderProgram } from './ShaderProgram';
 import { Structure } from './Structure';
 import { StructureRenderer } from './StructureRenderer';
 
-const structure = new Structure([3, 2, 3])
-  .addBlock([0, 0, 0], 'minecraft:crafting_table')
-  .addBlock([2, 0, 1], 'minecraft:hopper', { facing: 'south' })
-  .addBlock([1, 0, 1], 'minecraft:piston', { extended: 'false', facing: 'west' })
-  .addBlock([2, 0, 2], 'minecraft:grass_block', { snowy: 'false' })
-  .addBlock([1, 1, 0], 'minecraft:lantern', { hanging: 'false' })
-  .addBlock([2, 0, 0], 'minecraft:cauldron', { level: '2' })
-  .addBlock([0, 0, 1], 'minecraft:vine', { east: 'false', north: 'true', south: 'false', west: 'false', up: 'false' })
-  .addBlock([0, 0, 2], 'minecraft:lily_pad')
-  .addBlock([1, 0, 2], 'minecraft:redstone_wire', { east: 'up', west: 'side' })
-  .addBlock([2, 1, 2], 'minecraft:redstone_wire', { north: 'side', west: 'side' })
-  .addBlock([1, 0, 0], 'minecraft:birch_fence', { west: 'true' })
-  .addBlock([1, 1, 1], 'minecraft:cobweb')
-
 const vsSource = `
   attribute vec4 vertPos;
   attribute vec2 texCoord;
@@ -67,6 +53,10 @@ async function main() {
   if (!shaderProgram) {
     return
   }
+
+  const exampleRes = await fetch('./example.nbt')
+  const exampleData = await exampleRes.arrayBuffer()
+  const structure = await Structure.fromNbt(exampleData)
 
   const resources = new ResourceManager()
   await resources.loadFromZip('./assets.zip')
