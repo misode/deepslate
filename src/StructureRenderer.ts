@@ -45,12 +45,7 @@ export class StructureRenderer {
   
     this.gl.enable(this.gl.CULL_FACE);
     this.gl.cullFace(this.gl.BACK);
-  
-    const fieldOfView = 70 * Math.PI / 180;
-    const aspect = (this.gl.canvas as HTMLCanvasElement).clientWidth / (this.gl.canvas as HTMLCanvasElement).clientHeight;
-    const projMatrix = mat4.create();
-    mat4.perspective(projMatrix, fieldOfView, aspect, 0.1, 100.0);
-  
+
     const vertLoc = this.gl.getAttribLocation(this.shaderProgram, 'vertPos')
     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, buffers.position);
     this.gl.vertexAttribPointer(vertLoc, 3, this.gl.FLOAT, false, 0, 0);
@@ -69,10 +64,19 @@ export class StructureRenderer {
     this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, buffers.indices);
   
     this.gl.useProgram(this.shaderProgram);
-    
-    this.gl.uniformMatrix4fv(this.gl.getUniformLocation(this.shaderProgram, 'mProj'), false, projMatrix);
+  
+    this.setPerspective()
   
     this.vertexCount = buffers.length
+  }
+
+  private setPerspective() {
+    const fieldOfView = 70 * Math.PI / 180;
+    const aspect = (this.gl.canvas as HTMLCanvasElement).clientWidth / (this.gl.canvas as HTMLCanvasElement).clientHeight;
+    const projMatrix = mat4.create();
+    mat4.perspective(projMatrix, fieldOfView, aspect, 0.1, 100.0);
+    
+    this.gl.uniformMatrix4fv(this.gl.getUniformLocation(this.shaderProgram, 'mProj'), false, projMatrix);
   }
 
   private initBuffers() {
@@ -131,5 +135,9 @@ export class StructureRenderer {
 
     this.gl.drawElements(this.gl.TRIANGLES, this.vertexCount, this.gl.UNSIGNED_SHORT, 0);
   }
-  
+
+  public setViewport(x: number, y: number, width: number, height: number) {
+    this.gl.viewport(x, y, width, height)
+    this.setPerspective()
+  }
 }

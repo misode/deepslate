@@ -60,18 +60,9 @@ async function main() {
 
   const resources = new ResourceManager()
   await resources.loadFromZip('./assets.zip')
-
-  // Fetch block textures
-  const blockAtlas = resources.getBlockAtlas()
-  // Display preview of atlas
-  const atlasCanvas = document.querySelector('#atlas') as HTMLCanvasElement;
-  const ctx = atlasCanvas.getContext('2d')!;
-  atlasCanvas.width = blockAtlas.pixelWidth
-  atlasCanvas.height = blockAtlas.pixelWidth
-  ctx.putImageData(blockAtlas.getImageData(), 0, 0)
-
+  
   // Create structure renderer
-  const renderer = new StructureRenderer(gl, shaderProgram, resources, resources, blockAtlas, structure)
+  const renderer = new StructureRenderer(gl, shaderProgram, resources, resources, resources.getBlockAtlas(), structure)
 
   function render() {
     yRotation = yRotation % (Math.PI * 2)
@@ -98,6 +89,22 @@ async function main() {
   })
   canvas.addEventListener('wheel', evt => {
     viewDist += evt.deltaY / 100
+    requestAnimationFrame(render);
+  })
+
+  window.addEventListener('resize', () => {
+    const displayWidth  = canvas.clientWidth;
+    const displayHeight = canvas.clientHeight;
+
+    const needResize = canvas.width  != displayWidth || canvas.height != displayHeight;
+
+    if (needResize) {
+      canvas.width  = displayWidth;
+      canvas.height = displayHeight;
+    }
+    
+    renderer.setViewport(0, 0, canvas.width, canvas.height)
+
     requestAnimationFrame(render);
   })
 }
