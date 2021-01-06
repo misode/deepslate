@@ -9,13 +9,15 @@ export class BlockAtlas implements TextureUVProvider {
   public readonly pixelWidth: number
   private img: ImageData
   private idMap: { [id: string]: [number, number] }
-  private ctx: OffscreenCanvasRenderingContext2D
+  private ctx: CanvasRenderingContext2D
 
   constructor(width: number) {
     this.width = Math.pow(2, Math.ceil(Math.log(width)/Math.log(2)))
     this.pixelWidth = this.width * 16
     this.part = 1 / this.width
-    const canvas = new OffscreenCanvas(this.pixelWidth, this.pixelWidth)
+    const canvas = document.createElement('canvas')
+    canvas.width = this.pixelWidth
+    canvas.height = this.pixelWidth
     this.ctx = canvas.getContext('2d')!
     this.ctx.fillStyle = 'black'
     this.ctx.fillRect(0, 0, 16, 16)
