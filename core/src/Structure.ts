@@ -11,7 +11,7 @@ export class Structure {
     private blocks: { pos: BlockPos, state: number }[] = []
   ) {}
 
-  getSize() {
+  public getSize() {
     return this.size
   }
 

@@ -1,10 +1,10 @@
 export class ShaderProgram {
   private gl: WebGLRenderingContext
-  private program: WebGLProgram | null
+  private program: WebGLProgram
 
   constructor(gl: WebGLRenderingContext, vsSource: string, fsSource: string) {
-    this.gl = gl
-    this.program = this.initShaderProgram(vsSource, fsSource)
+    this.gl = gl;
+    this.program = this.initShaderProgram(vsSource, fsSource);
   }
   
   public getProgram() {
@@ -21,8 +21,7 @@ export class ShaderProgram {
     this.gl.linkProgram(shaderProgram);
 
     if (!this.gl.getProgramParameter(shaderProgram, this.gl.LINK_STATUS)) {
-      console.error('Unable to initialize the shader program: ' + this.gl.getProgramInfoLog(shaderProgram));
-      return null;
+      throw new Error(`Unable to link shader program: ${this.gl.getProgramInfoLog(shaderProgram)}`);
     }
 
     return shaderProgram;
@@ -35,9 +34,9 @@ export class ShaderProgram {
     this.gl.compileShader(shader);
 
     if (!this.gl.getShaderParameter(shader, this.gl.COMPILE_STATUS)) {
-      console.error(`An error occurred compiling ${type === this.gl.VERTEX_SHADER ? 'vertex' : 'fragment'} shaders ${this.gl.getShaderInfoLog(shader)}`);
+      const error = new Error(`Compiling ${type === this.gl.VERTEX_SHADER ? 'vertex' : 'fragment'} shader: ${this.gl.getShaderInfoLog(shader)}`);
       this.gl.deleteShader(shader);
-      return null;
+      throw error;
     }
 
     return shader;

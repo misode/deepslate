@@ -1,9 +1,41 @@
-import { mat4, ReadonlyVec3 } from "gl-matrix";
+import { mat4 } from "gl-matrix";
 import { BlockAtlas } from "./BlockAtlas";
 import { BlockModelProvider } from "./BlockModel";
 import { BlockDefinitionProvider } from "./BlockDefinition";
 import { mergeFloat32Arrays, transformVectors } from "./Util";
-import { Structure } from "./Structure";
+import { Structure } from "@webmc/core";
+import { ShaderProgram } from "./ShaderProgram";
+
+const vsSource = `
+  attribute vec4 vertPos;
+  attribute vec2 texCoord;
+  attribute vec3 tintColor;
+
+  uniform mat4 mView;
+  uniform mat4 mProj;
+
+  varying highp vec2 vTexCoord;
+  varying highp vec3 vTintColor;
+
+  void main(void) {
+    gl_Position = mProj * mView * vertPos;
+    vTexCoord = texCoord;
+    vTintColor = tintColor;
+  }
+`;
+
+const fsSource = `
+  precision highp float;
+  varying highp vec2 vTexCoord;
+  varying highp vec3 vTintColor;
+
+  uniform sampler2D sampler;
+
+  void main(void) {
+    vec4 texColor = texture2D(sampler, vTexCoord);
+    gl_FragColor = vec4(texColor.xyz * vTintColor, texColor.a);
+  }
+`;
 
 export class StructureRenderer {
   private gl: WebGLRenderingContext
@@ -17,16 +49,17 @@ export class StructureRenderer {
   private viewMatrixLoc: WebGLUniformLocation
   private vertexCount: number
   
-  constructor(gl: WebGLRenderingContext, shaderProgram: WebGLProgram, blockDefinitionProvider: BlockDefinitionProvider, blockModelProvider: BlockModelProvider, blockAtlas: BlockAtlas, structure: Structure) {
+  constructor(gl: WebGLRenderingContext, blockDefinitionProvider: BlockDefinitionProvider, blockModelProvider: BlockModelProvider, blockAtlas: BlockAtlas, structure: Structure) {
     this.gl = gl
-    this.shaderProgram = shaderProgram
     this.blockDefinitionProvider = blockDefinitionProvider
     this.blockModelProvider = blockModelProvider
     this.blockAtlas = blockAtlas
     this.structure = structure
+    
+    this.shaderProgram = new ShaderProgram(gl, vsSource, fsSource).getProgram()
 
     this.atlasTexture = blockAtlas.createTexture(gl)
-    this.viewMatrixLoc = gl.getUniformLocation(shaderProgram,'mView')!
+    this.viewMatrixLoc = gl.getUniformLocation(this.shaderProgram,'mView')!
     this.vertexCount = 0
     this.initialize()
   

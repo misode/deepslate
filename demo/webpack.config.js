@@ -1,7 +1,7 @@
 var CopyWebpackPlugin = require('copy-webpack-plugin')
 
 module.exports = (env, argv) => ({
-  entry: './src/app.ts',
+  entry: './src/App.ts',
   devtool: 'source-map',
   output: {
     path: __dirname + '/dist',

@@ -1,4 +1,4 @@
-name: Deploy to GitHub Pages
+name: Deploy demo to GitHub Pages
 
 on:
   push:
@@ -14,6 +14,7 @@ jobs:
 
     - name: Build
       run: |
+        cd demo
         npm install
         npm run build
 
@@ -22,4 +23,4 @@ jobs:
       with:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         BRANCH: gh-pages
-        FOLDER: dist
+        FOLDER: demo/dist

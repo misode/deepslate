@@ -1,0 +1,19 @@
+{
+  "private": true,
+  "scripts": {
+    "build": "webpack-cli -p",
+    "start": "webpack-dev-server -d --content-base ./public"
+  },
+  "devDependencies": {
+    "copy-webpack-plugin": "^6.4.1",
+    "ts-loader": "^7.0.4",
+    "typescript": "^4.1.3",
+    "webpack": "^4.44.2",
+    "webpack-cli": "^3.3.11",
+    "webpack-dev-server": "^3.11.0"
+  },
+  "dependencies": {
+    "@webmc/core": "0.0.1",
+    "@webmc/render": "0.0.1"
+  }
+}

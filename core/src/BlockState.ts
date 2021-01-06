@@ -4,19 +4,19 @@ export class BlockState {
     private properties: { [key: string]: string } = {}
   ) {}
 
-  getName() {
+  public getName() {
     return this.name
   }
 
-  getProperties() {
+  public getProperties() {
     return this.properties
   }
 
-  getProperty(key: string) {
+  public getProperty(key: string) {
     return this.properties[key]
   }
 
-  equals(other: BlockState) {
+  public equals(other: BlockState) {
     if (this.name !== other.name) {
       return false
     }
@@ -25,7 +25,7 @@ export class BlockState {
     })
   }
 
-  toString() {
+  public toString() {
     return `${this.name}[${Object.entries(this.properties).map(([k, v]) => k + '=' + v).join(',')}]`
   }
 }
