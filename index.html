@@ -19,7 +19,12 @@
       height: 100vh;
       border: none;
       background-color: black;
+      image-rendering: -moz-crisp-edges;
+      image-rendering: -webkit-optimize-contrast;
+      image-rendering: -o-crisp-edges;
+      image-rendering: optimizeSpeed;
       image-rendering: pixelated;
+      -ms-interpolation-mode: nearest-neighbor;
     }
     @media screen and (min-width: 1152px) {
       body {
