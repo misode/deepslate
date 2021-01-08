@@ -13,7 +13,6 @@ export class BlockAtlas implements TextureUVProvider {
     private idMap: UVMap
   ) {
     this.part = 16 / img.width
-    console.log(`width: ${img.width}, part: ${this.part}`)
   }
 
   public getImageData() {
@@ -35,9 +34,9 @@ export class BlockAtlas implements TextureUVProvider {
 
   public static async fromBlobs(textures: { [id: string]: Blob }): Promise<BlockAtlas> {   
     const initialWidth = Math.sqrt(Object.keys(textures).length + 1)
-    const width = Math.pow(2, Math.ceil(Math.log(initialWidth))/Math.log(2))
+    const width = Math.pow(2, Math.ceil(Math.log(initialWidth)/Math.log(2)))
     const pixelWidth = width * 16
-    const part = 1 / pixelWidth
+    const part = 1 / width
 
     const canvas = document.createElement('canvas')
     canvas.width = pixelWidth
