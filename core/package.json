@@ -15,9 +15,6 @@
     "type": "git",
     "url": "https://github.com/misode/webmc.git"
   },
-  "dependencies": {
-    "nbt": "^0.8.1"
-  },
   "devDependencies": {
     "typescript": "^4.1.3"
   },

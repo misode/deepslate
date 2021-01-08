@@ -1,12 +1,13 @@
-import nbt, { NamedNbtTag, NbtTag } from "nbt"
+export type NbtTag = {
+  type: string
+  value: any
+}
 
-export function parseNbt(buffer: ArrayBuffer): Promise<NamedNbtTag> {
-  return new Promise((res, rej) => {
-    nbt.parse(buffer, (err, data) => {
-      if (err) rej(err)
-      res(data)
-    })
-  })
+export type NamedNbtTag = {
+  name: string,
+  value: {
+    [name: string]: NbtTag
+  }
 }
 
 export function read(tag: NbtTag, type: string, name?: string) {

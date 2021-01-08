@@ -1,6 +1,5 @@
-import { NbtTag } from "nbt";
 import { BlockState } from "./BlockState";
-import { parseNbt, read, readListTag, readOptional, readTag } from "./NbtUtil";
+import { NamedNbtTag, NbtTag, read, readListTag, readOptional, readTag } from "./NbtUtil";
 
 export type BlockPos = [number, number, number]
 
@@ -33,9 +32,7 @@ export class Structure {
     }))
   }
 
-  public static async fromNbt(buffer: ArrayBuffer) {
-    const nbt = await parseNbt(buffer)
-
+  public static async fromNbt(nbt: NamedNbtTag) {
     const size = readListTag(nbt.value, 'size', 'int', 3) as BlockPos
     const palette = readListTag(nbt.value, 'palette', 'compound')
       .map(tags => {

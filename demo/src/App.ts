@@ -1,5 +1,7 @@
-import { Structure } from "@webmc/core"
-import { ResourceManager, StructureRenderer } from '@webmc/render';
+import { NamedNbtTag, Structure } from "@webmc/core"
+import { StructureRenderer } from '@webmc/render';
+import { ResourceManager } from './ResourceManager'
+import nbt from 'nbt'
 
 let viewDist = 4;
 let xRotation = 0.8;
@@ -17,6 +19,7 @@ async function main() {
 
   const exampleRes = await fetch('./example.nbt')
   const exampleData = await exampleRes.arrayBuffer()
+  
   const structure = await Structure.fromNbt(exampleData)
 
   const resources = new ResourceManager()
@@ -63,5 +66,14 @@ async function main() {
       renderer.setViewport(0, 0, canvas.width, canvas.height)
       requestAnimationFrame(render);
     }
+  })
+}
+
+function parseNbt(buffer: ArrayBuffer): Promise<NamedNbtTag> {
+  return new Promise((res, rej) => {
+    nbt.parse(buffer, (err, data) => {
+      if (err) rej(err)
+      res(data)
+    })
   })
 }

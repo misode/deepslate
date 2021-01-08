@@ -1,39 +1,6 @@
+import { NamedNbtTag, NbtTag } from "@webmc/core";
+
 declare module 'nbt' {
-
-  type NbtTag = {
-    type: 'byte' | 'short' | 'int' | 'float' | 'double'
-    value: number
-  } | {
-    type: 'long'
-    value: [number, number]
-  } | {
-    type: 'byteArray' | 'intArray'
-    value: number[]
-  } | {
-    type: 'longArray'
-    value: [number, number][]
-  } | {
-    type: 'string'
-    value: string
-  } | {
-    type: 'list'
-    value: {
-      type: string
-      value: any[]
-    }
-  } | {
-    type: 'compound'
-    value: {
-      [name: string]: NbtTag
-    }
-  }
-
-  type NamedNbtTag = {
-    name: string,
-    value: {
-      [name: string]: NbtTag
-    }
-  }
 
   type ParseCallback = (error: Error | null, value: NamedNbtTag) => void
 
