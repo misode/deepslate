@@ -65,6 +65,11 @@ export class StructureRenderer {
   
   }
 
+  public setStructure(structure: Structure) {
+    this.structure = structure
+    this.initialize()
+  }
+
   private initialize() {
     const buffers = this.initBuffers()
   
@@ -122,7 +127,10 @@ export class StructureRenderer {
     let buffers
     for (const b of this.structure.getBlocks()) {
       try {
-        const blockDefinition = this.blockDefinitionProvider.getBlockDefinition(b.state.getName())!
+        const blockDefinition = this.blockDefinitionProvider.getBlockDefinition(b.state.getName())
+        if (!blockDefinition) {
+          continue
+        }
         buffers = blockDefinition.getBuffers(b.state.getName(), b.state.getProperties(), this.blockAtlas, this.blockModelProvider, indexOffset)
         const t = mat4.create()
         mat4.translate(t, t, b.pos)

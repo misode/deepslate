@@ -3,29 +3,17 @@ export interface TextureUVProvider {
   getUV(texture: string): [number, number]
 }
 
-export class BlockAtlas implements TextureUVProvider {
-  public readonly width: number
-  public readonly part: number
-  public readonly pixelWidth: number
-  private img: ImageData
-  private idMap: { [id: string]: [number, number] }
-  private ctx: CanvasRenderingContext2D
+type UVMap = { [id: string]: [number, number] }
 
-  constructor(width: number) {
-    this.width = Math.pow(2, Math.ceil(Math.log(width)/Math.log(2)))
-    this.pixelWidth = this.width * 16
-    this.part = 1 / this.width
-    const canvas = document.createElement('canvas')
-    canvas.width = this.pixelWidth
-    canvas.height = this.pixelWidth
-    this.ctx = canvas.getContext('2d')!
-    this.ctx.fillStyle = 'black'
-    this.ctx.fillRect(0, 0, 16, 16)
-    this.ctx.fillStyle = 'magenta'
-    this.ctx.fillRect(0, 0, 8, 8)
-    this.ctx.fillRect(8, 8, 8, 8)
-    this.img = this.ctx.getImageData(0, 0, this.pixelWidth, this.pixelWidth)
-    this.idMap = {}
+export class BlockAtlas implements TextureUVProvider {
+  public readonly part: number
+
+  constructor(
+    private img: ImageData,
+    private idMap: UVMap
+  ) {
+    this.part = 16 / img.width
+    console.log(`width: ${img.width}, part: ${this.part}`)
   }
 
   public getImageData() {
@@ -45,20 +33,50 @@ export class BlockAtlas implements TextureUVProvider {
     return texture
   }
 
-  public static async fromBlobs(textures: { [id: string]: Blob }): Promise<BlockAtlas> {
-    const textureCount = Object.keys(textures).length
-    const atlas = new BlockAtlas(Math.sqrt(textureCount + 1))
+  public static async fromBlobs(textures: { [id: string]: Blob }): Promise<BlockAtlas> {   
+    const initialWidth = Math.sqrt(Object.keys(textures).length + 1)
+    const width = Math.pow(2, Math.ceil(Math.log(initialWidth))/Math.log(2))
+    const pixelWidth = width * 16
+    const part = 1 / pixelWidth
 
+    const canvas = document.createElement('canvas')
+    canvas.width = pixelWidth
+    canvas.height = pixelWidth
+    const ctx = canvas.getContext('2d')!
+    ctx.fillStyle = 'black'
+    ctx.fillRect(0, 0, 16, 16)
+    ctx.fillStyle = 'magenta'
+    ctx.fillRect(0, 0, 8, 8)
+    ctx.fillRect(8, 8, 8, 8)
+
+    const idMap: UVMap = {}
     let index = 1
     await Promise.all(Object.keys(textures).map(async (id) => {
-      const u = (index % atlas.width)
-      const v = Math.floor(index / atlas.width)
+      const u = (index % width)
+      const v = Math.floor(index / width)
       index += 1
-      atlas.idMap[id] = [atlas.part * u, atlas.part * v]
+      idMap[id] = [part * u, part * v]
       const img = await createImageBitmap(textures[id])
-      atlas.img = atlas.ctx.getImageData(0, 0, atlas.pixelWidth, atlas.pixelWidth)
-      atlas.ctx.drawImage(img, 0, 0, 16, 16, 16 * u, 16 * v, 16, 16)
+      ctx.drawImage(img, 0, 0, 16, 16, 16 * u, 16 * v, 16, 16)
     }))
-    return atlas
+
+    return new BlockAtlas(ctx.getImageData(0, 0, pixelWidth, pixelWidth), idMap)
+  }
+
+  public static empty() {
+    const canvas = document.createElement('canvas')
+    canvas.width = 16
+    canvas.height = 16
+    const ctx = canvas.getContext('2d')!
+    BlockAtlas.drawInvalidTexture(ctx)
+    return new BlockAtlas(ctx.getImageData(0, 0, 16, 16), {})
+  }
+
+  private static drawInvalidTexture(ctx: CanvasRenderingContext2D) {
+    ctx.fillStyle = 'black'
+    ctx.fillRect(0, 0, 16, 16)
+    ctx.fillStyle = 'magenta'
+    ctx.fillRect(0, 0, 8, 8)
+    ctx.fillRect(8, 8, 8, 8)
   }
 }

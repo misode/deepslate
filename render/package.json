@@ -17,8 +17,7 @@
   },
   "dependencies": {
     "@webmc/core": "0.0.1",
-    "gl-matrix": "^3.3.0",
-    "jszip": "^3.5.0"
+    "gl-matrix": "^3.3.0"
   },
   "devDependencies": {
     "typescript": "^4.1.3"
