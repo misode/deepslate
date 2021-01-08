@@ -1,7 +1,7 @@
 {
   "name": "@webmc/render",
   "description": "Renders Minecraft structures using WebGL",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "scripts": {
