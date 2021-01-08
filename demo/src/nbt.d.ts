@@ -1,6 +1,16 @@
-import { NamedNbtTag, NbtTag } from "@webmc/core";
-
 declare module 'nbt' {
+
+  type NbtTag = {
+    type: string
+    value: any
+  }
+  
+  type NamedNbtTag = {
+    name: string,
+    value: {
+      [name: string]: NbtTag
+    }
+  }
 
   type ParseCallback = (error: Error | null, value: NamedNbtTag) => void
 

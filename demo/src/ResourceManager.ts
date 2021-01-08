@@ -1,7 +1,5 @@
 import jszip from 'jszip'
-import { BlockAtlas } from '@webmc/render/src/BlockAtlas'
-import { BlockModel, BlockModelProvider } from '@webmc/render/src/BlockModel'
-import { BlockDefinition } from '@webmc/render/src/BlockDefinition'
+import { BlockAtlas, BlockDefinition, BlockModel, BlockModelProvider } from '@webmc/render'
 
 export class ResourceManager implements BlockModelProvider {
   private blockDefinitions: { [id: string]: BlockDefinition }

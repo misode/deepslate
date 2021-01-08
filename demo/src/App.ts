@@ -19,8 +19,8 @@ async function main() {
 
   const exampleRes = await fetch('./example.nbt')
   const exampleData = await exampleRes.arrayBuffer()
-  
-  const structure = await Structure.fromNbt(exampleData)
+  const exampleNbt = await parseNbt(exampleData)
+  const structure = await Structure.fromNbt(exampleNbt)
 
   const resources = new ResourceManager()
   await resources.loadFromZip('./assets.zip')
