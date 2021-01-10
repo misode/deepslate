@@ -1,6 +1,10 @@
 {
+  "name": "webmc",
   "scripts": {
     "build": "tsc -b",
     "watch": "tsc -b -w"
+  },
+  "devDependencies": {
+    "lerna": "^3.22.1"
   }
 }

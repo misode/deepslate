@@ -23,15 +23,6 @@ export class BlockAtlas implements TextureUVProvider {
     return this.idMap[id] ?? [0, 0]
   }
 
-  public createTexture(gl: WebGLRenderingContext) {
-    const texture = gl.createTexture()!;
-    gl.bindTexture(gl.TEXTURE_2D, texture);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, this.img);
-    gl.generateMipmap(gl.TEXTURE_2D);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-    return texture
-  }
-
   public static async fromBlobs(textures: { [id: string]: Blob }): Promise<BlockAtlas> {   
     const initialWidth = Math.sqrt(Object.keys(textures).length + 1)
     const width = Math.pow(2, Math.ceil(Math.log(initialWidth)/Math.log(2)))
