@@ -32,7 +32,7 @@ export class Structure {
     }))
   }
 
-  public static async fromNbt(nbt: NamedNbtTag) {
+  public static fromNbt(nbt: NamedNbtTag) {
     const size = readListTag(nbt.value, 'size', 'int', 3) as BlockPos
     const palette = readListTag(nbt.value, 'palette', 'compound')
       .map(tags => {
