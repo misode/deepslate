@@ -13,8 +13,8 @@
     "webpack-dev-server": "^3.11.0"
   },
   "dependencies": {
-    "@webmc/core": "^0.1.0",
-    "@webmc/render": "^0.2.1",
+    "@webmc/core": "^0.1.1",
+    "@webmc/render": "^0.3.0",
     "jszip": "^3.5.0",
     "nbt": "^0.8.1"
   }
