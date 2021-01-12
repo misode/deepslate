@@ -106,6 +106,7 @@ export class StructureRenderer {
   public setStructure(structure: Structure) {
     this.structure = structure
     this.structureBuffers = this.getStructureBuffers()
+    this.gridBuffers = this.getGridBuffers()
   }
 
   private initialize() {
