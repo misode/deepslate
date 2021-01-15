@@ -1,4 +1,4 @@
-import { mat4 } from "gl-matrix";
+import { mat4, vec3 } from "gl-matrix";
 import { BlockAtlas } from "./BlockAtlas";
 import { BlockModelProvider } from "./BlockModel";
 import { BlockDefinitionProvider } from "./BlockDefinition";
@@ -37,6 +37,30 @@ const fsSource = `
   }
 `;
 
+const vsColor = `
+  attribute vec4 vertPos;
+  attribute vec3 blockPos;
+
+  uniform mat4 mView;
+  uniform mat4 mProj;
+
+  varying highp vec3 vColor;
+
+  void main(void) {
+    gl_Position = mProj * mView * vertPos;
+    vColor = blockPos / 256.0;
+  }
+`;
+
+const fsColor = `
+  precision highp float;
+  varying highp vec3 vColor;
+
+  void main(void) {
+    gl_FragColor = vec4(vColor, 1.0);
+  }
+`;
+
 const vsGrid = `
   attribute vec4 vertPos;
   attribute vec3 vertColor;
@@ -65,6 +89,7 @@ type StructureBuffers = {
   position: WebGLBuffer
   texCoord: WebGLBuffer
   tintColor: WebGLBuffer
+  blockPos: WebGLBuffer
   index: WebGLBuffer
   length: number
 }
@@ -78,9 +103,11 @@ type GridBuffers = {
 export class StructureRenderer {
   private shaderProgram: WebGLProgram
   private gridShaderProgram: WebGLProgram
+  private colorShaderProgram: WebGLProgram
 
   private structureBuffers: StructureBuffers
   private gridBuffers: GridBuffers
+  private outlineBuffers: GridBuffers
   private atlasTexture: WebGLTexture
   private projMatrix: mat4
   private activeShader: WebGLProgram
@@ -94,9 +121,11 @@ export class StructureRenderer {
   ) {
     this.shaderProgram = new ShaderProgram(gl, vsSource, fsSource).getProgram()
     this.gridShaderProgram = new ShaderProgram(gl, vsGrid, fsGrid).getProgram()
+    this.colorShaderProgram = new ShaderProgram(gl, vsColor, fsColor).getProgram()
 
     this.structureBuffers = this.getStructureBuffers()
     this.gridBuffers = this.getGridBuffers()
+    this.outlineBuffers = this.getOutlineBuffers()
     this.atlasTexture = this.getBlockTexture()
     this.projMatrix = this.getPerspective()
     this.activeShader = this.shaderProgram
@@ -141,6 +170,7 @@ export class StructureRenderer {
     const positions = []
     const textureCoordinates = []
     const tintColors = []
+    const blockPositions = []
     const indices = []
     let indexOffset = 0
 
@@ -162,6 +192,7 @@ export class StructureRenderer {
       positions.push(buffers.position)
       textureCoordinates.push(...buffers.texCoord)
       tintColors.push(...buffers.tintColor)
+      for (let i = 0; i < buffers.texCoord.length / 2; i += 1) blockPositions.push(...b.pos)
       indices.push(...buffers.index)
       indexOffset += buffers.texCoord.length / 2
     }
@@ -170,6 +201,7 @@ export class StructureRenderer {
       position: this.createBuffer(this.gl.ARRAY_BUFFER, mergeFloat32Arrays(...positions)),
       texCoord: this.createBuffer(this.gl.ARRAY_BUFFER, new Float32Array(textureCoordinates)),
       tintColor: this.createBuffer(this.gl.ARRAY_BUFFER, new Float32Array(tintColors)),
+      blockPos: this.createBuffer(this.gl.ARRAY_BUFFER, new Float32Array(blockPositions)),
       index: this.createBuffer(this.gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices)),
       length: indices.length
     };
@@ -199,6 +231,34 @@ export class StructureRenderer {
     for (let x = 1; x <= X; x += 1) position.push(x, 0, 0, x, 0, Z)
     for (let z = 1; z <= Z; z += 1) position.push(0, 0, z, X, 0, z)
     for (let i = 0; i < 8 + X + Z; i += 1) color.push(0.8, 0.8, 0.8, 0.8, 0.8, 0.8)
+
+    return {
+      position: this.createBuffer(this.gl.ARRAY_BUFFER, new Float32Array(position)),
+      color: this.createBuffer(this.gl.ARRAY_BUFFER, new Float32Array(color)),
+      length: position.length / 3
+    }
+  }
+
+  private getOutlineBuffers(): GridBuffers {
+    const position: number[] = []
+    const color: number[] = []
+
+    position.push(0, 0, 0, 0, 0, 1)
+    position.push(1, 0, 0, 1, 0, 1)
+    position.push(0, 0, 0, 1, 0, 0)
+    position.push(0, 0, 1, 1, 0, 1)
+
+    position.push(0, 0, 0, 0, 1, 0)
+    position.push(1, 0, 0, 1, 1, 0)
+    position.push(0, 0, 1, 0, 1, 1)
+    position.push(1, 0, 1, 1, 1, 1)
+
+    position.push(0, 1, 0, 0, 1, 1)
+    position.push(1, 1, 0, 1, 1, 1)
+    position.push(0, 1, 0, 1, 1, 0)
+    position.push(0, 1, 1, 1, 1, 1)
+
+    for (let i = 0; i < 12; i += 1) color.push(1, 1, 1, 1, 1, 1)
 
     return {
       position: this.createBuffer(this.gl.ARRAY_BUFFER, new Float32Array(position)),
@@ -239,6 +299,33 @@ export class StructureRenderer {
     this.setUniform('mProj', this.projMatrix)
 
     this.gl.drawElements(this.gl.TRIANGLES, this.structureBuffers.length, this.gl.UNSIGNED_SHORT, 0)
+  }
+
+  public drawColoredStructure(viewMatrix: mat4) {
+    this.setShader(this.colorShaderProgram)
+
+    this.setVertexAttr('vertPos', 3, this.structureBuffers.position)
+    this.setVertexAttr('blockPos', 3, this.structureBuffers.blockPos)
+    this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.structureBuffers.index)
+    this.setUniform('mView', viewMatrix)
+    this.setUniform('mProj', this.projMatrix)
+
+    this.gl.drawElements(this.gl.TRIANGLES, this.structureBuffers.length, this.gl.UNSIGNED_SHORT, 0)
+  }
+
+  public drawOutline(viewMatrix: mat4, pos: vec3) {
+    this.setShader(this.gridShaderProgram)
+
+    this.setVertexAttr('vertPos', 3, this.outlineBuffers.position)
+    this.setVertexAttr('vertColor', 3, this.outlineBuffers.color)
+
+    const translatedMatrix = mat4.create()
+    mat4.copy(translatedMatrix, viewMatrix)
+    mat4.translate(translatedMatrix, translatedMatrix, pos)
+    this.setUniform('mView', translatedMatrix)
+    this.setUniform('mProj', this.projMatrix)
+
+    this.gl.drawArrays(this.gl.LINES, 0, this.outlineBuffers.length)
   }
 
   public setViewport(x: number, y: number, width: number, height: number) {
