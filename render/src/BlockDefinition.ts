@@ -66,8 +66,8 @@ export class BlockDefinition {
         const t = mat4.create()
         mat4.identity(t)
         mat4.translate(t, t, [8, 8, 8])
-        mat4.rotateX(t, t, -glMatrix.toRadian(variant.x ?? 0))
         mat4.rotateY(t, t, -glMatrix.toRadian(variant.y ?? 0))
+        mat4.rotateX(t, t, -glMatrix.toRadian(variant.x ?? 0))
         mat4.translate(t, t, [-8, -8, -8])
         transformVectors(buffers.position, t)
       }
