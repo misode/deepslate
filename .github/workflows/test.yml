@@ -6,7 +6,7 @@ on:
       - master
 
 jobs:
-  build-and-deploy:
+  test:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
@@ -17,3 +17,11 @@ jobs:
         cd core
         npm install
         npm run test
+        cd ..
+
+    - name: Test Nbt
+      run: |
+        cd nbt
+        npm install
+        npm run test
+        cd ..
