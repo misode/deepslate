@@ -115,7 +115,7 @@ export function readRegion(array: Uint8Array): NbtChunk[] {
       if (sectors === 0) continue
 
       const offset = (array[i] << 16) + (array[i + 1] << 8) + array[i + 2]
-      const timestamp = (array[i + 4096] << 24) + (array[i + 4097] << 16) + (array[i + 4098] << 8) + array[i + 4099] 
+      const timestamp = (array[i + 4096] << 24) + (array[i + 4097] << 16) + (array[i + 4098] << 8) + array[i + 4099]
 
       const j = offset * 4096
       const length = (array[j] << 24) + (array[j + 1] << 16) + (array[j + 2] << 8) + array[j + 3]
@@ -178,7 +178,7 @@ export function writeRegion(chunks: NbtChunk[]) {
     dataView.setInt32(i + 4096, chunk.timestamp)
 
     const j = offset * 4096
-    dataView.setInt32(j, chunk.data.length)
+    dataView.setInt32(j, chunk.data.length + 1)
     dataView.setInt8(j + 4, chunk.compression)
     array.set(chunk.data, j + 5)
 
