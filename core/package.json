@@ -7,6 +7,8 @@
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w",
+    "test": "mocha -r ts-node/register tests/**/*.test.ts",
+    "coverage": "nyc -r text -e .ts -x \"tests/*.test.ts\" npm run test",
     "prepublishOnly": "npm run build"
   },
   "author": "Misode",
@@ -19,6 +21,12 @@
     "@webmc/nbt": "^0.0.1"
   },
   "devDependencies": {
+    "@types/chai": "^4.2.14",
+    "@types/mocha": "^8.2.0",
+    "chai": "^4.2.0",
+    "mocha": "^8.2.1",
+    "nyc": "^15.1.0",
+    "ts-node": "^9.1.1",
     "typescript": "^4.1.3"
   },
   "publishConfig": {
