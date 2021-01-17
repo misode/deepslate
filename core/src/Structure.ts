@@ -1,22 +1,22 @@
+import { NamedNbtTag, NbtTag, getTag, getListTag, getOptional } from "@webmc/nbt";
 import { BlockState } from "./BlockState";
-import { NamedNbtTag, NbtTag, read, readListTag, readOptional, readTag } from "./NbtUtil";
 
 export type BlockPos = [number, number, number]
 
-type CompoundNbt = { [key: string]: NbtTag }
+export type BlockNbt = { [key: string]: NbtTag }
 
 export class Structure {
   constructor(
     private size: BlockPos,
     private palette: BlockState[] = [],
-    private blocks: { pos: BlockPos, state: number, nbt?: CompoundNbt }[] = []
+    private blocks: { pos: BlockPos, state: number, nbt?: BlockNbt }[] = []
   ) {}
 
   public getSize() {
     return this.size
   }
 
-  public addBlock(pos: BlockPos, name: string, properties?: { [key: string]: string }, nbt?: CompoundNbt) {
+  public addBlock(pos: BlockPos, name: string, properties?: { [key: string]: string }, nbt?: BlockNbt) {
     const blockState = new BlockState(name, properties)
     let state = this.palette.findIndex(b => b.equals(blockState))
     if (state === -1) {
@@ -46,21 +46,20 @@ export class Structure {
   }
 
   public static fromNbt(nbt: NamedNbtTag) {
-    const size = readListTag(nbt.value, 'size', 'int', 3) as BlockPos
-    const palette = readListTag(nbt.value, 'palette', 'compound')
+    const size = getListTag(nbt.value, 'size', 'int', 3) as BlockPos
+    const palette = getListTag(nbt.value, 'palette', 'compound')
       .map(tags => {
-        const name = readTag(tags, 'Name', 'string') as string
-        const propsTag = readOptional(() => readTag(tags, 'Properties', 'compound') as {[name: string]: NbtTag
-        }, {})
+        const name = getTag(tags, 'Name', 'string')
+        const propsTag = getOptional(() => getTag(tags, 'Properties', 'compound'), {})
         const properties = Object.keys(propsTag)
-          .reduce((acc, k) => ({...acc, [k]: read(propsTag[k], 'string', k)}), {})
+          .reduce((acc, k) => ({...acc, [k]: getTag(propsTag, k, 'string')}), {})
         return new BlockState(name, properties)
       })
-    const blocks = readListTag(nbt.value, 'blocks', 'compound')
+    const blocks = getListTag(nbt.value, 'blocks', 'compound')
       .map(tags => {
-        const pos = readListTag(tags, 'pos', 'int', 3) as BlockPos
-        const state = readTag(tags, 'state', 'int') as number
-        const nbt = readOptional(() => readTag(tags, 'nbt', 'compound') as CompoundNbt, undefined)
+        const pos = getListTag(tags, 'pos', 'int', 3) as BlockPos
+        const state = getTag(tags, 'state', 'int')
+        const nbt = getOptional(() => getTag(tags, 'nbt', 'compound'), undefined)
         return { pos, state, nbt }
       })
     return new Structure(size, palette, blocks)

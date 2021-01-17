@@ -1,7 +1,7 @@
 {
-  "name": "@webmc/core",
-  "description": "Core Minecraft functionality",
-  "version": "0.1.2",
+  "name": "@webmc/nbt",
+  "description": "NBT reader and writer",
+  "version": "0.0.1",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "scripts": {
@@ -16,9 +16,10 @@
     "url": "https://github.com/misode/webmc.git"
   },
   "dependencies": {
-    "@webmc/nbt": "^0.0.1"
+    "pako": "^2.0.3"
   },
   "devDependencies": {
+    "@types/pako": "^1.0.1",
     "typescript": "^4.1.3"
   },
   "publishConfig": {

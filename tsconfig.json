@@ -2,6 +2,7 @@
   "files": [],
   "references": [
     { "path": "core" },
+    { "path": "nbt" },
     { "path": "render" }
   ]
 }
