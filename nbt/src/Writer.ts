@@ -40,7 +40,7 @@ export class NbtWriter {
 
   getData() {
     this.accommodate(0)
-    return this.buffer.slice(0, this.offset)
+    return this.arrayView.slice(0, this.offset)
   }
 
   end(value: null) {}
@@ -102,11 +102,12 @@ export class NbtWriter {
   }
 
   compound(value: NbtValues['compound']) {
-    Object.keys(value).map(key => {
+    for (const key in value) {
       this.byte(tagTypes[value[key].type])
       this.string(key)
       // @ts-expect-error
       this[value[key].type](value[key].value)
-    })
+    }
+    this.byte(tagTypes.end)
   }
 }

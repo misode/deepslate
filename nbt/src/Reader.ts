@@ -6,10 +6,10 @@ export class NbtReader {
   private arrayView: Uint8Array
   private dataView: DataView
 
-  constructor(buffer: ArrayBuffer) {
+  constructor(array: Uint8Array) {
     this.offset = 0
-    this.arrayView = new Uint8Array(buffer)
-    this.dataView = new DataView(this.arrayView.buffer)
+    this.arrayView = array
+    this.dataView = new DataView(array.buffer)
   }
 
   end() {
