@@ -1,7 +1,7 @@
-import { NamedNbtTag, Structure } from "@webmc/core"
+import { Structure } from "@webmc/core"
+import { read as readNbt } from '@webmc/nbt'
 import { StructureRenderer } from '@webmc/render';
 import { ResourceManager } from './ResourceManager'
-import nbt from 'nbt'
 import { mat4 } from 'gl-matrix'
 
 let viewDist = 4;
@@ -20,8 +20,8 @@ async function main() {
 
   const exampleRes = await fetch('./example.nbt')
   const exampleData = await exampleRes.arrayBuffer()
-  const exampleNbt = await parseNbt(exampleData)
-  const structure = await Structure.fromNbt(exampleNbt)
+  const exampleNbt = readNbt(new Uint8Array(exampleData))
+  const structure = Structure.fromNbt(exampleNbt.result)
 
   const resources = new ResourceManager()
   await resources.loadFromZip('./assets.zip')
@@ -91,14 +91,5 @@ async function main() {
     if (resize()) {
       requestAnimationFrame(render);
     }
-  })
-}
-
-function parseNbt(buffer: ArrayBuffer): Promise<NamedNbtTag> {
-  return new Promise((res, rej) => {
-    nbt.parse(buffer, (err, data) => {
-      if (err) rej(err)
-      res(data)
-    })
   })
 }
