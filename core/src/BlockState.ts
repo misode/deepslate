@@ -1,3 +1,5 @@
+import { getOptional, getTag, NamedNbtTag } from "@webmc/nbt"
+
 export class BlockState {
   constructor(
     private name: string,
@@ -27,5 +29,13 @@ export class BlockState {
 
   public toString() {
     return `${this.name}[${Object.entries(this.properties).map(([k, v]) => k + '=' + v).join(',')}]`
+  }
+
+  public static fromNbt(nbt: NamedNbtTag) {
+    const name = getTag(nbt.value, 'Name', 'string')
+    const propsTag = getOptional(() => getTag(nbt.value, 'Properties', 'compound'), {})
+    const properties = Object.keys(propsTag)
+      .reduce((acc, k) => ({...acc, [k]: getTag(propsTag, k, 'string')}), {})
+    return new BlockState(name, properties)
   }
 }

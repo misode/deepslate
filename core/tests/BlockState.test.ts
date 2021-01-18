@@ -1,6 +1,7 @@
 import "mocha";
 import { expect } from 'chai';
 import { BlockState } from '../src/BlockState';
+import { NamedNbtTag } from "@webmc/nbt";
 
 describe('BlockState', () => {
   it('getName', () => {
@@ -40,5 +41,29 @@ describe('BlockState', () => {
     const state = new BlockState('minecraft:piston', { extended: 'false', facing: 'up' })
     const string = state.toString()
     expect(string).to.equal('minecraft:piston[extended=false,facing=up]')
+  })
+
+  it('fromNbt (no properties)', () => {
+    const nbt: NamedNbtTag = { name: '', value: {
+      Name: { type: 'string', value: 'minecraft:stone' }
+    } }
+    const stateA = BlockState.fromNbt(nbt)
+    const stateB = new BlockState('minecraft:stone')
+
+    expect(stateA).to.deep.equal(stateB)
+  })
+
+  it('fromNbt (properties)', () => {
+    const nbt: NamedNbtTag = { name: '', value: {
+      Name: { type: 'string', value: 'minecraft:piston' },
+      Properties: { type: 'compound', value: {
+        extended: { type: 'string', value: 'false' },
+        facing: { type: 'string', value: 'up' }
+      } }
+    } }
+    const stateA = BlockState.fromNbt(nbt)
+    const stateB = new BlockState('minecraft:piston', { extended: 'false', facing: 'up' })
+
+    expect(stateA).to.deep.equal(stateB)
   })
 })

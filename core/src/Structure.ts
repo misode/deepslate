@@ -48,13 +48,7 @@ export class Structure {
   public static fromNbt(nbt: NamedNbtTag) {
     const size = getListTag(nbt.value, 'size', 'int', 3) as BlockPos
     const palette = getListTag(nbt.value, 'palette', 'compound')
-      .map(tags => {
-        const name = getTag(tags, 'Name', 'string')
-        const propsTag = getOptional(() => getTag(tags, 'Properties', 'compound'), {})
-        const properties = Object.keys(propsTag)
-          .reduce((acc, k) => ({...acc, [k]: getTag(propsTag, k, 'string')}), {})
-        return new BlockState(name, properties)
-      })
+      .map(tags => BlockState.fromNbt({name: '', value: tags}))
     const blocks = getListTag(nbt.value, 'blocks', 'compound')
       .map(tags => {
         const pos = getListTag(tags, 'pos', 'int', 3) as BlockPos
