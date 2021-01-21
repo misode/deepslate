@@ -120,8 +120,13 @@ describe('Nbt', () => {
     expect(chunkList[2].data).to.deep.equal(raw)
   })
 
-  it('writeChunk (gzip)', () => {
+  it('writeChunk (invalid compression)', () => {
     const chunkList = chunks()
     expect(() => writeChunk(chunkList, 3, 0, nbt)).to.throw()
+  })
+
+  it('writeChunk (invalid coords)', () => {
+    expect(() => writeChunk(chunks(), 1, 1, nbt)).to.throw()
+    expect(() => writeChunk([], 0, 0, nbt)).to.throw()
   })
 })
