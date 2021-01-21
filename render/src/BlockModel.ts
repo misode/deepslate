@@ -24,7 +24,7 @@ type BlockModelElement = {
     rescale?: boolean
   }
   faces?: {
-    [key in Direction]: BlockModelFace
+    [key in Direction]?: BlockModelFace
   }
 }
 

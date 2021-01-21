@@ -5,6 +5,7 @@ import { BlockDefinitionProvider } from "./BlockDefinition";
 import { mergeFloat32Arrays, transformVectors } from "./Util";
 import { Structure } from "@webmc/core";
 import { ShaderProgram } from "./ShaderProgram";
+import { SpecialRenderer, SpecialRenderers } from "./SpecialRenderer";
 
 const vsSource = `
   attribute vec4 vertPos;
@@ -167,34 +168,46 @@ export class StructureRenderer {
   }
 
   private getStructureBuffers(): StructureBuffers {
-    const positions = []
-    const textureCoordinates = []
-    const tintColors = []
-    const blockPositions = []
-    const indices = []
+    const positions: Float32Array[] = []
+    const textureCoordinates: number[] = []
+    const tintColors: number[] = []
+    const blockPositions: number[] = []
+    const indices: number[] = []
     let indexOffset = 0
 
-    let buffers
-    for (const b of this.structure.getBlocks()) {
-      try {
-        const blockDefinition = this.blockDefinitionProvider.getBlockDefinition(b.state.getName())
-        if (!blockDefinition) {
-          continue
-        }
-        buffers = blockDefinition.getBuffers(b.state.getName(), b.state.getProperties(), this.blockAtlas, this.blockModelProvider, indexOffset)
-        const t = mat4.create()
-        mat4.translate(t, t, b.pos)
-        transformVectors(buffers.position, t)
-      } catch(e) {
-        console.error(e)
-        continue
-      }
+    function pushBuffers(buffers: any, pos: vec3) {
+      const t = mat4.create()
+      mat4.translate(t, t, pos)
+      transformVectors(buffers.position, t)
       positions.push(buffers.position)
       textureCoordinates.push(...buffers.texCoord)
       tintColors.push(...buffers.tintColor)
-      for (let i = 0; i < buffers.texCoord.length / 2; i += 1) blockPositions.push(...b.pos)
+      for (let i = 0; i < buffers.texCoord.length / 2; i += 1) blockPositions.push(...pos)
       indices.push(...buffers.index)
       indexOffset += buffers.texCoord.length / 2
+    }
+
+    let buffers
+    for (const b of this.structure.getBlocks()) {
+      const blockName = b.state.getName()
+      const blockProps = b.state.getProperties()
+      try {
+        const blockDefinition = this.blockDefinitionProvider.getBlockDefinition(blockName)
+        if (blockDefinition) {
+          buffers = blockDefinition.getBuffers(blockName, blockProps, this.blockAtlas, this.blockModelProvider, indexOffset)
+        }
+        if (SpecialRenderers.has(blockName)) {
+          if (blockDefinition) {
+            pushBuffers(buffers, b.pos)
+          }
+          buffers = SpecialRenderer[blockName](indexOffset, blockProps, this.blockAtlas)
+          pushBuffers(buffers, b.pos)
+        } else if(blockDefinition) {
+          pushBuffers(buffers, b.pos)
+        }
+      } catch(e) {
+        console.error(`Error rendering block ${blockName}`, e)
+      }
     }
 
     return {
