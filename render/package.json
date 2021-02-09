@@ -1,7 +1,7 @@
 {
   "name": "@webmc/render",
   "description": "Renders Minecraft structures using WebGL",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "scripts": {
@@ -16,7 +16,7 @@
     "url": "https://github.com/misode/webmc.git"
   },
   "dependencies": {
-    "@webmc/core": "^0.1.0",
+    "@webmc/core": "^0.2.0",
     "gl-matrix": "^3.3.0"
   },
   "devDependencies": {
