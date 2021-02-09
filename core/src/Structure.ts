@@ -1,4 +1,4 @@
-import { NamedNbtTag, NbtTag, getTag, getListTag, getOptional } from "@webmc/nbt";
+import { NamedNbtTag, getTag, getListTag, getOptional } from "@webmc/nbt";
 import { BlockState } from "./BlockState";
 import { StructureProvider, BlockPos, BlockNbt } from "./StructureProvider";
 
