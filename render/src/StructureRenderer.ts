@@ -3,7 +3,7 @@ import { BlockAtlas } from "./BlockAtlas";
 import { BlockModelProvider } from "./BlockModel";
 import { BlockDefinitionProvider } from "./BlockDefinition";
 import { mergeFloat32Arrays, transformVectors } from "./Util";
-import { Structure } from "@webmc/core";
+import { StructureProvider } from "@webmc/core";
 import { ShaderProgram } from "./ShaderProgram";
 import { SpecialRenderer, SpecialRenderers } from "./SpecialRenderer";
 
@@ -118,7 +118,7 @@ export class StructureRenderer {
     private blockDefinitionProvider: BlockDefinitionProvider,
     private blockModelProvider: BlockModelProvider, 
     private blockAtlas: BlockAtlas,
-    private structure: Structure
+    private structure: StructureProvider
   ) {
     this.shaderProgram = new ShaderProgram(gl, vsSource, fsSource).getProgram()
     this.gridShaderProgram = new ShaderProgram(gl, vsGrid, fsGrid).getProgram()
@@ -133,7 +133,7 @@ export class StructureRenderer {
     this.initialize()
   }
 
-  public setStructure(structure: Structure) {
+  public setStructure(structure: StructureProvider) {
     this.structure = structure
     this.structureBuffers = this.getStructureBuffers()
     this.gridBuffers = this.getGridBuffers()
