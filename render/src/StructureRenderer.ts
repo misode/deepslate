@@ -106,7 +106,7 @@ export class StructureRenderer {
   private gridShaderProgram: WebGLProgram
   private colorShaderProgram: WebGLProgram
 
-  private structureBuffers: StructureBuffers
+  private structureBuffers: StructureBuffers[]
   private gridBuffers: GridBuffers
   private outlineBuffers: GridBuffers
   private atlasTexture: WebGLTexture
@@ -118,7 +118,8 @@ export class StructureRenderer {
     private blockDefinitionProvider: BlockDefinitionProvider,
     private blockModelProvider: BlockModelProvider, 
     private blockAtlas: BlockAtlas,
-    private structure: StructureProvider
+    private structure: StructureProvider,
+    private facesPerBuffer: number = 5500
   ) {
     this.shaderProgram = new ShaderProgram(gl, vsSource, fsSource).getProgram()
     this.gridShaderProgram = new ShaderProgram(gl, vsGrid, fsGrid).getProgram()
@@ -167,15 +168,36 @@ export class StructureRenderer {
     return projMatrix
   }
 
-  private getStructureBuffers(): StructureBuffers {
-    const positions: Float32Array[] = []
-    const textureCoordinates: number[] = []
-    const tintColors: number[] = []
-    const blockPositions: number[] = []
-    const indices: number[] = []
+  private getStructureBuffers(): StructureBuffers[] {
+    
+    const structureBuffers: StructureBuffers[] = []
+
+    let positions: Float32Array[] = []
+    let textureCoordinates: number[] = []
+    let tintColors: number[] = []
+    let blockPositions: number[] = []
+    let indices: number[] = []
     let indexOffset = 0
 
-    function pushBuffers(buffers: any, pos: vec3) {
+    var finishBuffers = () => {
+      structureBuffers.push({
+        position: this.createBuffer(this.gl.ARRAY_BUFFER, mergeFloat32Arrays(...positions)),
+        texCoord: this.createBuffer(this.gl.ARRAY_BUFFER, new Float32Array(textureCoordinates)),
+        tintColor: this.createBuffer(this.gl.ARRAY_BUFFER, new Float32Array(tintColors)),
+        blockPos: this.createBuffer(this.gl.ARRAY_BUFFER, new Float32Array(blockPositions)),
+        index: this.createBuffer(this.gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices)),
+        length: indices.length
+      })
+
+      positions = []
+      textureCoordinates = []
+      tintColors = []
+      blockPositions = []
+      indices = []
+      indexOffset = 0
+    }
+
+    var pushBuffers = (buffers: any, pos: vec3) => {
       const t = mat4.create()
       mat4.translate(t, t, pos)
       transformVectors(buffers.position, t)
@@ -185,6 +207,8 @@ export class StructureRenderer {
       for (let i = 0; i < buffers.texCoord.length / 2; i += 1) blockPositions.push(...pos)
       indices.push(...buffers.index)
       indexOffset += buffers.texCoord.length / 2
+
+      if (indexOffset > this.facesPerBuffer) finishBuffers()
     }
 
     let buffers
@@ -210,14 +234,9 @@ export class StructureRenderer {
       }
     }
 
-    return {
-      position: this.createBuffer(this.gl.ARRAY_BUFFER, mergeFloat32Arrays(...positions)),
-      texCoord: this.createBuffer(this.gl.ARRAY_BUFFER, new Float32Array(textureCoordinates)),
-      tintColor: this.createBuffer(this.gl.ARRAY_BUFFER, new Float32Array(tintColors)),
-      blockPos: this.createBuffer(this.gl.ARRAY_BUFFER, new Float32Array(blockPositions)),
-      index: this.createBuffer(this.gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices)),
-      length: indices.length
-    };
+    finishBuffers()
+
+    return structureBuffers
   }
 
   private getGridBuffers(): GridBuffers {
@@ -304,26 +323,32 @@ export class StructureRenderer {
     this.gl.activeTexture(this.gl.TEXTURE0)
     this.gl.bindTexture(this.gl.TEXTURE_2D, this.atlasTexture)
 
-    this.setVertexAttr('vertPos', 3, this.structureBuffers.position)
-    this.setVertexAttr('texCoord', 2, this.structureBuffers.texCoord)
-    this.setVertexAttr('tintColor', 3, this.structureBuffers.tintColor)
-    this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.structureBuffers.index)
     this.setUniform('mView', viewMatrix)
     this.setUniform('mProj', this.projMatrix)
 
-    this.gl.drawElements(this.gl.TRIANGLES, this.structureBuffers.length, this.gl.UNSIGNED_SHORT, 0)
+    this.structureBuffers.forEach(structureBuffers => {
+      this.setVertexAttr('vertPos', 3, structureBuffers.position)
+      this.setVertexAttr('texCoord', 2, structureBuffers.texCoord)
+      this.setVertexAttr('tintColor', 3, structureBuffers.tintColor)
+      this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, structureBuffers.index)
+      
+      this.gl.drawElements(this.gl.TRIANGLES, structureBuffers.length, this.gl.UNSIGNED_SHORT, 0)
+    });
   }
 
   public drawColoredStructure(viewMatrix: mat4) {
     this.setShader(this.colorShaderProgram)
 
-    this.setVertexAttr('vertPos', 3, this.structureBuffers.position)
-    this.setVertexAttr('blockPos', 3, this.structureBuffers.blockPos)
-    this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.structureBuffers.index)
     this.setUniform('mView', viewMatrix)
     this.setUniform('mProj', this.projMatrix)
 
-    this.gl.drawElements(this.gl.TRIANGLES, this.structureBuffers.length, this.gl.UNSIGNED_SHORT, 0)
+    this.structureBuffers.forEach(structureBuffers => {
+      this.setVertexAttr('vertPos', 3, structureBuffers.position)
+      this.setVertexAttr('blockPos', 3, structureBuffers.blockPos)
+      this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, structureBuffers.index)
+
+      this.gl.drawElements(this.gl.TRIANGLES, structureBuffers.length, this.gl.UNSIGNED_SHORT, 0)
+    });
   }
 
   public drawOutline(viewMatrix: mat4, pos: vec3) {
