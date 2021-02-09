@@ -1,11 +1,8 @@
 import { NamedNbtTag, NbtTag, getTag, getListTag, getOptional } from "@webmc/nbt";
 import { BlockState } from "./BlockState";
+import { StructureProvider, BlockPos, BlockNbt } from "./StructureProvider";
 
-export type BlockPos = [number, number, number]
-
-export type BlockNbt = { [key: string]: NbtTag }
-
-export class Structure {
+export class Structure implements StructureProvider {
   constructor(
     private size: BlockPos,
     private palette: BlockState[] = [],
