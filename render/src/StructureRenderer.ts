@@ -1,8 +1,9 @@
 import { mat4, vec3 } from "gl-matrix";
 import { BlockAtlas } from "./BlockAtlas";
-import { BlockModelProvider } from "./BlockModel";
+import { BlockModelProvider, Cull } from "./BlockModel";
 import { BlockDefinitionProvider } from "./BlockDefinition";
 import { mergeFloat32Arrays, transformVectors } from "./Util";
+import { isSolid } from "./SolidHelper"
 import { StructureProvider } from "@webmc/core";
 import { ShaderProgram } from "./ShaderProgram";
 import { SpecialRenderer, SpecialRenderers } from "./SpecialRenderer";
@@ -215,10 +216,20 @@ export class StructureRenderer {
     for (const b of this.structure.getBlocks()) {
       const blockName = b.state.getName()
       const blockProps = b.state.getProperties()
+
       try {
+        const cull: Cull = {
+          up: isSolid(this.structure.getBlock([b.pos[0], b.pos[1]+1, b.pos[2]])?.state.getName()),
+          down: isSolid(this.structure.getBlock([b.pos[0], b.pos[1]-1, b.pos[2]])?.state.getName()),
+          west: isSolid(this.structure.getBlock([b.pos[0]-1, b.pos[1], b.pos[2]])?.state.getName()),
+          east: isSolid(this.structure.getBlock([b.pos[0]+1, b.pos[1], b.pos[2]])?.state.getName()),
+          north: isSolid(this.structure.getBlock([b.pos[0], b.pos[1], b.pos[2]-1])?.state.getName()),
+          south: isSolid(this.structure.getBlock([b.pos[0], b.pos[1], b.pos[2]+1])?.state.getName())
+        }
+
         const blockDefinition = this.blockDefinitionProvider.getBlockDefinition(blockName)
         if (blockDefinition) {
-          buffers = blockDefinition.getBuffers(blockName, blockProps, this.blockAtlas, this.blockModelProvider, indexOffset)
+          buffers = blockDefinition.getBuffers(blockName, blockProps, this.blockAtlas, this.blockModelProvider, indexOffset, cull)
         }
         if (SpecialRenderers.has(blockName)) {
           if (blockDefinition) {

@@ -3,11 +3,17 @@ import { BlockState } from "./BlockState";
 import { StructureProvider, BlockPos, BlockNbt } from "./StructureProvider";
 
 export class Structure implements StructureProvider {
+  private blocksMap: { pos: BlockPos, state: number, nbt?: BlockNbt }[] = []
+
   constructor(
     private size: BlockPos,
     private palette: BlockState[] = [],
     private blocks: { pos: BlockPos, state: number, nbt?: BlockNbt }[] = []
-  ) {}
+  ) {
+    blocks.forEach(block => {
+      this.blocksMap[block.pos[0] * size[1] * size[2] + block.pos[1] * size[2] + block.pos[2]] = block
+    });
+  }
 
   public getSize() {
     return this.size
@@ -21,6 +27,7 @@ export class Structure implements StructureProvider {
       this.palette.push(blockState)
     }
     this.blocks.push({ pos, state, nbt })
+    this.blocksMap[pos[0] * this.size[1] * this.size[2] + pos[1] * this.size[2] + pos[2]] = { pos, state, nbt }    
     return this
   }
 
@@ -33,7 +40,12 @@ export class Structure implements StructureProvider {
   }
 
   public getBlock(pos: BlockPos) {
-    const block = this.blocks.find(b => b.pos[0] === pos[0] && b.pos[1] === pos[1] && b.pos[2] === pos[2])
+    if (pos[0] < 0 || pos[1] < 0 || pos[2] < 0 || pos[0] >= this.size[0] || pos[1] >= this.size[1] || pos[2] >= this.size[2])
+      return null
+
+
+    const block = this.blocksMap[pos[0] * this.size[1] * this.size[2] + pos[1] * this.size[2] + pos[2]]
+//    const block = this.blocks.find(b => b.pos[0] === pos[0] && b.pos[1] === pos[1] && b.pos[2] === pos[2])
     if (!block) return null
     return {
       pos: block.pos,

@@ -6,7 +6,7 @@ function dummy(name: string, uvProvider: TextureUVProvider, offset: number, mode
   const definition = new BlockDefinition('', {'': { model: '' } }, undefined)
   const modelProvider = { getBlockModel: () => model }
   model.flatten(modelProvider)
-  return definition.getBuffers(name, {}, uvProvider, modelProvider, offset)
+  return definition.getBuffers(name, {}, uvProvider, modelProvider, offset, {})
 }
 
 function liquidRenderer(type: string, index: number, level: number, uvProvider: TextureUVProvider, tintindex?: number) {

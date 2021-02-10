@@ -1,7 +1,7 @@
 import { glMatrix, mat4 } from "gl-matrix"
 import { TextureUVProvider } from "./BlockAtlas"
-import { BlockModelProvider } from "./BlockModel"
-import { mergeFloat32Arrays, transformVectors } from "./Util"
+import { BlockModelProvider, Cull } from "./BlockModel"
+import { mergeFloat32Arrays, rotateCull, transformVectors } from "./Util"
 
 type ModelVariant = {
   model: string
@@ -51,7 +51,7 @@ export class BlockDefinition {
     return []
   }
 
-  public getBuffers(name: string, props: { [key: string]: string }, textureUVProvider: TextureUVProvider, blockModelProvider: BlockModelProvider, offset: number) {
+  public getBuffers(name: string, props: { [key: string]: string }, textureUVProvider: TextureUVProvider, blockModelProvider: BlockModelProvider, offset: number, cull: Cull) {
     const variants = this.getModelVariants(props)
 
     const position: Float32Array[] = []
@@ -60,7 +60,8 @@ export class BlockDefinition {
     const index: number[] = []
 
     for (const variant of variants) {
-      const buffers = blockModelProvider.getBlockModel(variant.model)!.getBuffers(name, props, textureUVProvider, offset)
+      const newCull = rotateCull(cull, variant.x ?? 0, variant.y ?? 0)
+      const buffers = blockModelProvider.getBlockModel(variant.model)!.getBuffers(name, props, textureUVProvider, offset, newCull)
 
       if (variant.x || variant.y) {
         const t = mat4.create()
