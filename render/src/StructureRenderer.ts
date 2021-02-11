@@ -103,6 +103,8 @@ type GridBuffers = {
 }
 
 export class StructureRenderer {
+  private facesPerBuffer: number
+
   private shaderProgram: WebGLProgram
   private gridShaderProgram: WebGLProgram
   private colorShaderProgram: WebGLProgram
@@ -120,8 +122,12 @@ export class StructureRenderer {
     private blockModelProvider: BlockModelProvider, 
     private blockAtlas: BlockAtlas,
     private structure: StructureProvider,
-    private facesPerBuffer: number = 5500
+    options?: {
+      facesPerBuffer?: number
+    }
   ) {
+    this.facesPerBuffer = options?.facesPerBuffer ?? 5500
+
     this.shaderProgram = new ShaderProgram(gl, vsSource, fsSource).getProgram()
     this.gridShaderProgram = new ShaderProgram(gl, vsGrid, fsGrid).getProgram()
     this.colorShaderProgram = new ShaderProgram(gl, vsColor, fsColor).getProgram()
@@ -180,7 +186,7 @@ export class StructureRenderer {
     let indices: number[] = []
     let indexOffset = 0
 
-    var finishBuffers = () => {
+    const finishBuffers = () => {
       structureBuffers.push({
         position: this.createBuffer(this.gl.ARRAY_BUFFER, mergeFloat32Arrays(...positions)),
         texCoord: this.createBuffer(this.gl.ARRAY_BUFFER, new Float32Array(textureCoordinates)),
@@ -198,7 +204,7 @@ export class StructureRenderer {
       indexOffset = 0
     }
 
-    var pushBuffers = (buffers: any, pos: vec3) => {
+    const pushBuffers = (buffers: any, pos: vec3) => {
       const t = mat4.create()
       mat4.translate(t, t, pos)
       transformVectors(buffers.position, t)

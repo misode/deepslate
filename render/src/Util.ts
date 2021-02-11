@@ -79,7 +79,8 @@ export function rotateCull(cull: Cull, x: number, y: number){
   }
   
   const yRotCull : Cull = {}
-  for (const d of directions) yRotCull[yMapping![d]] = cull[d]
+  for (const d of directions)
+    yRotCull[yMapping![d]] = cull[d]
 
 
   let xMapping : {[key in Direction]: Direction}
@@ -126,7 +127,8 @@ export function rotateCull(cull: Cull, x: number, y: number){
   }
 
   const xRotCull : Cull = {}
-  for (const d of directions) xRotCull[xMapping![d]] = yRotCull[d]
+  for (const d of directions)
+    xRotCull[xMapping![d]] = yRotCull[d]
 
   return xRotCull
 }
