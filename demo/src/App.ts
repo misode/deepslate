@@ -26,7 +26,12 @@ async function main() {
   const resources = new ResourceManager()
   await resources.loadFromZip('./assets.zip')
 
-  const renderer = new StructureRenderer(gl, resources, resources, resources.getBlockAtlas(), structure)
+  const renderer = new StructureRenderer(gl, structure, {
+    blockModels: resources,
+    blockDefinitions: resources,
+    blockAtlas: resources.getBlockAtlas(),
+    blockProperties: resources
+  })
 
   function resize() {
     const displayWidth = canvas.clientWidth;

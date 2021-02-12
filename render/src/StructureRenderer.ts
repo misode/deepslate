@@ -2,8 +2,8 @@ import { mat4, vec3 } from "gl-matrix";
 import { BlockAtlas } from "./BlockAtlas";
 import { BlockModelProvider, Cull } from "./BlockModel";
 import { BlockDefinitionProvider } from "./BlockDefinition";
+import { BlockPropertiesProvider } from "./BlockProperties";
 import { mergeFloat32Arrays, transformVectors } from "./Util";
-import { isSolid } from "./SolidHelper"
 import { StructureProvider } from "@webmc/core";
 import { ShaderProgram } from "./ShaderProgram";
 import { SpecialRenderer, SpecialRenderers } from "./SpecialRenderer";
@@ -102,6 +102,13 @@ type GridBuffers = {
   length: number
 }
 
+type Resources = {
+  blockDefinitions: BlockDefinitionProvider
+  blockModels: BlockModelProvider
+  blockAtlas: BlockAtlas
+  blockProperties: BlockPropertiesProvider
+}
+
 export class StructureRenderer {
   private facesPerBuffer: number
 
@@ -118,10 +125,8 @@ export class StructureRenderer {
 
   constructor(
     private gl: WebGLRenderingContext,
-    private blockDefinitionProvider: BlockDefinitionProvider,
-    private blockModelProvider: BlockModelProvider, 
-    private blockAtlas: BlockAtlas,
     private structure: StructureProvider,
+    private resources: Resources,
     options?: {
       facesPerBuffer?: number
     }
@@ -161,7 +166,7 @@ export class StructureRenderer {
   private getBlockTexture() {
     const texture = this.gl.createTexture()!;
     this.gl.bindTexture(this.gl.TEXTURE_2D, texture);
-    this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, this.gl.RGBA, this.gl.UNSIGNED_BYTE, this.blockAtlas.getImageData());
+    this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, this.gl.RGBA, this.gl.UNSIGNED_BYTE, this.resources.blockAtlas.getImageData());
     this.gl.generateMipmap(this.gl.TEXTURE_2D);
     this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.NEAREST);
     return texture
@@ -224,24 +229,26 @@ export class StructureRenderer {
       const blockProps = b.state.getProperties()
 
       try {
+        const blockProperties = this.resources.blockProperties?.getBlockProperties(blockName)
+
         const cull: Cull = {
-          up: isSolid(this.structure.getBlock([b.pos[0], b.pos[1]+1, b.pos[2]])?.state.getName()),
-          down: isSolid(this.structure.getBlock([b.pos[0], b.pos[1]-1, b.pos[2]])?.state.getName()),
-          west: isSolid(this.structure.getBlock([b.pos[0]-1, b.pos[1], b.pos[2]])?.state.getName()),
-          east: isSolid(this.structure.getBlock([b.pos[0]+1, b.pos[1], b.pos[2]])?.state.getName()),
-          north: isSolid(this.structure.getBlock([b.pos[0], b.pos[1], b.pos[2]-1])?.state.getName()),
-          south: isSolid(this.structure.getBlock([b.pos[0], b.pos[1], b.pos[2]+1])?.state.getName())
+          up: this.resources.blockProperties.getBlockProperties(this.structure.getBlock([b.pos[0], b.pos[1]+1, b.pos[2]])?.state.getName())?.opaque,
+          down: this.resources.blockProperties.getBlockProperties(this.structure.getBlock([b.pos[0], b.pos[1]-1, b.pos[2]])?.state.getName())?.opaque,
+          west: this.resources.blockProperties.getBlockProperties(this.structure.getBlock([b.pos[0]-1, b.pos[1], b.pos[2]])?.state.getName())?.opaque,
+          east: this.resources.blockProperties.getBlockProperties(this.structure.getBlock([b.pos[0]+1, b.pos[1], b.pos[2]])?.state.getName())?.opaque,
+          north: this.resources.blockProperties.getBlockProperties(this.structure.getBlock([b.pos[0], b.pos[1], b.pos[2]-1])?.state.getName())?.opaque,
+          south: this.resources.blockProperties.getBlockProperties(this.structure.getBlock([b.pos[0], b.pos[1], b.pos[2]+1])?.state.getName())?.opaque
         }
 
-        const blockDefinition = this.blockDefinitionProvider.getBlockDefinition(blockName)
+        const blockDefinition = this.resources.blockDefinitions.getBlockDefinition(blockName)
         if (blockDefinition) {
-          buffers = blockDefinition.getBuffers(blockName, blockProps, this.blockAtlas, this.blockModelProvider, indexOffset, cull)
+          buffers = blockDefinition.getBuffers(blockName, blockProps, this.resources.blockAtlas, this.resources.blockModels, indexOffset, cull)
         }
         if (SpecialRenderers.has(blockName)) {
           if (blockDefinition) {
             pushBuffers(buffers, b.pos)
           }
-          buffers = SpecialRenderer[blockName](indexOffset, blockProps, this.blockAtlas)
+          buffers = SpecialRenderer[blockName](indexOffset, blockProps, this.resources.blockAtlas)
           pushBuffers(buffers, b.pos)
         } else if(blockDefinition) {
           pushBuffers(buffers, b.pos)

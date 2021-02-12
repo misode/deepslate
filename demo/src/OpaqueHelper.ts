@@ -1,4 +1,4 @@
-export function isSolid(name?: string){
+export function isOpaque(name?: string){
     if (!name)
       return false
   
