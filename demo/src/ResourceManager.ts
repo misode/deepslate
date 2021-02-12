@@ -1,6 +1,5 @@
 import jszip from 'jszip'
-import { BlockAtlas, BlockDefinition, BlockDefinitionProvider, BlockModel, BlockModelProvider } from '@webmc/render'
-import { BlockProperties, BlockPropertiesProvider } from '@webmc/render/lib/BlockProperties'
+import { BlockAtlas, BlockDefinition, BlockDefinitionProvider, BlockModel, BlockModelProvider, BlockProperties, BlockPropertiesProvider } from '@webmc/render'
 import { isOpaque } from './OpaqueHelper'
 
 export class ResourceManager implements BlockModelProvider, BlockDefinitionProvider, BlockPropertiesProvider {
