@@ -1,7 +1,8 @@
 import jszip from 'jszip'
-import { BlockAtlas, BlockDefinition, BlockModel, BlockModelProvider } from '@webmc/render'
+import { BlockAtlas, BlockDefinition, BlockDefinitionProvider, BlockModel, BlockModelProvider, BlockProperties, BlockPropertiesProvider } from '@webmc/render'
+import { isOpaque } from './OpaqueHelper'
 
-export class ResourceManager implements BlockModelProvider {
+export class ResourceManager implements BlockModelProvider, BlockDefinitionProvider, BlockPropertiesProvider {
   private blockDefinitions: { [id: string]: BlockDefinition }
   private blockModels: { [id: string]: BlockModel }
   private blockAtlas: BlockAtlas
@@ -26,6 +27,12 @@ export class ResourceManager implements BlockModelProvider {
 
   public getBlockAtlas() {
     return this.blockAtlas
+  }
+
+  public getBlockProperties(id: string | undefined): BlockProperties | null {
+    return {
+      opaque: isOpaque(id)
+    }
   }
 
   public async loadFromZip(url: string) {

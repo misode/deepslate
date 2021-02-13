@@ -1,4 +1,5 @@
 import { mat4, vec3 } from "gl-matrix"
+import { Cull, Direction } from "./BlockModel"
 
 export function mergeFloat32Arrays(...arrays: Float32Array[]) {
   let totalLength = 0
@@ -29,4 +30,105 @@ export function transformVectors(array: Float32Array, transformation: mat4) {
 
 export function clamp(x: number, min: number, max: number) {
   return Math.max(min, Math.min(max, x))
+}
+
+export function rotateCull(cull: Cull, x: number, y: number){
+  const directions: Direction[] = ["up", "down", "north", "south", "west", "east"]
+
+  let yMapping : {[key in Direction]: Direction}
+  switch (y) {
+    case 0:
+      yMapping = {
+        "north": "north",
+        "east": "east",
+        "south": "south",
+        "west": "west",
+        "up": "up",
+        "down": "down"
+      }
+      break;
+    case 270:
+      yMapping = {
+        "north": "east",
+        "east": "south",
+        "south": "west",
+        "west": "north",
+        "up": "up",
+        "down": "down"
+      }
+      break;
+    case 180:
+      yMapping = {
+        "north": "south",
+        "east": "west",
+        "south": "north",
+        "west": "east",
+        "up": "up",
+        "down": "down"
+      }
+      break;
+    case 90:
+      yMapping = {
+        "north": "west",
+        "east": "north",
+        "south": "east",
+        "west": "south",
+        "up": "up",
+        "down": "down"
+      }
+  }
+  
+  const yRotCull : Cull = {}
+  for (const d of directions)
+    yRotCull[yMapping![d]] = cull[d]
+
+
+  let xMapping : {[key in Direction]: Direction}
+  switch (x) {
+    case 0:
+      xMapping = {
+        "north": "north",
+        "east": "east",
+        "south": "south",
+        "west": "west",
+        "up": "up",
+        "down": "down"
+      }
+      break;
+    case 270:
+      xMapping = {
+        "north": "down",
+        "east": "east",
+        "south": "up",
+        "west": "west",
+        "up": "north",
+        "down": "south"
+      }
+      break;
+    case 180:
+      xMapping = {
+        "north": "south",
+        "east": "east",
+        "south": "north",
+        "west": "west",
+        "up": "down",
+        "down": "up"
+      }
+      break;
+    case 90:
+      xMapping = {
+        "north": "up",
+        "east": "east",
+        "south": "down",
+        "west": "west",
+        "up": "south",
+        "down": "north"
+      }
+  }
+
+  const xRotCull : Cull = {}
+  for (const d of directions)
+    xRotCull[xMapping![d]] = yRotCull[d]
+
+  return xRotCull
 }

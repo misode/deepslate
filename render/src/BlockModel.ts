@@ -3,13 +3,15 @@ import { TextureUVProvider } from "./BlockAtlas";
 import { BlockColors } from "./BlockColors";
 import { mergeFloat32Arrays, transformVectors } from "./Util";
 
-type Direction = 'up' | 'down' | 'north' | 'east' | 'south' | 'west'
+export type Direction = 'up' | 'down' | 'north' | 'east' | 'south' | 'west'
+export type Cull = {[key in Direction]?: boolean}
 
 type Axis = 'x' | 'y' | 'z'
 
 type BlockModelFace = {
   texture: string
   uv?: number[]
+  cullface?: Direction
   rotation?: 0 | 90 | 180 | 270
   tintindex?: number
 }
@@ -64,14 +66,14 @@ export class BlockModel {
     this.flattened = false
   }
 
-  public getBuffers(name: string, props: {[key: string]: string}, uvProvider: TextureUVProvider, offset: number) {
+  public getBuffers(name: string, props: {[key: string]: string}, uvProvider: TextureUVProvider, offset: number, cull: Cull) {
     const position: Float32Array[] = []
     const texCoord: number[] = []
     const tintColor: number[] = []
     const index: number[] = []
 
     for (const element of this.elements ?? []) {
-      const buffers = this.getElementBuffers(name, props, element, offset, uvProvider)
+      const buffers = this.getElementBuffers(name, props, element, offset, uvProvider, cull)
       position.push(buffers.position)
       texCoord.push(...buffers.texCoord)
       tintColor.push(...buffers.tintColor)
@@ -87,7 +89,7 @@ export class BlockModel {
     }
   }
 
-  private getElementBuffers(name: string, props: {[key: string]: string}, e: BlockModelElement, i: number, uvProvider: TextureUVProvider) {
+  private getElementBuffers(name: string, props: {[key: string]: string}, e: BlockModelElement, i: number, uvProvider: TextureUVProvider, cull: {[key in Direction]?: boolean}) {
     const x0 = e.from[0]
     const y0 = e.from[1]
     const z0 = e.from[2]
@@ -118,27 +120,27 @@ export class BlockModel {
       i += 4
     }
 
-    if (e.faces?.up?.texture) {
+    if (e.faces?.up?.texture && (!e.faces.up.cullface || !cull[e.faces.up.cullface])) {
       addFace(e.faces.up, [16 - x1, z1, 16 - x0, z0],
         [x0, y1, z1,  x1, y1, z1,  x1, y1, z0,  x0, y1, z0])
     }
-    if (e.faces?.down?.texture) {
+    if (e.faces?.down?.texture && (!e.faces.down.cullface || !cull[e.faces.down.cullface])) {
       addFace(e.faces.down, [16 - z1, 16 - x1, 16 - z0, 16 - x0],
         [x0, y0, z0,  x1, y0, z0,  x1, y0, z1,  x0, y0, z1])
     }
-    if (e.faces?.south?.texture) {
+    if (e.faces?.south?.texture && (!e.faces.south.cullface || !cull[e.faces.south.cullface])) {
       addFace(e.faces.south, [x0, 16 - y1, x1, 16 - y0], 
         [x0, y0, z1,  x1, y0, z1,  x1, y1, z1,  x0, y1, z1])
     }
-    if (e.faces?.north?.texture) {
+    if (e.faces?.north?.texture && (!e.faces.north.cullface || !cull[e.faces.north.cullface])) {
       addFace(e.faces.north, [16 - x1, 16 - y1, 16 - x0, 16 - y0], 
         [x1, y0, z0,  x0, y0, z0,  x0, y1, z0,  x1, y1, z0])
     }
-    if (e.faces?.east?.texture) {
+    if (e.faces?.east?.texture && (!e.faces.east.cullface || !cull[e.faces.east.cullface])) {
       addFace(e.faces.east, [16 - z1, 16 - y1, 16 - z0, 16 - y0], 
         [x1, y0, z1,  x1, y0, z0,  x1, y1, z0,  x1, y1, z1])
     }
-    if (e.faces?.west?.texture) {
+    if (e.faces?.west?.texture && (!e.faces.west.cullface || !cull[e.faces.west.cullface])) {
       addFace(e.faces.west, [z0, 16 - y1, z1, 16 - y0], 
         [x0, y0, z0,  x0, y0, z1,  x0, y1, z1,  x0, y1, z0])
     }
