@@ -3,12 +3,14 @@ import { encodeUTF8 } from './Utils'
 
 export class NbtWriter {
   public offset: number
+  private littleEndian: boolean
   private buffer: ArrayBuffer
   private arrayView: Uint8Array
   private dataView: DataView
 
-  constructor() {
+  constructor(littleEndian = false) {
     this.offset = 0
+    this.littleEndian = littleEndian
     this.buffer = new ArrayBuffer(1024)
     this.arrayView = new Uint8Array(this.buffer)
     this.dataView = new DataView(this.buffer)
@@ -47,7 +49,7 @@ export class NbtWriter {
   
   private writeNum(type: 'setInt8' | 'setInt16' | 'setInt32' | 'setFloat32' | 'setFloat64', size: number, value: number) {
     this.accommodate(size)
-    this.dataView[type](this.offset, value)
+    this.dataView[type](this.offset, value, this.littleEndian)
     this.offset += size
   }
 

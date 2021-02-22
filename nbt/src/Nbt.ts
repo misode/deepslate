@@ -81,8 +81,8 @@ export const tagNames = [
   'longArray'
 ] as const
 
-export function readUncompressed(array: Uint8Array): NamedNbtTag {
-  const reader = new NbtReader(array)
+export function readUncompressed(array: Uint8Array, littleEndian?: boolean): NamedNbtTag {
+  const reader = new NbtReader(array, littleEndian)
   const type = reader.byte()
   if (type !== tagTypes.compound) {
     throw new Error('Top tag should be a compound')
@@ -93,16 +93,16 @@ export function readUncompressed(array: Uint8Array): NamedNbtTag {
   }
 }
 
-export function readCompressed(array: Uint8Array): NamedNbtTag {
+export function readCompressed(array: Uint8Array, littleEndian?: boolean): NamedNbtTag {
   const uncompressed = pako.inflate(array)
-  return readUncompressed(uncompressed)
+  return readUncompressed(uncompressed, littleEndian)
 }
 
-export function read(array: Uint8Array) {
+export function read(array: Uint8Array, littleEndian?: boolean) {
   if (hasGzipHeader(array)) {
-    return { compressed: true, result: readCompressed(array) }
+    return { compressed: true, result: readCompressed(array, littleEndian) }
   } else {
-    return { compressed: false, result: readUncompressed(array) }
+    return { compressed: false, result: readUncompressed(array, littleEndian) }
   }
 }
 
@@ -139,7 +139,7 @@ export function readChunk(chunks: NbtChunk[], x: number, z: number) {
   return chunk
 }
 
-export function writeUncompressed(value: NamedNbtTag) {
+export function writeUncompressed(value: NamedNbtTag, littleEndian?: boolean) {
   const writer = new NbtWriter()
   writer.byte(tagTypes.compound)
   writer.string(value.name)
@@ -147,16 +147,16 @@ export function writeUncompressed(value: NamedNbtTag) {
   return writer.getData()
 }
 
-export function writeCompressed(value: NamedNbtTag, zlib?: boolean) {
-  const uncompressed = writeUncompressed(value)
+export function writeCompressed(value: NamedNbtTag, littleEndian?: boolean, zlib?: boolean) {
+  const uncompressed = writeUncompressed(value, littleEndian)
   return pako[zlib ? 'deflate' : 'gzip'](uncompressed)
 }
 
-export function write(value: NamedNbtTag, compressed: boolean) {
+export function write(value: NamedNbtTag, compressed: boolean, littleEndian?: boolean) {
   if (compressed) {
-    return writeCompressed(value)
+    return writeCompressed(value, littleEndian)
   } else {
-    return writeUncompressed(value)
+    return writeUncompressed(value, littleEndian)
   }
 }
 

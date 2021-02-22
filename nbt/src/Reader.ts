@@ -3,11 +3,13 @@ import { NbtTag, NbtValues, tagNames } from './Nbt'
 
 export class NbtReader {
   public offset: number
+  private littleEndian: boolean
   private arrayView: Uint8Array
   private dataView: DataView
 
-  constructor(array: Uint8Array) {
+  constructor(array: Uint8Array, littleEndian = false) {
     this.offset = 0
+    this.littleEndian = littleEndian
     this.arrayView = array
     this.dataView = new DataView(array.buffer)
   }
@@ -17,7 +19,7 @@ export class NbtReader {
   }
 
   private readNum(type: 'getInt8' | 'getInt16' | 'getInt32' | 'getFloat32' | 'getFloat64', size: number) {
-    const value = this.dataView[type](this.offset)
+    const value = this.dataView[type](this.offset, this.littleEndian)
     this.offset += size
     return value
   }
