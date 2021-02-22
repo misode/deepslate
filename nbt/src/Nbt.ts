@@ -191,7 +191,7 @@ export function writeChunk(chunks: NbtChunk[], x: number, z: number, nbt: NamedN
   const chunk = findChunk(chunks, x, z)
   switch (chunk.compression) {
     case 1: chunk.data = writeCompressed(nbt); break
-    case 2: chunk.data = writeCompressed(nbt, true); break
+    case 2: chunk.data = writeCompressed(nbt, false, true); break
     case 3: chunk.data = writeUncompressed(nbt); break
     default: throw new Error(`Invalid compression mode ${chunk.compression}`)
   }
