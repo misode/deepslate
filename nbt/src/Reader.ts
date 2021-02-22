@@ -11,7 +11,7 @@ export class NbtReader {
     this.offset = 0
     this.littleEndian = littleEndian
     this.arrayView = array
-    this.dataView = new DataView(array.buffer)
+    this.dataView = new DataView(array.buffer, array.byteOffset)
   }
 
   end() {
