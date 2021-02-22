@@ -140,7 +140,7 @@ export function readChunk(chunks: NbtChunk[], x: number, z: number) {
 }
 
 export function writeUncompressed(value: NamedNbtTag, littleEndian?: boolean) {
-  const writer = new NbtWriter()
+  const writer = new NbtWriter(littleEndian)
   writer.byte(tagTypes.compound)
   writer.string(value.name)
   writer.compound(value.value)
