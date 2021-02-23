@@ -119,6 +119,7 @@ export class StructureRenderer {
   private structureBuffers: StructureBuffers[]
   private gridBuffers: GridBuffers
   private outlineBuffers: GridBuffers
+  private invisibleBlockBuffers: GridBuffers
   private atlasTexture: WebGLTexture
   private projMatrix: mat4
   private activeShader: WebGLProgram
@@ -140,6 +141,7 @@ export class StructureRenderer {
     this.structureBuffers = this.getStructureBuffers()
     this.gridBuffers = this.getGridBuffers()
     this.outlineBuffers = this.getOutlineBuffers()
+    this.invisibleBlockBuffers = this.getInvisibleBlockBuffers()
     this.atlasTexture = this.getBlockTexture()
     this.projMatrix = this.getPerspective()
     this.activeShader = this.shaderProgram
@@ -150,6 +152,7 @@ export class StructureRenderer {
     this.structure = structure
     this.structureBuffers = this.getStructureBuffers()
     this.gridBuffers = this.getGridBuffers()
+    this.invisibleBlockBuffers = this.getInvisibleBlockBuffers()
   }
 
   private initialize() {
@@ -299,28 +302,57 @@ export class StructureRenderer {
     const position: number[] = []
     const color: number[] = []
 
-    position.push(0, 0, 0, 0, 0, 1)
-    position.push(1, 0, 0, 1, 0, 1)
-    position.push(0, 0, 0, 1, 0, 0)
-    position.push(0, 0, 1, 1, 0, 1)
-
-    position.push(0, 0, 0, 0, 1, 0)
-    position.push(1, 0, 0, 1, 1, 0)
-    position.push(0, 0, 1, 0, 1, 1)
-    position.push(1, 0, 1, 1, 1, 1)
-
-    position.push(0, 1, 0, 0, 1, 1)
-    position.push(1, 1, 0, 1, 1, 1)
-    position.push(0, 1, 0, 1, 1, 0)
-    position.push(0, 1, 1, 1, 1, 1)
-
-    for (let i = 0; i < 12; i += 1) color.push(1, 1, 1, 1, 1, 1)
+    this.addCube(position, color, [1, 1, 1], [0, 0, 0], [1, 1, 1])
 
     return {
       position: this.createBuffer(this.gl.ARRAY_BUFFER, new Float32Array(position)),
       color: this.createBuffer(this.gl.ARRAY_BUFFER, new Float32Array(color)),
       length: position.length / 3
     }
+  }
+
+  private getInvisibleBlockBuffers(): GridBuffers {
+    const size = this.structure.getSize()
+    const position: number[] = []
+    const color: number[] = []
+
+    for (let x = 0; x < size[0]; x += 1) {
+      for (let y = 0; y < size[1]; y += 1) {
+        for (let z = 0; z < size[2]; z += 1) {
+          const block = this.structure.getBlock([x, y, z])
+          if (block === null) {
+            this.addCube(position, color, [1, 0.25, 0.25], [x + 0.4375, y + 0.4375, z + 0.4375], [x + 0.5625, y + 0.5625, z + 0.5625])
+          } else if (block.state.getName() === 'minecraft:air') {
+            this.addCube(position, color, [0.5, 0.5, 1], [x + 0.375, y + 0.375, z + 0.375], [x + 0.625, y + 0.625, z + 0.625])
+          }
+        }
+      }
+    }
+
+    return {
+      position: this.createBuffer(this.gl.ARRAY_BUFFER, new Float32Array(position)),
+      color: this.createBuffer(this.gl.ARRAY_BUFFER, new Float32Array(color)),
+      length: position.length / 3
+    }
+  }
+
+  private addCube(positions: number[], colors: number[], color: number[], a: number[], b: number[]) {
+    positions.push(a[0], a[1], a[2], a[0], a[1], b[2])
+    positions.push(b[0], a[1], a[2], b[0], a[1], b[2])
+    positions.push(a[0], a[1], a[2], b[0], a[1], a[2])
+    positions.push(a[0], a[1], b[2], b[0], a[1], b[2])
+
+    positions.push(a[0], a[1], a[2], a[0], b[1], a[2])
+    positions.push(b[0], a[1], a[2], b[0], b[1], a[2])
+    positions.push(a[0], a[1], b[2], a[0], b[1], b[2])
+    positions.push(b[0], a[1], b[2], b[0], b[1], b[2])
+
+    positions.push(a[0], b[1], a[2], a[0], b[1], b[2])
+    positions.push(b[0], b[1], a[2], b[0], b[1], b[2])
+    positions.push(a[0], b[1], a[2], b[0], b[1], a[2])
+    positions.push(a[0], b[1], b[2], b[0], b[1], b[2])
+
+    for (let i = 0; i < 24; i += 1) colors.push(...color)
   }
 
   private createBuffer(type: number, array: ArrayBuffer) {
@@ -339,6 +371,17 @@ export class StructureRenderer {
     this.setUniform('mProj', this.projMatrix)
 
     this.gl.drawArrays(this.gl.LINES, 0, this.gridBuffers.length)
+  }
+
+  public drawInvisibleBlocks(viewMatrix: mat4) {
+    this.setShader(this.gridShaderProgram)
+
+    this.setVertexAttr('vertPos', 3, this.invisibleBlockBuffers.position)
+    this.setVertexAttr('vertColor', 3, this.invisibleBlockBuffers.color)
+    this.setUniform('mView', viewMatrix)
+    this.setUniform('mProj', this.projMatrix)
+
+    this.gl.drawArrays(this.gl.LINES, 0, this.invisibleBlockBuffers.length)
   }
 
   public drawStructure(viewMatrix: mat4) {
