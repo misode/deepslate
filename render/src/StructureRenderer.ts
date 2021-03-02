@@ -35,6 +35,7 @@ const fsSource = `
 
   void main(void) {
     vec4 texColor = texture2D(sampler, vTexCoord);
+    if(texColor.a < 0.01) discard;
     gl_FragColor = vec4(texColor.xyz * vTintColor, texColor.a);
   }
 `;
