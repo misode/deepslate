@@ -116,26 +116,25 @@ type Chunk = {
   tintColors: number[],
   blockPositions: number[],
   indices: number[],
-  indexOffset: number
+  indexOffset: number,
+  buffer?: StructureBuffers
 }
 
 export class StructureRenderer {
-  private facesPerBuffer: number
-
   private shaderProgram: WebGLProgram
   private gridShaderProgram: WebGLProgram
   private colorShaderProgram: WebGLProgram
 
   private chunks: Chunk[][][] = []
 
-  private structureBuffers: StructureBuffers[] = []
+//  private structureBuffers: StructureBuffers[][][] = []
   private gridBuffers: GridBuffers
   private outlineBuffers: GridBuffers
   private invisibleBlockBuffers: GridBuffers
   private atlasTexture: WebGLTexture
   private projMatrix: mat4
   private activeShader: WebGLProgram
-
+  private chunkSize: number
 
 
   constructor(
@@ -143,10 +142,15 @@ export class StructureRenderer {
     private structure: StructureProvider,
     private resources: Resources,
     options?: {
-      facesPerBuffer?: number
+      facesPerBuffer?: number,
+      chunkSize?: number
     }
   ) {
-    this.facesPerBuffer = options?.facesPerBuffer ?? 5500
+    if (options?.facesPerBuffer){
+      console.warn("webgl render warning: facesPerBuffer option has been removed in favor of chunkSize")
+    }
+    
+    this.chunkSize = options?.chunkSize ?? 16
 
     this.shaderProgram = new ShaderProgram(gl, vsSource, fsSource).getProgram()
     this.gridShaderProgram = new ShaderProgram(gl, vsGrid, fsGrid).getProgram()
@@ -217,7 +221,7 @@ export class StructureRenderer {
         tintColors: [],
         blockPositions: [],
         indices: [],
-        indexOffset: 0
+        indexOffset: 0,
       }
 
     return this.chunks[x][y][z]
@@ -238,18 +242,45 @@ export class StructureRenderer {
       chunk.indexOffset += buffers.texCoord.length / 2
     }
 
-    if (!chunkPositions)
-      this.chunks = []
-    else 
+    const resetChunk = (chunk: Chunk) => {
+      chunk.positions = []
+      chunk.textureCoordinates = []
+      chunk.tintColors = []
+      chunk.blockPositions = []
+      chunk.indices = []
+      chunk.indexOffset = 0
+    }
+
+    const refreshBuffer = (chunk: Chunk) => {
+      if (chunk.buffer){
+        this.updateBuffer(chunk.buffer.position, this.gl.ARRAY_BUFFER, mergeFloat32Arrays(...chunk.positions))
+        this.updateBuffer(chunk.buffer.texCoord, this.gl.ARRAY_BUFFER, new Float32Array(chunk.textureCoordinates)),
+        this.updateBuffer(chunk.buffer.tintColor, this.gl.ARRAY_BUFFER, new Float32Array(chunk.tintColors)),
+        this.updateBuffer(chunk.buffer.blockPos, this.gl.ARRAY_BUFFER, new Float32Array(chunk.blockPositions)),
+        this.updateBuffer(chunk.buffer.index, this.gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(chunk.indices)),
+        chunk.buffer.length = chunk.indices.length
+      } else {
+        chunk.buffer = {
+          position: this.createBuffer(this.gl.ARRAY_BUFFER, mergeFloat32Arrays(...chunk.positions)),
+          texCoord: this.createBuffer(this.gl.ARRAY_BUFFER, new Float32Array(chunk.textureCoordinates)),
+          tintColor: this.createBuffer(this.gl.ARRAY_BUFFER, new Float32Array(chunk.tintColors)),
+          blockPos: this.createBuffer(this.gl.ARRAY_BUFFER, new Float32Array(chunk.blockPositions)),
+          index: this.createBuffer(this.gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(chunk.indices)),
+          length: chunk.indices.length
+        }
+      }
+    }
+
+    if (!chunkPositions){
+      this.chunks.forEach(x => x.forEach(y => y.forEach(chunk => {
+        resetChunk(chunk)
+      })))
+    } else { 
       chunkPositions.forEach(chunkPos => {
         const chunk = this.getChunk(chunkPos)
-        chunk.positions = []
-        chunk.textureCoordinates = []
-        chunk.tintColors = []
-        chunk.blockPositions = []
-        chunk.indices = []
-        chunk.indexOffset = 0
+        resetChunk(chunk)
       });
+    }
 
     let buffers
     for (const b of this.structure.getBlocks()) {
@@ -293,18 +324,16 @@ export class StructureRenderer {
       }
     }
 
-    this.structureBuffers = []
-
-    this.chunks.forEach(x => x.forEach(y => y.forEach(chunk => {
-      this.structureBuffers.push({
-        position: this.createBuffer(this.gl.ARRAY_BUFFER, mergeFloat32Arrays(...chunk.positions)),
-        texCoord: this.createBuffer(this.gl.ARRAY_BUFFER, new Float32Array(chunk.textureCoordinates)),
-        tintColor: this.createBuffer(this.gl.ARRAY_BUFFER, new Float32Array(chunk.tintColors)),
-        blockPos: this.createBuffer(this.gl.ARRAY_BUFFER, new Float32Array(chunk.blockPositions)),
-        index: this.createBuffer(this.gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(chunk.indices)),
-        length: chunk.indices.length
+    if (!chunkPositions){
+      this.chunks.forEach(x => x.forEach(y => y.forEach(chunk => {
+        refreshBuffer(chunk)
+      })))
+    } else {
+      chunkPositions.forEach(chunkPos => {
+        const chunk = this.getChunk(chunkPos)
+        refreshBuffer(chunk)
       })
-    })))
+    }
   }
 
   private getGridBuffers(): GridBuffers {
@@ -399,8 +428,13 @@ export class StructureRenderer {
   private createBuffer(type: number, array: ArrayBuffer) {
     const buffer = this.gl.createBuffer()!;
     this.gl.bindBuffer(type, buffer);
-    this.gl.bufferData(type, array, this.gl.STATIC_DRAW);
+    this.gl.bufferData(type, array, this.gl.DYNAMIC_DRAW);
     return buffer
+  }
+
+  private updateBuffer(buffer: WebGLBuffer, type: number, array: ArrayBuffer) {
+    this.gl.bindBuffer(type, buffer);
+    this.gl.bufferData(type, array, this.gl.STATIC_DRAW);
   }
 
   public drawGrid(viewMatrix: mat4) {
@@ -434,14 +468,19 @@ export class StructureRenderer {
     this.setUniform('mView', viewMatrix)
     this.setUniform('mProj', this.projMatrix)
 
-    this.structureBuffers.forEach(structureBuffers => {
-      this.setVertexAttr('vertPos', 3, structureBuffers.position)
-      this.setVertexAttr('texCoord', 2, structureBuffers.texCoord)
-      this.setVertexAttr('tintColor', 3, structureBuffers.tintColor)
-      this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, structureBuffers.index)
-      
-      this.gl.drawElements(this.gl.TRIANGLES, structureBuffers.length, this.gl.UNSIGNED_SHORT, 0)
-    });
+    this.chunks.forEach(x => {
+      x.forEach(y => {
+        y.forEach(chunk => {
+          if (!chunk.buffer) return
+          this.setVertexAttr('vertPos', 3, chunk.buffer.position)
+          this.setVertexAttr('texCoord', 2, chunk.buffer.texCoord)
+          this.setVertexAttr('tintColor', 3, chunk.buffer.tintColor)
+          this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, chunk.buffer.index)
+
+          this.gl.drawElements(this.gl.TRIANGLES, chunk.buffer.length, this.gl.UNSIGNED_SHORT, 0)
+        });
+      })
+    })
   }
 
   public drawColoredStructure(viewMatrix: mat4) {
@@ -450,13 +489,18 @@ export class StructureRenderer {
     this.setUniform('mView', viewMatrix)
     this.setUniform('mProj', this.projMatrix)
 
-    this.structureBuffers.forEach(structureBuffers => {
-      this.setVertexAttr('vertPos', 3, structureBuffers.position)
-      this.setVertexAttr('blockPos', 3, structureBuffers.blockPos)
-      this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, structureBuffers.index)
+    this.chunks.forEach(x => {
+      x.forEach(y => {
+        y.forEach(chunk => {
+          if (!chunk.buffer) return
+          this.setVertexAttr('vertPos', 3, chunk.buffer.position)
+          this.setVertexAttr('blockPos', 3, chunk.buffer.blockPos)
+          this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, chunk.buffer.index)
 
-      this.gl.drawElements(this.gl.TRIANGLES, structureBuffers.length, this.gl.UNSIGNED_SHORT, 0)
-    });
+          this.gl.drawElements(this.gl.TRIANGLES, chunk.buffer.length, this.gl.UNSIGNED_SHORT, 0)
+        });
+      })
+    })
   }
 
   public drawOutline(viewMatrix: mat4, pos: vec3) {
