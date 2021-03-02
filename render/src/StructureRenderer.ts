@@ -172,10 +172,6 @@ export class StructureRenderer {
     this.invisibleBlockBuffers = this.getInvisibleBlockBuffers()
   }
 
-  public updateRendering(chunkPositions?: vec3[]){
-    this.updateStructureBuffers(chunkPositions)
-  }
-
   private initialize() {
     this.gl.enable(this.gl.DEPTH_TEST)
     this.gl.depthFunc(this.gl.LEQUAL)
@@ -226,7 +222,7 @@ export class StructureRenderer {
     return this.chunks[x][y][z]
   }  
 
-  private updateStructureBuffers(chunkPositions?: vec3[]): void {
+  public updateStructureBuffers(chunkPositions?: vec3[]): void {
 
     const pushBuffers = (buffers: any, pos: vec3, chunk: Chunk) => {
       const t = mat4.create()
