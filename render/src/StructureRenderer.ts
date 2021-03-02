@@ -286,7 +286,7 @@ export class StructureRenderer {
       const blockName = b.state.getName()
       const blockProps = b.state.getProperties()
 
-      const chunkPos:vec3 = [Math.floor(b.pos[0]/16), Math.floor(b.pos[1]/16), Math.floor(b.pos[2]/16)]
+      const chunkPos:vec3 = [Math.floor(b.pos[0]/this.chunkSize), Math.floor(b.pos[1]/this.chunkSize), Math.floor(b.pos[2]/this.chunkSize)]
 
       if (chunkPositions && !chunkPositions.some(pos => vec3.equals(pos, chunkPos)))
         continue
@@ -294,8 +294,6 @@ export class StructureRenderer {
       const chunk = this.getChunk(chunkPos)
 
       try {
-        const blockProperties = this.resources.blockProperties?.getBlockProperties(blockName)
-
         const cull: Cull = {
           up: this.resources.blockProperties.getBlockProperties(this.structure.getBlock([b.pos[0], b.pos[1]+1, b.pos[2]])?.state.getName())?.opaque,
           down: this.resources.blockProperties.getBlockProperties(this.structure.getBlock([b.pos[0], b.pos[1]-1, b.pos[2]])?.state.getName())?.opaque,
