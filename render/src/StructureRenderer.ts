@@ -110,6 +110,15 @@ type Resources = {
   blockProperties: BlockPropertiesProvider
 }
 
+type Chunk = {
+  positions: Float32Array[],
+  textureCoordinates: number[],
+  tintColors: number[],
+  blockPositions: number[],
+  indices: number[],
+  indexOffset: number
+}
+
 export class StructureRenderer {
   private facesPerBuffer: number
 
@@ -117,13 +126,17 @@ export class StructureRenderer {
   private gridShaderProgram: WebGLProgram
   private colorShaderProgram: WebGLProgram
 
-  private structureBuffers: StructureBuffers[]
+  private chunks: Chunk[][][] = []
+
+  private structureBuffers: StructureBuffers[] = []
   private gridBuffers: GridBuffers
   private outlineBuffers: GridBuffers
   private invisibleBlockBuffers: GridBuffers
   private atlasTexture: WebGLTexture
   private projMatrix: mat4
   private activeShader: WebGLProgram
+
+
 
   constructor(
     private gl: WebGLRenderingContext,
@@ -139,7 +152,7 @@ export class StructureRenderer {
     this.gridShaderProgram = new ShaderProgram(gl, vsGrid, fsGrid).getProgram()
     this.colorShaderProgram = new ShaderProgram(gl, vsColor, fsColor).getProgram()
 
-    this.structureBuffers = this.getStructureBuffers()
+    this.updateStructureBuffers()
     this.gridBuffers = this.getGridBuffers()
     this.outlineBuffers = this.getOutlineBuffers()
     this.invisibleBlockBuffers = this.getInvisibleBlockBuffers()
@@ -151,9 +164,13 @@ export class StructureRenderer {
 
   public setStructure(structure: StructureProvider) {
     this.structure = structure
-    this.structureBuffers = this.getStructureBuffers()
+    this.updateStructureBuffers()
     this.gridBuffers = this.getGridBuffers()
     this.invisibleBlockBuffers = this.getInvisibleBlockBuffers()
+  }
+
+  public updateRendering(chunkPositions?: vec3[]){
+    this.updateStructureBuffers(chunkPositions)
   }
 
   private initialize() {
@@ -180,57 +197,71 @@ export class StructureRenderer {
     const fieldOfView = 70 * Math.PI / 180;
     const aspect = (this.gl.canvas as HTMLCanvasElement).clientWidth / (this.gl.canvas as HTMLCanvasElement).clientHeight;
     const projMatrix = mat4.create();
-    mat4.perspective(projMatrix, fieldOfView, aspect, 0.1, 100.0);
+    mat4.perspective(projMatrix, fieldOfView, aspect, 0.1, 500.0);
     return projMatrix
   }
 
-  private getStructureBuffers(): StructureBuffers[] {
-    
-    const structureBuffers: StructureBuffers[] = []
+  private getChunk(chunkPos: vec3): Chunk{
+    const x = Math.abs(chunkPos[0]) * 2 + (chunkPos[0] < 0 ? 1 : 0)
+    const y = Math.abs(chunkPos[1]) * 2 + (chunkPos[1] < 0 ? 1 : 0)
+    const z = Math.abs(chunkPos[2]) * 2 + (chunkPos[2] < 0 ? 1 : 0)
 
-    let positions: Float32Array[] = []
-    let textureCoordinates: number[] = []
-    let tintColors: number[] = []
-    let blockPositions: number[] = []
-    let indices: number[] = []
-    let indexOffset = 0
+    if (!this.chunks[x])
+      this.chunks[x] = []
+    if (!this.chunks[x][y])
+      this.chunks[x][y] = []
+    if (!this.chunks[x][y][z])
+      this.chunks[x][y][z] = {
+        positions: [],
+        textureCoordinates: [],
+        tintColors: [],
+        blockPositions: [],
+        indices: [],
+        indexOffset: 0
+      }
 
-    const finishBuffers = () => {
-      structureBuffers.push({
-        position: this.createBuffer(this.gl.ARRAY_BUFFER, mergeFloat32Arrays(...positions)),
-        texCoord: this.createBuffer(this.gl.ARRAY_BUFFER, new Float32Array(textureCoordinates)),
-        tintColor: this.createBuffer(this.gl.ARRAY_BUFFER, new Float32Array(tintColors)),
-        blockPos: this.createBuffer(this.gl.ARRAY_BUFFER, new Float32Array(blockPositions)),
-        index: this.createBuffer(this.gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices)),
-        length: indices.length
-      })
+    return this.chunks[x][y][z]
+  }  
 
-      positions = []
-      textureCoordinates = []
-      tintColors = []
-      blockPositions = []
-      indices = []
-      indexOffset = 0
-    }
+  private updateStructureBuffers(chunkPositions?: vec3[]): void {
 
-    const pushBuffers = (buffers: any, pos: vec3) => {
+    const pushBuffers = (buffers: any, pos: vec3, chunk: Chunk) => {
       const t = mat4.create()
       mat4.translate(t, t, pos)
       transformVectors(buffers.position, t)
-      positions.push(buffers.position)
-      textureCoordinates.push(...buffers.texCoord)
-      tintColors.push(...buffers.tintColor)
-      for (let i = 0; i < buffers.texCoord.length / 2; i += 1) blockPositions.push(...pos)
-      indices.push(...buffers.index)
-      indexOffset += buffers.texCoord.length / 2
 
-      if (indexOffset > this.facesPerBuffer) finishBuffers()
+      chunk.positions.push(buffers.position)
+      chunk.textureCoordinates.push(...buffers.texCoord)
+      chunk.tintColors.push(...buffers.tintColor)
+      for (let i = 0; i < buffers.texCoord.length / 2; i += 1) chunk.blockPositions.push(...pos)
+      chunk.indices.push(...buffers.index)
+      chunk.indexOffset += buffers.texCoord.length / 2
     }
+
+    if (!chunkPositions)
+      this.chunks = []
+    else 
+      chunkPositions.forEach(chunkPos => {
+        const chunk = this.getChunk(chunkPos)
+        chunk.positions = []
+        chunk.textureCoordinates = []
+        chunk.tintColors = []
+        chunk.blockPositions = []
+        chunk.indices = []
+        chunk.indexOffset = 0
+      });
 
     let buffers
     for (const b of this.structure.getBlocks()) {
       const blockName = b.state.getName()
       const blockProps = b.state.getProperties()
+
+      const chunkPos:vec3 = [Math.floor(b.pos[0]/16), Math.floor(b.pos[1]/16), Math.floor(b.pos[2]/16)]
+
+      if (chunkPositions && !chunkPositions.some(pos => vec3.equals(pos, chunkPos)))
+        continue
+
+      const chunk = this.getChunk(chunkPos)
 
       try {
         const blockProperties = this.resources.blockProperties?.getBlockProperties(blockName)
@@ -246,25 +277,34 @@ export class StructureRenderer {
 
         const blockDefinition = this.resources.blockDefinitions.getBlockDefinition(blockName)
         if (blockDefinition) {
-          buffers = blockDefinition.getBuffers(blockName, blockProps, this.resources.blockAtlas, this.resources.blockModels, indexOffset, cull)
+          buffers = blockDefinition.getBuffers(blockName, blockProps, this.resources.blockAtlas, this.resources.blockModels, chunk.indexOffset, cull)
         }
         if (SpecialRenderers.has(blockName)) {
           if (blockDefinition) {
-            pushBuffers(buffers, b.pos)
+            pushBuffers(buffers, b.pos, chunk)
           }
-          buffers = SpecialRenderer[blockName](indexOffset, blockProps, this.resources.blockAtlas)
-          pushBuffers(buffers, b.pos)
+          buffers = SpecialRenderer[blockName](chunk.indexOffset, blockProps, this.resources.blockAtlas)
+          pushBuffers(buffers, b.pos, chunk)
         } else if(blockDefinition) {
-          pushBuffers(buffers, b.pos)
+          pushBuffers(buffers, b.pos, chunk)
         }
       } catch(e) {
         console.error(`Error rendering block ${blockName}`, e)
       }
     }
 
-    finishBuffers()
+    this.structureBuffers = []
 
-    return structureBuffers
+    this.chunks.forEach(x => x.forEach(y => y.forEach(chunk => {
+      this.structureBuffers.push({
+        position: this.createBuffer(this.gl.ARRAY_BUFFER, mergeFloat32Arrays(...chunk.positions)),
+        texCoord: this.createBuffer(this.gl.ARRAY_BUFFER, new Float32Array(chunk.textureCoordinates)),
+        tintColor: this.createBuffer(this.gl.ARRAY_BUFFER, new Float32Array(chunk.tintColors)),
+        blockPos: this.createBuffer(this.gl.ARRAY_BUFFER, new Float32Array(chunk.blockPositions)),
+        index: this.createBuffer(this.gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(chunk.indices)),
+        length: chunk.indices.length
+      })
+    })))
   }
 
   private getGridBuffers(): GridBuffers {
