@@ -127,7 +127,6 @@ export class StructureRenderer {
 
   private chunks: Chunk[][][] = []
 
-//  private structureBuffers: StructureBuffers[][][] = []
   private gridBuffers: GridBuffers
   private outlineBuffers: GridBuffers
   private invisibleBlockBuffers: GridBuffers
