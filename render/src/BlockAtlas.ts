@@ -1,16 +1,15 @@
-export interface TextureUVProvider {
-  part: number
-  getUV(texture: string): [number, number]
-}
+export type UV = [number, number, number, number]
 
-type UVMap = { [id: string]: [number, number] }
+export interface TextureUVProvider {
+  getUV(texture: string): UV
+}
 
 export class BlockAtlas implements TextureUVProvider {
   public readonly part: number
 
   constructor(
     private img: ImageData,
-    private idMap: UVMap
+    private idMap: Record<string, UV>,
   ) {
     this.part = 16 / img.width
   }
@@ -20,7 +19,7 @@ export class BlockAtlas implements TextureUVProvider {
   }
 
   public getUV(id: string) {
-    return this.idMap[id] ?? [0, 0]
+    return this.idMap[id] ?? [0, 0, this.part, this.part]
   }
 
   public static async fromBlobs(textures: { [id: string]: Blob }): Promise<BlockAtlas> {   
@@ -33,19 +32,15 @@ export class BlockAtlas implements TextureUVProvider {
     canvas.width = pixelWidth
     canvas.height = pixelWidth
     const ctx = canvas.getContext('2d')!
-    ctx.fillStyle = 'black'
-    ctx.fillRect(0, 0, 16, 16)
-    ctx.fillStyle = 'magenta'
-    ctx.fillRect(0, 0, 8, 8)
-    ctx.fillRect(8, 8, 8, 8)
+    this.drawInvalidTexture(ctx)
 
-    const idMap: UVMap = {}
+    const idMap: Record<string, UV> = {}
     let index = 1
     await Promise.all(Object.keys(textures).map(async (id) => {
       const u = (index % width)
       const v = Math.floor(index / width)
       index += 1
-      idMap[id] = [part * u, part * v]
+      idMap[id] = [part * u, part * v, part * u + part, part * v + part]
       const img = await createImageBitmap(textures[id])
       ctx.drawImage(img, 0, 0, 16, 16, 16 * u, 16 * v, 16, 16)
     }))

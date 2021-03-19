@@ -1,5 +1,5 @@
 import { glMatrix, mat4, ReadonlyVec3, vec3 } from "gl-matrix";
-import { TextureUVProvider } from "./BlockAtlas";
+import { TextureUVProvider, UV } from "./BlockAtlas";
 import { BlockColors } from "./BlockColors";
 import { mergeFloat32Arrays, transformVectors } from "./Util";
 
@@ -10,7 +10,7 @@ type Axis = 'x' | 'y' | 'z'
 
 type BlockModelFace = {
   texture: string
-  uv?: number[]
+  uv?: UV
   cullface?: Direction
   rotation?: 0 | 90 | 180 | 270
   tintindex?: number
@@ -102,11 +102,14 @@ export class BlockModel {
     const tintColors: number[] = []
     const indices: number[] = []
 
-    const p = uvProvider.part / 16
-
-    const addFace = (face: BlockModelFace, uv: number[], pos: number[]) => {
-      const [u0, v0] = uvProvider.getUV(this.getTexture(face.texture))
-      ;(face.uv ?? uv).forEach((e, i) => uv[i] = p * e)
+    const addFace = (face: BlockModelFace, uv: UV, pos: number[]) => {
+      let [u0, v0, u1, v1] = uvProvider.getUV(this.getTexture(face.texture))
+      const du = (u1 - u0) / 16
+      const dv = (v1 - v0) / 16
+      uv[0] = (face.uv?.[0] ?? uv[0]) * du
+      uv[1] = (face.uv?.[1] ?? uv[1]) * dv
+      uv[2] = (face.uv?.[2] ?? uv[2]) * du
+      uv[3] = (face.uv?.[3] ?? uv[3]) * dv
       const r = faceRotations[face.rotation ?? 0]
       texCoords.push(
         u0 + uv[r[0]], v0 + uv[r[1]],
