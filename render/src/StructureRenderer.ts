@@ -394,6 +394,10 @@ export class StructureRenderer {
             this.addCube(position, color, [1, 0.25, 0.25], [x + 0.4375, y + 0.4375, z + 0.4375], [x + 0.5625, y + 0.5625, z + 0.5625])
           } else if (block.state.getName() === 'minecraft:air') {
             this.addCube(position, color, [0.5, 0.5, 1], [x + 0.375, y + 0.375, z + 0.375], [x + 0.625, y + 0.625, z + 0.625])
+          } else if (block.state.getName() === 'minecraft:cave_air') {
+            this.addCube(position, color, [0.5, 1, 0.5], [x + 0.375, y + 0.375, z + 0.375], [x + 0.625, y + 0.625, z + 0.625])
+          } else if (block.state.getName() === 'minecraft:structure_void') {
+            this.addCube(position, color, [1, 0.5, 0.5], [x + 0.375, y + 0.375, z + 0.375], [x + 0.625, y + 0.625, z + 0.625])
           }
         }
       }
