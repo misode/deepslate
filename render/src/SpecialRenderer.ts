@@ -1,15 +1,15 @@
-import { TextureUVProvider } from "./BlockAtlas"
+import { TextureAtlasProvider } from "./TextureAtlas"
 import { BlockDefinition } from "./BlockDefinition"
 import { BlockModel } from "./BlockModel"
 
-function dummy(name: string, uvProvider: TextureUVProvider, offset: number, model: BlockModel) {
+function dummy(name: string, uvProvider: TextureAtlasProvider, offset: number, model: BlockModel) {
   const definition = new BlockDefinition('', {'': { model: '' } }, undefined)
   const modelProvider = { getBlockModel: () => model }
   model.flatten(modelProvider)
   return definition.getBuffers(name, {}, uvProvider, modelProvider, offset, {})
 }
 
-function liquidRenderer(type: string, index: number, level: number, uvProvider: TextureUVProvider, tintindex?: number) {
+function liquidRenderer(type: string, index: number, level: number, uvProvider: TextureAtlasProvider, tintindex?: number) {
     const y = [14.2, 12.5, 10.5, 9, 7, 5.3, 3.7, 1.9, 16, 16, 16, 16, 16, 16, 16, 16][level]
     return dummy(`minecraft:${type}`, uvProvider, index, new BlockModel('', '', {
       'still': `minecraft:block/${type}_still`,
@@ -29,7 +29,7 @@ function liquidRenderer(type: string, index: number, level: number, uvProvider: 
   }
 
 export const SpecialRenderer: {
-  [key: string]: (index: number, props: { [key: string]: string }, uvProvider: TextureUVProvider) => any
+  [key: string]: (index: number, props: { [key: string]: string }, uvProvider: TextureAtlasProvider) => any
 } = {
   'minecraft:water': (index, props, uvProvider) =>
     liquidRenderer('water', index, parseInt(props.level), uvProvider, 0),

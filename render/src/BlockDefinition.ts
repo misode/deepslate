@@ -1,5 +1,5 @@
 import { glMatrix, mat4 } from "gl-matrix"
-import { TextureUVProvider } from "./BlockAtlas"
+import { TextureAtlasProvider } from "./TextureAtlas"
 import { BlockModelProvider, Cull } from "./BlockModel"
 import { mergeFloat32Arrays, rotateCull, transformVectors } from "./Util"
 
@@ -51,7 +51,7 @@ export class BlockDefinition {
     return []
   }
 
-  public getBuffers(name: string, props: { [key: string]: string }, textureUVProvider: TextureUVProvider, blockModelProvider: BlockModelProvider, offset: number, cull: Cull) {
+  public getBuffers(name: string, props: { [key: string]: string }, textureUVProvider: TextureAtlasProvider, blockModelProvider: BlockModelProvider, offset: number, cull: Cull) {
     const variants = this.getModelVariants(props)
 
     const position: Float32Array[] = []

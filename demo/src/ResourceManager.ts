@@ -1,16 +1,21 @@
 import jszip from 'jszip'
-import { BlockAtlas, BlockDefinition, BlockDefinitionProvider, BlockModel, BlockModelProvider, BlockProperties, BlockPropertiesProvider } from '@webmc/render'
+import { TextureAtlas, BlockDefinition, BlockDefinitionProvider, BlockModel, BlockModelProvider, BlockFlagsProvider, TextureAtlasProvider, BlockPropertiesProvider } from '@webmc/render'
 import { isOpaque } from './OpaqueHelper'
 
-export class ResourceManager implements BlockModelProvider, BlockDefinitionProvider, BlockPropertiesProvider {
+export class ResourceManager implements BlockModelProvider, BlockDefinitionProvider, BlockFlagsProvider, TextureAtlasProvider, BlockPropertiesProvider {
   private blockDefinitions: { [id: string]: BlockDefinition }
   private blockModels: { [id: string]: BlockModel }
-  private blockAtlas: BlockAtlas
+  private blockAtlas: TextureAtlas
+  private blocks: Record<string, {
+    default: Record<string, string>,
+    properties: Record<string, string[]>
+  }>
 
   constructor() {
     this.blockDefinitions = {}
     this.blockModels = {}
-    this.blockAtlas = BlockAtlas.empty()
+    this.blockAtlas = TextureAtlas.empty()
+    this.blocks = {}
   }
 
   public getBlockDefinition(id: string) {
@@ -22,17 +27,25 @@ export class ResourceManager implements BlockModelProvider, BlockDefinitionProvi
   }
 
   public getTextureUV(id: string) {
-    return this.blockAtlas.getUV(id)
+    return this.blockAtlas.getTextureUV(id)
   }
 
-  public getBlockAtlas() {
-    return this.blockAtlas
+  public getTextureAtlas() {
+    return this.blockAtlas.getTextureAtlas()
   }
 
-  public getBlockProperties(id: string | undefined): BlockProperties | null {
+  public getBlockFlags(id: string) {
     return {
       opaque: isOpaque(id)
     }
+  }
+
+  public getBlockProperties(id: string) {
+    return this.blocks[id]?.properties ?? null
+  }
+
+  public getDefaultBlockProperties(id: string) {
+    return this.blocks[id]?.default ?? null
   }
 
   public async loadFromZip(url: string) {
@@ -50,7 +63,7 @@ export class ResourceManager implements BlockModelProvider, BlockDefinitionProvi
     await this.loadFromFolderPng(assets.folder('minecraft/textures/block')!, async (id, data) => {
       textures['minecraft:block/' + id] = data
     })
-    this.blockAtlas = await BlockAtlas.fromBlobs(textures)
+    this.blockAtlas = await TextureAtlas.fromBlobs(textures)
     Object.values(this.blockModels).forEach(m => m.flatten(this))
   }
 
@@ -72,5 +85,9 @@ export class ResourceManager implements BlockModelProvider, BlockDefinitionProvi
       promises.push(file.async('blob').then(data => callback(id, data)))
     })
     return Promise.all(promises)
+  }
+
+  public async loadBlocks(url: string) {
+    this.blocks = await (await fetch(url)).json()
   }
 }

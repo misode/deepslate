@@ -1,5 +1,5 @@
 import { glMatrix, mat4, ReadonlyVec3, vec3 } from "gl-matrix";
-import { TextureUVProvider, UV } from "./BlockAtlas";
+import { UV, TextureAtlasProvider } from "./TextureAtlas";
 import { BlockColors } from "./BlockColors";
 import { mergeFloat32Arrays, transformVectors } from "./Util";
 
@@ -66,7 +66,7 @@ export class BlockModel {
     this.flattened = false
   }
 
-  public getBuffers(name: string, props: {[key: string]: string}, uvProvider: TextureUVProvider, offset: number, cull: Cull) {
+  public getBuffers(name: string, props: {[key: string]: string}, uvProvider: TextureAtlasProvider, offset: number, cull: Cull) {
     const position: Float32Array[] = []
     const texCoord: number[] = []
     const tintColor: number[] = []
@@ -89,7 +89,7 @@ export class BlockModel {
     }
   }
 
-  private getElementBuffers(name: string, props: {[key: string]: string}, e: BlockModelElement, i: number, uvProvider: TextureUVProvider, cull: {[key in Direction]?: boolean}) {
+  private getElementBuffers(name: string, props: {[key: string]: string}, e: BlockModelElement, i: number, uvProvider: TextureAtlasProvider, cull: {[key in Direction]?: boolean}) {
     const x0 = e.from[0]
     const y0 = e.from[1]
     const z0 = e.from[2]
@@ -103,7 +103,7 @@ export class BlockModel {
     const indices: number[] = []
 
     const addFace = (face: BlockModelFace, uv: UV, pos: number[]) => {
-      let [u0, v0, u1, v1] = uvProvider.getUV(this.getTexture(face.texture))
+      let [u0, v0, u1, v1] = uvProvider.getTextureUV(this.getTexture(face.texture))
       const du = (u1 - u0) / 16
       const dv = (v1 - v0) / 16
       uv[0] = (face.uv?.[0] ?? uv[0]) * du

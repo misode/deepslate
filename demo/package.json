@@ -16,7 +16,7 @@
   "dependencies": {
     "@webmc/core": "^0.2.1",
     "@webmc/nbt": "^0.1.1",
-    "@webmc/render": "^0.5.0",
+    "@webmc/render": "^0.6.0",
     "jszip": "^3.5.0"
   }
 }

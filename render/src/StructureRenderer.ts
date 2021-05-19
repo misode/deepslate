@@ -1,10 +1,9 @@
 import { mat4, vec3 } from "gl-matrix";
-import { BlockAtlas } from "./BlockAtlas";
-import { BlockModelProvider, Cull } from "./BlockModel";
+import { TextureAtlasProvider } from "./TextureAtlas";
+import { BlockModelProvider } from "./BlockModel";
 import { BlockDefinitionProvider } from "./BlockDefinition";
-import { BlockPropertiesProvider } from "./BlockProperties";
 import { mergeFloat32Arrays, transformVectors } from "./Util";
-import { StructureProvider } from "@webmc/core";
+import { BlockPos, StructureProvider } from "@webmc/core";
 import { ShaderProgram } from "./ShaderProgram";
 import { SpecialRenderer, SpecialRenderers } from "./SpecialRenderer";
 
@@ -103,12 +102,20 @@ type GridBuffers = {
   length: number
 }
 
-type Resources = {
-  blockDefinitions: BlockDefinitionProvider
-  blockModels: BlockModelProvider
-  blockAtlas: BlockAtlas
-  blockProperties: BlockPropertiesProvider
+type BlockFlags = {
+  opaque?: boolean
 }
+
+export interface BlockFlagsProvider {
+  getBlockFlags(id: string): BlockFlags | null
+}
+
+export interface BlockPropertiesProvider {
+	getBlockProperties(id: string): Record<string, string[]> | null
+	getDefaultBlockProperties(id: string): Record<string, string> | null
+}
+
+export interface Resources extends BlockDefinitionProvider, BlockModelProvider, TextureAtlasProvider, BlockFlagsProvider, BlockPropertiesProvider {}
 
 type Chunk = {
   positions: Float32Array[],
@@ -188,7 +195,7 @@ export class StructureRenderer {
   private getBlockTexture() {
     const texture = this.gl.createTexture()!;
     this.gl.bindTexture(this.gl.TEXTURE_2D, texture);
-    this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, this.gl.RGBA, this.gl.UNSIGNED_BYTE, this.resources.blockAtlas.getImageData());
+    this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, this.gl.RGBA, this.gl.UNSIGNED_BYTE, this.resources.getTextureAtlas());
     this.gl.generateMipmap(this.gl.TEXTURE_2D);
     this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.NEAREST);
     return texture
@@ -283,8 +290,12 @@ export class StructureRenderer {
     for (const b of this.structure.getBlocks()) {
       const blockName = b.state.getName()
       const blockProps = b.state.getProperties()
+      const defaultProps = this.resources.getDefaultBlockProperties(blockName) ?? {}
+      Object.entries(defaultProps).forEach(([k, v]) => {
+        if (!blockProps[k]) blockProps[k] = v
+      })
 
-      const chunkPos:vec3 = [Math.floor(b.pos[0]/this.chunkSize), Math.floor(b.pos[1]/this.chunkSize), Math.floor(b.pos[2]/this.chunkSize)]
+      const chunkPos: vec3 = [Math.floor(b.pos[0]/this.chunkSize), Math.floor(b.pos[1]/this.chunkSize), Math.floor(b.pos[2]/this.chunkSize)]
 
       if (chunkPositions && !chunkPositions.some(pos => vec3.equals(pos, chunkPos)))
         continue
@@ -292,24 +303,23 @@ export class StructureRenderer {
       const chunk = this.getChunk(chunkPos)
 
       try {
-        const cull: Cull = {
-          up: this.resources.blockProperties.getBlockProperties(this.structure.getBlock([b.pos[0], b.pos[1]+1, b.pos[2]])?.state.getName())?.opaque,
-          down: this.resources.blockProperties.getBlockProperties(this.structure.getBlock([b.pos[0], b.pos[1]-1, b.pos[2]])?.state.getName())?.opaque,
-          west: this.resources.blockProperties.getBlockProperties(this.structure.getBlock([b.pos[0]-1, b.pos[1], b.pos[2]])?.state.getName())?.opaque,
-          east: this.resources.blockProperties.getBlockProperties(this.structure.getBlock([b.pos[0]+1, b.pos[1], b.pos[2]])?.state.getName())?.opaque,
-          north: this.resources.blockProperties.getBlockProperties(this.structure.getBlock([b.pos[0], b.pos[1], b.pos[2]-1])?.state.getName())?.opaque,
-          south: this.resources.blockProperties.getBlockProperties(this.structure.getBlock([b.pos[0], b.pos[1], b.pos[2]+1])?.state.getName())?.opaque
-        }
-
-        const blockDefinition = this.resources.blockDefinitions.getBlockDefinition(blockName)
+        const blockDefinition = this.resources.getBlockDefinition(blockName)
         if (blockDefinition) {
-          buffers = blockDefinition.getBuffers(blockName, blockProps, this.resources.blockAtlas, this.resources.blockModels, chunk.indexOffset, cull)
+          const cull = {
+            up: this.isOpaque([b.pos[0], b.pos[1]+1, b.pos[2]]),
+            down: this.isOpaque([b.pos[0], b.pos[1]-1, b.pos[2]]),
+            west: this.isOpaque([b.pos[0]-1, b.pos[1], b.pos[2]]),
+            east: this.isOpaque([b.pos[0]+1, b.pos[1], b.pos[2]]),
+            north: this.isOpaque([b.pos[0], b.pos[1], b.pos[2]-1]),
+            south: this.isOpaque([b.pos[0], b.pos[1], b.pos[2]+1])
+          }
+          buffers = blockDefinition.getBuffers(blockName, blockProps, this.resources, this.resources, chunk.indexOffset, cull)
         }
         if (SpecialRenderers.has(blockName)) {
           if (blockDefinition) {
             pushBuffers(buffers, b.pos, chunk)
           }
-          buffers = SpecialRenderer[blockName](chunk.indexOffset, blockProps, this.resources.blockAtlas)
+          buffers = SpecialRenderer[blockName](chunk.indexOffset, blockProps, this.resources)
           pushBuffers(buffers, b.pos, chunk)
         } else if(blockDefinition) {
           pushBuffers(buffers, b.pos, chunk)
@@ -329,6 +339,12 @@ export class StructureRenderer {
         refreshBuffer(chunk)
       })
     }
+  }
+
+  private isOpaque(pos: BlockPos) {
+    const block = this.structure.getBlock(pos)?.state.getName()
+    if (!block) return false
+    return this.resources.getBlockFlags(block)?.opaque ?? false
   }
 
   private getGridBuffers(): GridBuffers {

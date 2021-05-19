@@ -24,14 +24,12 @@ async function main() {
   const structure = Structure.fromNbt(exampleNbt.result)
 
   const resources = new ResourceManager()
-  await resources.loadFromZip('./assets.zip')
+  await Promise.all([
+    resources.loadFromZip('./assets.zip'),
+    resources.loadBlocks('https://raw.githubusercontent.com/Arcensoth/mcdata/master/processed/reports/blocks/simplified/data.min.json')
+  ])
 
-  const renderer = new StructureRenderer(gl, structure, {
-    blockModels: resources,
-    blockDefinitions: resources,
-    blockAtlas: resources.getBlockAtlas(),
-    blockProperties: resources
-  })
+  const renderer = new StructureRenderer(gl, structure, resources)
 
   function resize() {
     const displayWidth = canvas.clientWidth;

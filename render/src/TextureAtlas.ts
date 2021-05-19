@@ -1,11 +1,12 @@
 export type UV = [number, number, number, number]
 
-export interface TextureUVProvider {
-  getUV(texture: string): UV
+export interface TextureAtlasProvider {
+  getTextureAtlas(): ImageData
+  getTextureUV(texture: string): UV
 }
 
-export class BlockAtlas implements TextureUVProvider {
-  public readonly part: number
+export class TextureAtlas implements TextureAtlasProvider {
+  private readonly part: number
 
   constructor(
     private img: ImageData,
@@ -14,15 +15,15 @@ export class BlockAtlas implements TextureUVProvider {
     this.part = 16 / img.width
   }
 
-  public getImageData() {
+  public getTextureAtlas() {
     return this.img
   }
 
-  public getUV(id: string) {
+  public getTextureUV(id: string) {
     return this.idMap[id] ?? [0, 0, this.part, this.part]
   }
 
-  public static async fromBlobs(textures: { [id: string]: Blob }): Promise<BlockAtlas> {   
+  public static async fromBlobs(textures: { [id: string]: Blob }): Promise<TextureAtlas> {   
     const initialWidth = Math.sqrt(Object.keys(textures).length + 1)
     const width = Math.pow(2, Math.ceil(Math.log(initialWidth)/Math.log(2)))
     const pixelWidth = width * 16
@@ -45,7 +46,7 @@ export class BlockAtlas implements TextureUVProvider {
       ctx.drawImage(img, 0, 0, 16, 16, 16 * u, 16 * v, 16, 16)
     }))
 
-    return new BlockAtlas(ctx.getImageData(0, 0, pixelWidth, pixelWidth), idMap)
+    return new TextureAtlas(ctx.getImageData(0, 0, pixelWidth, pixelWidth), idMap)
   }
 
   public static empty() {
@@ -53,8 +54,8 @@ export class BlockAtlas implements TextureUVProvider {
     canvas.width = 16
     canvas.height = 16
     const ctx = canvas.getContext('2d')!
-    BlockAtlas.drawInvalidTexture(ctx)
-    return new BlockAtlas(ctx.getImageData(0, 0, 16, 16), {})
+    TextureAtlas.drawInvalidTexture(ctx)
+    return new TextureAtlas(ctx.getImageData(0, 0, 16, 16), {})
   }
 
   private static drawInvalidTexture(ctx: CanvasRenderingContext2D) {
