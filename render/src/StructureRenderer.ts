@@ -11,17 +11,20 @@ const vsSource = `
   attribute vec4 vertPos;
   attribute vec2 texCoord;
   attribute vec3 tintColor;
+  attribute vec3 normal;
 
   uniform mat4 mView;
   uniform mat4 mProj;
 
   varying highp vec2 vTexCoord;
   varying highp vec3 vTintColor;
+  varying highp float vLighting;
 
   void main(void) {
     gl_Position = mProj * mView * vertPos;
     vTexCoord = texCoord;
     vTintColor = tintColor;
+    vLighting = normal.y * 0.2 + abs(normal.z) * 0.1 + 0.8;
   }
 `;
 
@@ -29,13 +32,14 @@ const fsSource = `
   precision highp float;
   varying highp vec2 vTexCoord;
   varying highp vec3 vTintColor;
+  varying highp float vLighting;
 
   uniform sampler2D sampler;
 
   void main(void) {
     vec4 texColor = texture2D(sampler, vTexCoord);
     if(texColor.a < 0.01) discard;
-    gl_FragColor = vec4(texColor.xyz * vTintColor, texColor.a);
+    gl_FragColor = vec4(texColor.xyz * vTintColor * vLighting, texColor.a);
   }
 `;
 
@@ -91,6 +95,7 @@ type StructureBuffers = {
   position: WebGLBuffer
   texCoord: WebGLBuffer
   tintColor: WebGLBuffer
+  normal: WebGLBuffer
   blockPos: WebGLBuffer
   index: WebGLBuffer
   length: number
@@ -121,6 +126,7 @@ type Chunk = {
   positions: Float32Array[],
   textureCoordinates: number[],
   tintColors: number[],
+  normals: number[],
   blockPositions: number[],
   indices: number[],
   indexOffset: number,
@@ -224,6 +230,7 @@ export class StructureRenderer {
         textureCoordinates: [],
         tintColors: [],
         blockPositions: [],
+        normals: [],
         indices: [],
         indexOffset: 0,
       }
@@ -241,7 +248,19 @@ export class StructureRenderer {
       chunk.positions.push(buffers.position)
       chunk.textureCoordinates.push(...buffers.texCoord)
       chunk.tintColors.push(...buffers.tintColor)
-      for (let i = 0; i < buffers.texCoord.length / 2; i += 1) chunk.blockPositions.push(...pos)
+      for (let i = 0; i < buffers.position.length; i += 12) {
+        const a = vec3.fromValues(buffers.position[i], buffers.position[i + 1], buffers.position[i + 2])
+        const b = vec3.fromValues(buffers.position[i + 3], buffers.position[i + 4], buffers.position[i + 5])
+        const c = vec3.fromValues(buffers.position[i + 6], buffers.position[i + 7], buffers.position[i + 8])
+        vec3.subtract(b, b, a)
+        vec3.subtract(c, c, a)
+        vec3.cross(b, b, c)
+        vec3.normalize(b, b)
+        chunk.normals.push(...b, ...b, ...b, ...b)
+      }
+      for (let i = 0; i < buffers.texCoord.length / 2; i += 1) {
+        chunk.blockPositions.push(...pos)
+      }
       chunk.indices.push(...buffers.index)
       chunk.indexOffset += buffers.texCoord.length / 2
     }
@@ -251,15 +270,17 @@ export class StructureRenderer {
       chunk.textureCoordinates = []
       chunk.tintColors = []
       chunk.blockPositions = []
+      chunk.normals = []
       chunk.indices = []
       chunk.indexOffset = 0
     }
 
     const refreshBuffer = (chunk: Chunk) => {
-      if (chunk.buffer){
+      if (chunk.buffer) {
         this.updateBuffer(chunk.buffer.position, this.gl.ARRAY_BUFFER, mergeFloat32Arrays(...chunk.positions))
         this.updateBuffer(chunk.buffer.texCoord, this.gl.ARRAY_BUFFER, new Float32Array(chunk.textureCoordinates)),
         this.updateBuffer(chunk.buffer.tintColor, this.gl.ARRAY_BUFFER, new Float32Array(chunk.tintColors)),
+        this.updateBuffer(chunk.buffer.normal, this.gl.ARRAY_BUFFER, new Float32Array(chunk.normals)),
         this.updateBuffer(chunk.buffer.blockPos, this.gl.ARRAY_BUFFER, new Float32Array(chunk.blockPositions)),
         this.updateBuffer(chunk.buffer.index, this.gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(chunk.indices)),
         chunk.buffer.length = chunk.indices.length
@@ -269,6 +290,7 @@ export class StructureRenderer {
           texCoord: this.createBuffer(this.gl.ARRAY_BUFFER, new Float32Array(chunk.textureCoordinates)),
           tintColor: this.createBuffer(this.gl.ARRAY_BUFFER, new Float32Array(chunk.tintColors)),
           blockPos: this.createBuffer(this.gl.ARRAY_BUFFER, new Float32Array(chunk.blockPositions)),
+          normal: this.createBuffer(this.gl.ARRAY_BUFFER, new Float32Array(chunk.normals)),
           index: this.createBuffer(this.gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(chunk.indices)),
           length: chunk.indices.length
         }
@@ -495,6 +517,7 @@ export class StructureRenderer {
           this.setVertexAttr('vertPos', 3, chunk.buffer.position)
           this.setVertexAttr('texCoord', 2, chunk.buffer.texCoord)
           this.setVertexAttr('tintColor', 3, chunk.buffer.tintColor)
+          this.setVertexAttr('normal', 3, chunk.buffer.normal)
           this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, chunk.buffer.index)
 
           this.gl.drawElements(this.gl.TRIANGLES, chunk.buffer.length, this.gl.UNSIGNED_SHORT, 0)
