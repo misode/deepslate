@@ -173,7 +173,7 @@ export function writeRegion(chunks: NbtChunk[]) {
     const i = 4 * ((chunk.x & 31) + (chunk.z & 31) * 32)
     const sectors = Math.ceil(chunk.data.length / 4096)
     dataView.setInt8(i, offset >> 16)
-    dataView.setInt16(i + 1, offset & 15)
+    dataView.setInt16(i + 1, offset & 0xffff)
     dataView.setInt8(i + 3, sectors)
     dataView.setInt32(i + 4096, chunk.timestamp)
 
