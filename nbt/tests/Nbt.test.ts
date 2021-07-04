@@ -10,7 +10,7 @@ const nbt: NamedNbtTag = {name: '', value: { foo: { type: 'byte', value: 4 } } }
 
 const rawEmptyRegion = new Uint8Array(Array(4096 * 2).fill(0))
 const rawRegion = new Uint8Array(Array(4096 * 6).fill(0))
-rawRegion.set([0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 2, 1, 0, 0, 3, 1])
+rawRegion.set([0, 0, 2, 1, 0, 0, 3, 1, 0, 0, 4, 1, 0, 0, 5, 1])
 rawRegion.set([0, 0, 0, 4, 0, 0, 1, 144], 4096)
 rawRegion.set([0, 0, 0, rawCompressed.length + 1, 1, ...rawCompressed], 4096 * 2)
 rawRegion.set([0, 0, 0, rawZCompressed.length + 1, 2, ...rawZCompressed], 4096 * 3)
