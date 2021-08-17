@@ -1,4 +1,4 @@
-import { NbtTag } from "@webmc/nbt";
+import { NbtTag } from "../nbt";
 import { BlockState } from "./BlockState";
 
 export type BlockPos = [number, number, number]

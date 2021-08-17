@@ -1,8 +1,27 @@
 {
-  "files": [],
-  "references": [
-    { "path": "core" },
-    { "path": "nbt" },
-    { "path": "render" }
+  "compilerOptions": {
+    "target": "es2015",
+    "module": "commonjs",
+    "lib": [
+      "dom",
+      "es2017",
+      "es2020.bigint"
+    ],
+    "rootDir": "src",
+    "outDir": "lib",
+
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "noImplicitAny": true,
+
+    "composite": true,
+    "declaration": true,
+    "declarationMap": true,
+    "incremental": true
+  },
+  "include": [
+    "./src/**/*.ts"
   ]
 }

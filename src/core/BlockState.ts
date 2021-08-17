@@ -1,4 +1,4 @@
-import { getOptional, getTag, NamedNbtTag } from "@webmc/nbt"
+import { getOptional, getTag, NamedNbtTag } from "../nbt"
 
 export class BlockState {
   constructor(

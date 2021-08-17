@@ -1,6 +1,6 @@
-import { Structure } from "@webmc/core"
-import { read as readNbt } from '@webmc/nbt'
-import { StructureRenderer } from '@webmc/render';
+import { Structure } from "../../lib/core"
+import { read as readNbt } from '../../lib/nbt'
+import { StructureRenderer } from '../../lib/render';
 import { ResourceManager } from './ResourceManager'
 import { mat4 } from 'gl-matrix'
 

@@ -1,6 +1,6 @@
 import 'mocha';
 import { expect } from 'chai';
-import { NbtReader } from '../src/Reader';
+import { NbtReader } from '../../lib/nbt';
 
 function Reader(data: number[]) {
   return new NbtReader(new Uint8Array(data))

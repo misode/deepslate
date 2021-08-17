@@ -3,7 +3,7 @@ import { TextureAtlasProvider } from "./TextureAtlas";
 import { BlockModelProvider } from "./BlockModel";
 import { BlockDefinitionProvider } from "./BlockDefinition";
 import { mergeFloat32Arrays, transformVectors } from "./Util";
-import { BlockPos, StructureProvider } from "@webmc/core";
+import { BlockPos, StructureProvider } from "../core";
 import { ShaderProgram } from "./ShaderProgram";
 import { SpecialRenderer, SpecialRenderers } from "./SpecialRenderer";
 

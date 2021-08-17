@@ -1,7 +1,7 @@
 import "mocha";
 import { expect } from 'chai';
-import { BlockState } from '../src/BlockState';
-import { NamedNbtTag } from "@webmc/nbt";
+import { BlockState } from '../../src/core/BlockState';
+import { NamedNbtTag } from "../../lib/nbt";
 
 describe('BlockState', () => {
   it('getName', () => {

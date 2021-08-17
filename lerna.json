@@ -1,9 +1,0 @@
-{
-  "version": "0.0.0",
-  "packages": [
-    "core",
-    "nbt",
-    "render",
-    "demo"
-  ]
-}

@@ -1,5 +1,5 @@
 {
-  "name": "@webmc/demo",
+  "name": "deepslate-demo",
   "private": true,
   "scripts": {
     "build": "webpack-cli -p",
@@ -14,9 +14,7 @@
     "webpack-dev-server": "^3.11.0"
   },
   "dependencies": {
-    "@webmc/core": "^0.2.1",
-    "@webmc/nbt": "^0.1.1",
-    "@webmc/render": "^0.6.0",
+    "deepslate": "^0.7.0",
     "jszip": "^3.5.0"
   }
 }

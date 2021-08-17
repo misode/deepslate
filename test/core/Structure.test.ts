@@ -1,8 +1,7 @@
 import "mocha";
 import { expect } from 'chai';
-import { NamedNbtTag } from "@webmc/nbt";
-import { Structure } from '../src/Structure';
-import { BlockState } from "../src/BlockState";
+import { NamedNbtTag } from "../../lib/nbt";
+import { Structure, BlockState } from '../../lib/core';
 
 describe('Structure', () => {
   it('getSize', () => {

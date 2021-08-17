@@ -1,5 +1,5 @@
 import jszip from 'jszip'
-import { TextureAtlas, BlockDefinition, BlockDefinitionProvider, BlockModel, BlockModelProvider, BlockFlagsProvider, TextureAtlasProvider, BlockPropertiesProvider } from '@webmc/render'
+import { TextureAtlas, BlockDefinition, BlockDefinitionProvider, BlockModel, BlockModelProvider, BlockFlagsProvider, TextureAtlasProvider, BlockPropertiesProvider } from '../../lib/render'
 import { isOpaque } from './OpaqueHelper'
 
 export class ResourceManager implements BlockModelProvider, BlockDefinitionProvider, BlockFlagsProvider, TextureAtlasProvider, BlockPropertiesProvider {
