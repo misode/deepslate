@@ -12,16 +12,10 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v1
 
-    - name: Test Core
+    - name: Build
       run: |
-        cd core
         npm install
-        npm run test
-        cd ..
+        npm run build
 
-    - name: Test Nbt
-      run: |
-        cd nbt
-        npm install
-        npm run test
-        cd ..
+    - name: Test
+      run: npm run test
