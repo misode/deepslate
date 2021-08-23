@@ -1,7 +1,7 @@
 {
   "name": "deepslate",
   "description": "Library for rendering Minecraft structures",
-  "version": "0.7.9",
+  "version": "0.7.10",
   "author": "Misode",
   "license": "MIT",
   "repository": {
