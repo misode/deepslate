@@ -1,51 +1,34 @@
 {
   "name": "deepslate",
-  "description": "Minecraft library for rendering structures",
-  "version": "0.7.5",
-  "main": "./lib/index.js",
-  "unpkg": "./dist/index.min.js",
-  "types": "./lib/index.d.ts",
-  "exports": {
-    ".": {
-      "browser": "./dist/index.min.js",
-      "import": "./dist/index.esm.js",
-      "default": "./lib/index.js"
-    },
-    "./core": "./lib/core/index.js",
-    "./nbt": "./lib/nbt/index.js",
-    "./render": "./lib/render/index.js"
-  },
-  "typesVersions": {
-    "*": {
-      "core": [
-        "./lib/core/index.d.ts"
-      ],
-      "nbt": [
-        "./lib/nbt/index.d.ts"
-      ],
-      "render": [
-        "./lib/render/index.d.ts"
-      ]
-    }
-  },
-  "scripts": {
-    "build": "tsc && rollup --config rollup.config.js",
-    "watch": "tsc --watch",
-    "test": "env TS_NODE_PROJECT=\"tsconfig.testing.json\" mocha --require ts-node/register 'test/**/*.test.ts'",
-    "lint": "eslint . --ext .ts",
-    "prepublishOnly": "npm run build"
-  },
+  "description": "Library for rendering Minecraft structures",
+  "version": "0.7.9",
   "author": "Misode",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/misode/deepslate.git"
   },
+  "main": "./dist/deepslate.cjs.js",
+  "module": "./dist/deepslate.esm.js",
+  "unpkg": "./dist/deepslate.umd.js",
+  "types": "./dist/deepslate.d.ts",
+  "files": [
+    "dist/*",
+    "!dist/**/*.tsbuildinfo"
+  ],
+  "scripts": {
+    "build": "rollup --config",
+    "dev": "rollup --config --watch",
+    "test": "env TS_NODE_PROJECT=\"tsconfig.testing.json\" mocha --require ts-node/register 'test/**/*.test.ts'",
+    "lint": "eslint . --ext .ts",
+    "prepublishOnly": "npm run build"
+  },
   "dependencies": {
     "gl-matrix": "^3.3.0",
     "pako": "^2.0.3"
   },
   "devDependencies": {
+    "@rollup/plugin-commonjs": "^20.0.0",
     "@rollup/plugin-node-resolve": "^13.0.4",
     "@rollup/plugin-typescript": "^8.2.5",
     "@types/chai": "^4.2.14",
@@ -59,17 +42,10 @@
     "mocha": "^8.2.1",
     "nyc": "^15.1.0",
     "rollup": "^2.56.2",
+    "rollup-plugin-dts": "^3.0.2",
     "rollup-plugin-terser": "^7.0.2",
     "ts-node": "^9.1.1",
     "typescript": "^4.2.3",
     "vite": "^2.3.4"
-  },
-  "publishConfig": {
-    "access": "public"
-  },
-  "files": [
-    "dist/*",
-    "lib/**/*",
-    "!lib/**/*.tsbuildinfo"
-  ]
+  }
 }
