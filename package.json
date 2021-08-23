@@ -21,6 +21,7 @@
     "dev": "rollup --config --watch",
     "test": "env TS_NODE_PROJECT=\"tsconfig.testing.json\" mocha --require ts-node/register 'test/**/*.test.ts'",
     "lint": "eslint . --ext .ts",
+    "version": "bash scripts/version.sh",
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
