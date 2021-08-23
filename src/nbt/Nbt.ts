@@ -1,25 +1,9 @@
 import pako from 'pako'
 import { NbtReader } from './Reader'
-import type { NbtTag } from './Tags'
+import type { NamedNbtTag, NbtChunk } from './Tags'
 import { tagTypes } from './Tags'
 import { hasGzipHeader } from './Utils'
 import { NbtWriter } from './Writer'
-
-export type NamedNbtTag = {
-	name: string,
-	value: {
-		[name: string]: NbtTag,
-	},
-}
-
-export type NbtChunk = {
-	x: number,
-	z: number,
-	timestamp: number,
-	compression: number,
-	data: Uint8Array,
-	nbt?: NamedNbtTag,
-}
 
 export function readUncompressed(array: Uint8Array, littleEndian?: boolean): NamedNbtTag {
 	const reader = new NbtReader(array, littleEndian)

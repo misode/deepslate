@@ -28,6 +28,22 @@ export type NbtTag = {
 	}
 }[keyof NbtValues]
 
+export type NamedNbtTag = {
+	name: string,
+	value: {
+		[name: string]: NbtTag,
+	},
+}
+
+export type NbtChunk = {
+	x: number,
+	z: number,
+	timestamp: number,
+	compression: number,
+	data: Uint8Array,
+	nbt?: NamedNbtTag,
+}
+
 export const tagTypes = {
 	end: 0,
 	byte: 1,

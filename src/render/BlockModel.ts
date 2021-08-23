@@ -107,10 +107,13 @@ export class BlockModel {
 			const [u0, v0, u1, v1] = uvProvider.getTextureUV(this.getTexture(face.texture))
 			const du = (u1 - u0) / 16
 			const dv = (v1 - v0) / 16
-			uv[0] = (face.uv?.[0] ?? uv[0]) * du
-			uv[1] = (face.uv?.[1] ?? uv[1]) * dv
-			uv[2] = (face.uv?.[2] ?? uv[2]) * du
-			uv[3] = (face.uv?.[3] ?? uv[3]) * dv
+			// Hack to remove stiching lines
+			const duu = du / 16
+			const dvv = dv / 16
+			uv[0] = (face.uv?.[0] ?? uv[0]) * du + duu
+			uv[1] = (face.uv?.[1] ?? uv[1]) * dv + dvv
+			uv[2] = (face.uv?.[2] ?? uv[2]) * du - duu
+			uv[3] = (face.uv?.[3] ?? uv[3]) * dv - dvv
 			const r = faceRotations[face.rotation ?? 0]
 			texCoords.push(
 				u0 + uv[r[0]], v0 + uv[r[1]],
@@ -125,7 +128,7 @@ export class BlockModel {
 		}
 
 		if (e.faces?.up?.texture && (!e.faces.up.cullface || !cull[e.faces.up.cullface])) {
-			addFace(e.faces.up, [16 - x1, z1, 16 - x0, z0],
+			addFace(e.faces.up, [x0, 16 - z1, x1, 16 - z0],
 				[x0, y1, z1,  x1, y1, z1,  x1, y1, z0,  x0, y1, z0])
 		}
 		if (e.faces?.down?.texture && (!e.faces.down.cullface || !cull[e.faces.down.cullface])) {
