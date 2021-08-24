@@ -6,7 +6,7 @@ Library for rendering Minecraft structures
 npm install deepslate
 ```
 ```html
-<script src="https://unpkg.com/deepslate@0.7.11"></script>
+<script src="https://unpkg.com/deepslate@0.7.12"></script>
 ```
 
 ## Examples
