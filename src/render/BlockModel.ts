@@ -120,7 +120,7 @@ export class BlockModel {
 				u0 + uv[r[2]], v0 + uv[r[3]],
 				u0 + uv[r[4]], v0 + uv[r[5]],
 				u0 + uv[r[6]], v0 + uv[r[7]])
-			const tint = (face.tintindex ?? -1) >= 0 ? BlockColors[name.slice(10)]?.(props) : [1, 1, 1]
+			const tint = (face.tintindex ?? -1) >= 0 ? (BlockColors[name.slice(10)]?.(props) ?? [1, 1, 1]) : [1, 1, 1]
 			tintColors.push(...tint, ...tint, ...tint, ...tint)
 			positions.push(...pos)
 			indices.push(i, i+1, i+2,  i, i+2, i+3)
