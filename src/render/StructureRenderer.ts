@@ -1,5 +1,5 @@
 import { mat4, vec3 } from 'gl-matrix'
-import type { BlockPos, StructureProvider } from '../core'
+import type { BlockPos, BlockState, StructureProvider } from '../core'
 import type { BlockDefinitionProvider } from './BlockDefinition'
 import type { BlockModelProvider } from './BlockModel'
 import { ShaderProgram } from './ShaderProgram'
@@ -326,24 +326,20 @@ export class StructureRenderer {
 
 			try {
 				const blockDefinition = this.resources.getBlockDefinition(blockName)
+				const cull = {
+					up: this.needsCull(b.state, [b.pos[0], b.pos[1]+1, b.pos[2]]),
+					down: this.needsCull(b.state, [b.pos[0], b.pos[1]-1, b.pos[2]]),
+					west: this.needsCull(b.state, [b.pos[0]-1, b.pos[1], b.pos[2]]),
+					east: this.needsCull(b.state, [b.pos[0]+1, b.pos[1], b.pos[2]]),
+					north: this.needsCull(b.state, [b.pos[0], b.pos[1], b.pos[2]-1]),
+					south: this.needsCull(b.state, [b.pos[0], b.pos[1], b.pos[2]+1]),
+				}
 				if (blockDefinition) {
-					const cull = {
-						up: this.isOpaque([b.pos[0], b.pos[1]+1, b.pos[2]]),
-						down: this.isOpaque([b.pos[0], b.pos[1]-1, b.pos[2]]),
-						west: this.isOpaque([b.pos[0]-1, b.pos[1], b.pos[2]]),
-						east: this.isOpaque([b.pos[0]+1, b.pos[1], b.pos[2]]),
-						north: this.isOpaque([b.pos[0], b.pos[1], b.pos[2]-1]),
-						south: this.isOpaque([b.pos[0], b.pos[1], b.pos[2]+1]),
-					}
 					buffers = blockDefinition.getBuffers(blockName, blockProps, this.resources, this.resources, chunk.indexOffset, cull)
+					pushBuffers(buffers, b.pos, chunk)
 				}
 				if (SpecialRenderers.has(blockName)) {
-					if (blockDefinition) {
-						pushBuffers(buffers, b.pos, chunk)
-					}
-					buffers = SpecialRenderer[blockName](chunk.indexOffset, blockProps, this.resources)
-					pushBuffers(buffers, b.pos, chunk)
-				} else if(blockDefinition) {
+					buffers = SpecialRenderer[blockName](chunk.indexOffset, blockProps, this.resources, cull)
 					pushBuffers(buffers, b.pos, chunk)
 				}
 			} catch(e) {
@@ -363,10 +359,25 @@ export class StructureRenderer {
 		}
 	}
 
+	private needsCull(source: BlockState, pos: BlockPos) {
+		if (this.isOpaque(pos)) {
+			return true
+		}
+		if (source.getName() === 'minecraft:water' || source.getName() === 'minecraft:lava') {
+			return this.isFluid(pos)
+		}
+		return false
+	}
+
 	private isOpaque(pos: BlockPos) {
 		const block = this.structure.getBlock(pos)?.state.getName()
 		if (!block) return false
 		return this.resources.getBlockFlags(block)?.opaque ?? false
+	}
+
+	private isFluid(pos: BlockPos) {
+		const block = this.structure.getBlock(pos)?.state.getName()
+		return block === 'minecraft:water' || block === 'minecraft:lava'
 	}
 
 	private getGridBuffers(): GridBuffers {
