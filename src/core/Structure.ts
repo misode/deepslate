@@ -1,7 +1,10 @@
 import type { NamedNbtTag } from '../nbt'
 import { getListTag, getOptional, getTag } from '../nbt'
+import type { BlockPos } from './BlockPos'
 import { BlockState } from './BlockState'
-import type { BlockNbt, BlockPos, StructureProvider } from './StructureProvider'
+import type { BlockNbt, StructureProvider } from './StructureProvider'
+
+export type PlacedBlock = { pos: BlockPos, state: BlockState, nbt: BlockNbt | undefined }
 
 export class Structure implements StructureProvider {
 	private blocksMap: { pos: BlockPos, state: number, nbt?: BlockNbt }[] = []
@@ -12,6 +15,9 @@ export class Structure implements StructureProvider {
 		private readonly blocks: { pos: BlockPos, state: number, nbt?: BlockNbt }[] = []
 	) {
 		blocks.forEach(block => {
+			if (!this.isInside(block.pos)) {
+				throw new Error(`Found block at ${block.pos} which is outside the structure bounds ${this.size}`)
+			}
 			this.blocksMap[block.pos[0] * size[1] * size[2] + block.pos[1] * size[2] + block.pos[2]] = block
 		})
 	}
@@ -21,6 +27,9 @@ export class Structure implements StructureProvider {
 	}
 
 	public addBlock(pos: BlockPos, name: string, properties?: { [key: string]: string }, nbt?: BlockNbt) {
+		if (!this.isInside(pos)) {
+			throw new Error(`Cannot add block at ${pos} outside the structure bounds ${this.size}`)
+		}
 		const blockState = new BlockState(name, properties)
 		let state = this.palette.findIndex(b => b.equals(blockState))
 		if (state === -1) {
@@ -32,7 +41,7 @@ export class Structure implements StructureProvider {
 		return this
 	}
 
-	public getBlocks() {
+	public getBlocks(): PlacedBlock[] {
 		return this.blocks.map(b => ({
 			pos: b.pos,
 			state: this.palette[b.state],
@@ -40,19 +49,22 @@ export class Structure implements StructureProvider {
 		}))
 	}
 
-	public getBlock(pos: BlockPos) {
-		if (pos[0] < 0 || pos[1] < 0 || pos[2] < 0 || pos[0] >= this.size[0] || pos[1] >= this.size[1] || pos[2] >= this.size[2])
-			return null
-
-
+	public getBlock(pos: BlockPos): PlacedBlock | null {
+		if (!this.isInside(pos)) return null
 		const block = this.blocksMap[pos[0] * this.size[1] * this.size[2] + pos[1] * this.size[2] + pos[2]]
-		//    const block = this.blocks.find(b => b.pos[0] === pos[0] && b.pos[1] === pos[1] && b.pos[2] === pos[2])
 		if (!block) return null
-		return {
+		const placedBlock = {
 			pos: block.pos,
 			state: this.palette[block.state],
 			nbt: block.nbt,
 		}
+		return placedBlock
+	}
+
+	public isInside(pos: BlockPos) {
+		return pos[0] >= 0 && pos[0] < this.size[0]
+			&& pos[1] >= 0 && pos[1] < this.size[1]
+			&& pos[2] >= 0 && pos[2] < this.size[2]
 	}
 
 	public static fromNbt(nbt: NamedNbtTag) {

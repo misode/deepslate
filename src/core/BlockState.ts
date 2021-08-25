@@ -19,6 +19,10 @@ export class BlockState {
 		return this.properties[key]
 	}
 
+	public isFluid() {
+		return this.name === 'minecraft:water' || this.name === 'minecraft:lava'
+	}
+
 	public equals(other: BlockState) {
 		if (this.name !== other.name) {
 			return false

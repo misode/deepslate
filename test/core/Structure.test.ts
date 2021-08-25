@@ -19,6 +19,12 @@ describe('Structure', () => {
 		expect(structure).to.equal(addedBlock)
 	})
 
+	it('addBlock (outside)', () => {
+		const structure = new Structure([1, 1, 1])
+		expect(() => structure.addBlock([2, 0, 0], 'minecraft:stone')).to.throw()
+		expect(() => structure.addBlock([0, -1, 0], 'minecraft:stone')).to.throw()
+	})
+
 	it('getBlock', () => {
 		const structure = new Structure([1, 2, 1])
 			.addBlock([0, 0, 0], 'minecraft:stone')

@@ -1,6 +1,5 @@
 export * from './BlockColors'
 export * from './BlockDefinition'
 export * from './BlockModel'
-export * from './ShaderProgram'
 export * from './StructureRenderer'
 export * from './TextureAtlas'

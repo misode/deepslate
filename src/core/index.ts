@@ -1,3 +1,5 @@
+export * from './BlockPos'
 export * from './BlockState'
+export * from './Direction'
 export * from './Structure'
 export * from './StructureProvider'

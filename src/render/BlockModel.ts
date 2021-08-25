@@ -1,11 +1,10 @@
 import type { ReadonlyVec3 } from 'gl-matrix'
 import { glMatrix, mat4, vec3 } from 'gl-matrix'
+import type { Direction } from '../core'
 import { BlockColors } from './BlockColors'
+import type { Cull } from './Cull'
 import type { TextureAtlasProvider, UV } from './TextureAtlas'
 import { mergeFloat32Arrays, transformVectors } from './Util'
-
-export type Direction = 'up' | 'down' | 'north' | 'east' | 'south' | 'west'
-export type Cull = {[key in Direction]?: boolean}
 
 type Axis = 'x' | 'y' | 'z'
 

@@ -1,6 +1,7 @@
+import { Direction } from '../core'
 import { BlockDefinition } from './BlockDefinition'
-import type { Cull } from './BlockModel'
 import { BlockModel } from './BlockModel'
+import type { Cull } from './Cull'
 import type { TextureAtlasProvider } from './TextureAtlas'
 
 function dummy(name: string, uvProvider: TextureAtlasProvider, offset: number, cull: Cull, model: BlockModel) {
@@ -19,12 +20,29 @@ function liquidRenderer(type: string, index: number, level: number, uvProvider: 
 		from: [0, 0, 0],
 		to: [16, y, 16],
 		faces: {
-			up: { texture: '#still', tintindex, cullface: 'up' },
-			down: { texture: '#still', tintindex, cullface: 'down' },
-			north: { texture: '#flow', tintindex, cullface: 'north' },
-			east: { texture: '#flow', tintindex, cullface: 'east' },
-			south: { texture: '#flow', tintindex, cullface: 'south' },
-			west: { texture: '#flow', tintindex, cullface: 'west' },
+			up: { texture: '#still', tintindex, cullface: Direction.UP },
+			down: { texture: '#still', tintindex, cullface: Direction.DOWN },
+			north: { texture: '#flow', tintindex, cullface: Direction.NORTH },
+			east: { texture: '#flow', tintindex, cullface: Direction.EAST },
+			south: { texture: '#flow', tintindex, cullface: Direction.SOUTH },
+			west: { texture: '#flow', tintindex, cullface: Direction.WEST },
+		},
+	}]))
+}
+
+function chestRenderer(index: number, facing: string, type: string, uvProvider: TextureAtlasProvider) {
+	return dummy('minecraft:chest', uvProvider, index, {}, new BlockModel('', '', {
+		0: 'minecraft:block/chest',
+	}, [{
+		from: [1, 0, 1],
+		to: [15, 14, 15],
+		faces: {
+			up: { texture: '#0' },
+			down: { texture: '#0' },
+			north: { texture: '#0' },
+			east: { texture: '#0' },
+			south: { texture: '#0' },
+			west: { texture: '#0' },
 		},
 	}]))
 }
@@ -36,6 +54,8 @@ export const SpecialRenderer: {
 		liquidRenderer('water', index, parseInt(props.level), uvProvider, cull, 0),
 	'minecraft:lava': (index, props, uvProvider, cull) =>
 		liquidRenderer('lava', index, parseInt(props.level), uvProvider, cull),
+	'minecraft:chest': (index, props, uvProvider) =>
+		chestRenderer(index, props.facing || 'south', props.type || 'single', uvProvider),
 }
 
 export const SpecialRenderers = new Set(Object.keys(SpecialRenderer))

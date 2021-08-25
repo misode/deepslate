@@ -1,0 +1,20 @@
+import { expect } from 'chai'
+import 'mocha'
+import { BlockPos, Direction } from '../../src/core'
+
+describe('BlockPos', () => {
+	it('create', () => {
+		const pos = BlockPos.create(1, 2, 3)
+		expect(pos).to.deep.equal([1, 2, 3])
+	})
+	it('offset', () => {
+		const posA = BlockPos.create(1, 2, 3)
+		const posB = BlockPos.offset(posA, 2, 0, -5)
+		expect(posB).to.deep.equal([3, 2, -2])
+	})
+	it('towards', () => {
+		const posA = BlockPos.create(1, 2, 3)
+		const posB = BlockPos.towards(posA, Direction.NORTH)
+		expect(posB).to.deep.equal([1, 2, 2])
+	})
+})
