@@ -1,4 +1,4 @@
-import { clamp } from './Util'
+import { clamp } from '../math'
 
 const toRGB = (c: number) => {
 	const r = (c >> 16) & 255

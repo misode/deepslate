@@ -1,6 +1,6 @@
 import type { NbtValues } from './Tags'
 import { tagTypes } from './Tags'
-import { encodeUTF8 } from './Utils'
+import { encodeUTF8 } from './Util'
 
 export class NbtWriter {
 	public offset: number

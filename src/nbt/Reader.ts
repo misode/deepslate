@@ -1,6 +1,6 @@
 import type { NbtTag, NbtValues } from './Tags'
 import { tagNames } from './Tags'
-import { decodeUTF8 } from './Utils'
+import { decodeUTF8 } from './Util'
 
 export class NbtReader {
 	public offset: number

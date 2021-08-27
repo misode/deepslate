@@ -2,7 +2,7 @@ import pako from 'pako'
 import { NbtReader } from './Reader'
 import type { NamedNbtTag, NbtChunk } from './Tags'
 import { tagTypes } from './Tags'
-import { hasGzipHeader } from './Utils'
+import { hasGzipHeader } from './Util'
 import { NbtWriter } from './Writer'
 
 export function readUncompressed(array: Uint8Array, littleEndian?: boolean): NamedNbtTag {
