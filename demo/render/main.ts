@@ -1,8 +1,6 @@
-import { Structure } from 'deepslate/core'
-import { read as readNbt } from 'deepslate/nbt'
-import { StructureRenderer } from 'deepslate/render'
+import { read as readNbt, Structure, StructureRenderer } from 'deepslate'
 import { mat4 } from 'gl-matrix'
-import { ResourceManager } from './ResourceManager'
+import { ResourceManager } from './resources'
 
 let viewDist = 4
 let xRotation = 0.8
@@ -11,14 +9,14 @@ let yRotation = 0.5
 main()
 
 async function main() {
-	const canvas = document.querySelector('#demo') as HTMLCanvasElement
+	const canvas = document.querySelector('canvas') as HTMLCanvasElement
 	const gl = canvas.getContext('webgl')
 
 	if (!gl) {
 		throw new Error('Unable to initialize WebGL. Your browser or machine may not support it.')
 	}
 
-	const exampleRes = await fetch('./example.nbt')
+	const exampleRes = await fetch('../example.nbt')
 	const exampleData = await exampleRes.arrayBuffer()
 	const exampleNbt = readNbt(new Uint8Array(exampleData))
 
@@ -26,7 +24,7 @@ async function main() {
 
 	const resources = new ResourceManager()
 	await Promise.all([
-		resources.loadFromZip('./assets.zip'),
+		resources.loadFromZip('../assets.zip'),
 		resources.loadBlocks('https://raw.githubusercontent.com/Arcensoth/mcdata/master/processed/reports/blocks/simplified/data.min.json'),
 	])
 

@@ -12,7 +12,7 @@
     "vite": "^2.3.4"
   },
   "dependencies": {
-    "deepslate": "^0.7.7",
+    "deepslate": "^0.8.0",
     "gl-matrix": "^3.3.0",
     "jszip": "^3.7.1"
   }
