@@ -6,23 +6,23 @@ import type { NamedNbtTag } from '../../src/nbt'
 describe('Structure', () => {
 	it('getSize', () => {
 		const structureA = new Structure([1, 2, 3])
-		expect(structureA.getSize()).to.deep.equal([1, 2, 3])
+		expect(structureA.getSize()).deep.equal([1, 2, 3])
 
 		const structureB = new Structure([16, 30, 24])
-		expect(structureB.getSize()).to.deep.equal([16, 30, 24])
+		expect(structureB.getSize()).deep.equal([16, 30, 24])
 	})
 
 	it('addBlock', () => {
 		const structure = new Structure([1, 1, 1])
 		const addedBlock = structure.addBlock([0, 0, 0], 'minecraft:stone')
-		expect(addedBlock).to.be.an.instanceOf(Structure)
-		expect(structure).to.equal(addedBlock)
+		expect(addedBlock).an.instanceOf(Structure)
+		expect(structure).equal(addedBlock)
 	})
 
 	it('addBlock (outside)', () => {
 		const structure = new Structure([1, 1, 1])
-		expect(() => structure.addBlock([2, 0, 0], 'minecraft:stone')).to.throw()
-		expect(() => structure.addBlock([0, -1, 0], 'minecraft:stone')).to.throw()
+		expect(() => structure.addBlock([2, 0, 0], 'minecraft:stone')).throw()
+		expect(() => structure.addBlock([0, -1, 0], 'minecraft:stone')).throw()
 	})
 
 	it('getBlock', () => {
@@ -30,13 +30,13 @@ describe('Structure', () => {
 			.addBlock([0, 0, 0], 'minecraft:stone')
 
 		const blockA = structure.getBlock([0, 1, 0])
-		expect(blockA).to.be.null
+		expect(blockA).null
 
 		const blockB = structure.getBlock([0, 0, 0])
-		expect(blockB).to.be.an('object').with.any.keys('pos', 'state')
-		expect(blockB?.state).to.be.an.instanceOf(BlockState)
-		expect(blockB?.state).to.deep.equal(new BlockState('minecraft:stone'))
-		expect(blockB?.pos).to.deep.equal([0, 0, 0])
+		expect(blockB).an('object').with.any.keys('pos', 'state')
+		expect(blockB?.state).an.instanceOf(BlockState)
+		expect(blockB?.state).deep.equal(new BlockState('minecraft:stone'))
+		expect(blockB?.pos).deep.equal([0, 0, 0])
 	})
 
 	it('getBlocks', () => {
@@ -46,10 +46,10 @@ describe('Structure', () => {
 			.addBlock([0, 2, 0], 'minecraft:jigsaw', { orientation: 'east_up' })
 
 		const blocks = structure.getBlocks()
-		expect(blocks).to.be.an('array').with.lengthOf(3)
+		expect(blocks).an('array').with.lengthOf(3)
 
 		const blockNames = blocks.map(b => b.state.getName())
-		expect(blockNames).to.deep.equal(['minecraft:stone', 'minecraft:stone', 'minecraft:jigsaw'])
+		expect(blockNames).deep.equal(['minecraft:stone', 'minecraft:stone', 'minecraft:jigsaw'])
 	})
 
 	it('fromNbt (empty)', () => {
@@ -62,7 +62,7 @@ describe('Structure', () => {
 		const structureA = Structure.fromNbt(nbt)
 		const structureB = new Structure([0, 0, 0])
 
-		expect(structureA).to.deep.equal(structureB)
+		expect(structureA).deep.equal(structureB)
 	})
 
 	it('fromNbt (simple)', () => {
@@ -88,6 +88,6 @@ describe('Structure', () => {
 		const structureB = new Structure([1, 2, 1])
 			.addBlock([0, 0, 0], 'minecraft:jigsaw', { orientation: 'east_up' })
 
-		expect(structureA).to.deep.equal(structureB)
+		expect(structureA).deep.equal(structureB)
 	})
 })

@@ -12,14 +12,14 @@ describe('NormalNoise', () => {
 	it('valueFactor', () => {
 		const { noise } = setup()
 
-		expect(noise.valueFactor).to.equal(1.111111111111111)
+		expect(noise.valueFactor).equal(1.111111111111111)
 	})
 
 	it('sample', () => {
 		const { noise } = setup()
 
-		expect(noise.sample(0, 0, 0)).to.be.approximately(-0.11173738673691287, DELTA)
-		expect(noise.sample(0.5, 4, -2)).to.be.approximately(-0.12418270136523879, DELTA)
-		expect(noise.sample(-204, 28, 12)).to.be.approximately(-0.593348747968403, DELTA)
+		expect(noise.sample(0, 0, 0)).closeTo(-0.11173738673691287, DELTA)
+		expect(noise.sample(0.5, 4, -2)).closeTo(-0.12418270136523879, DELTA)
+		expect(noise.sample(-204, 28, 12)).closeTo(-0.593348747968403, DELTA)
 	})
 })

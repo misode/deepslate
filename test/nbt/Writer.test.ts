@@ -4,7 +4,7 @@ import { NbtWriter } from '../../src/nbt'
 
 function matches(writer: NbtWriter, data: number[], message?: string) {
 	expect(writer.getData())
-		.to.deep.equal(new Uint8Array(data), message)
+		.deep.equal(new Uint8Array(data), message)
 }
 
 describe('Writer', () => {

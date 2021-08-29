@@ -8,18 +8,18 @@ function test<T extends keyof typeof tagTypes>(type: T, data: NbtValues[T]) {
 	// @ts-ignore
 	writer[type](data)
 	const raw = writer.getData()
-	expect(raw).to.be.instanceOf(Uint8Array)
+	expect(raw).instanceOf(Uint8Array)
 
 	const reader = new NbtReader(raw)
 	// @ts-ignore
 	const data2 = reader[type]()
-	expect(data2).to.deep.equal(data)
+	expect(data2).deep.equal(data)
 
 	const writer2 = new NbtWriter()
 	// @ts-ignore
 	writer2[type](data2)
 	const raw2 = writer2.getData()
-	expect(raw2).to.deep.equal(raw)
+	expect(raw2).deep.equal(raw)
 }
 
 describe('Full', () => {
