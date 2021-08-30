@@ -6,7 +6,7 @@ Library for rendering and emulating parts of Minecraft
 npm install deepslate
 ```
 ```html
-<script src="https://unpkg.com/deepslate@0.8.0"></script>
+<script src="https://unpkg.com/deepslate@0.9.0-beta.0"></script>
 ```
 
 ## Examples
