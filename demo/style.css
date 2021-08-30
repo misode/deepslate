@@ -5,6 +5,7 @@
 	--surface1: #1a1c1f;
 	--accent1: #183c72;
 	--accent2: #2658a3;
+	--accent3: #6083b8;
 	--text1: #b0b7c0;
 }
 
@@ -19,35 +20,68 @@ a {
 	text-decoration: none;
 }
 
-canvas.full {
+canvas {
 	display: block;
-	width: 100vw;
-	height: 100vh;
+	background-color: black;
 }
 
-.back {
+canvas.full {
+	width: 100vw;
+	height: 100vh;
+	background: none;
+	margin: 0;
+}
+
+canvas.pixelated {
+	image-rendering: pixelated;
+}
+
+header {
 	position: fixed;
-	padding: 5px;
+	padding: 15px;
+	height: 40px;
+	display: flex;
+	align-items: center;
 }
 
 .back svg {
-	fill: #bbb;
-	width: 48px;
-	height: 48px;
+	fill: var(--text1);
+	width: 40px;
+	height: 40px;
+	margin-right: 12px;
+	transition: fill 0.1s;
 }
 
-nav, section {
-	margin: 40px 20px;
+.back:hover svg {
+	fill: var(--accent3);
+}
+
+main {
+	padding: 15px;
+}
+
+header + main {
+	padding-top: 75px;
+}
+
+.collection {
+	display: flex;
+	flex-wrap: wrap;
+}
+
+.plot {
+	margin: 8px;
 }
 
 nav ul {
 	list-style: none;
-	margin-top: 20px;
 }
 
 nav a {
+	display: inline-block;
 	background-color: var(--accent1);
 	padding: 6px 18px;
+	margin-bottom: 5px;
 	border-radius: 4px;
 	transition: background-color 0.1s;
 }
