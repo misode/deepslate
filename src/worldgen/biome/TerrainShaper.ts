@@ -124,31 +124,31 @@ export namespace TerrainShaper {
 	}
 
 	function buildErosionOffsetSpline(name: string, f: number, f2: number, f3: number, f4: number, f5: number, f6: number, f7: number, bl: boolean, bl2: boolean) {
-		const mSpline1 = buildMountainRidgeSplineWithPoints(lerp(f5, 0.6, 1.5), bl2)
-		const mSpline2 = buildMountainRidgeSplineWithPoints(lerp(f5, 0.6, 1.0), bl2)
-		const spline3 = buildMountainRidgeSplineWithPoints(f5,bl2)
+		const mountain1 = buildMountainRidgeSplineWithPoints(lerp(f5, 0.6, 1.5), bl2)
+		const mountain2 = buildMountainRidgeSplineWithPoints(lerp(f5, 0.6, 1.0), bl2)
+		const mountain3 = buildMountainRidgeSplineWithPoints(f5,bl2)
 		const widePlateau = ridgeSpline(name + '-widePlateau', f - 0.15, 0.5 * f5, lerp(0.5, 0.5, 0.5) * f5, 0.5 * f5, 0.6 * f5, 0.5)
 		const narrowPlateau = ridgeSpline(name + '-narrowPlateau', f, f6 * f5, f3 * f5, 0.5 * f5, 0.6 * f5, 0.5)
 		const plains = ridgeSpline(name + '-plains', f, f6,f6, f3, f4, 0.5)
 		const plainsFarInland = ridgeSpline(name + '-plainsFarInland',f, f6, f6, f3, f4, 0.5)
-		const plainsRidges = new Spline<Point>(name, p => p.ridges)
+		const extremeHills = new Spline<Point>(name, p => p.ridges)
 			.addPoint(-1.0, f)
 			.addPoint(-0.4, plains)
 			.addPoint(0.0, f4 + 0.07)
 		const swampsRidges = ridgeSpline(name + '-swamps', -0.02, f7, f7, f3, f4, 0.0)
 
 		const erosion = new Spline<Point>(name, p => p.erosion)
-			.addPoint(-0.85, mSpline1)
-			.addPoint(-0.7, mSpline2)
-			.addPoint(-0.4, spline3)
+			.addPoint(-0.85, mountain1)
+			.addPoint(-0.7, mountain2)
+			.addPoint(-0.4, mountain3)
 			.addPoint(-0.35, widePlateau)
 			.addPoint(-0.1, narrowPlateau)
 			.addPoint(0.2, plains)
 		if (bl) {
 			erosion
 				.addPoint(0.4, plainsFarInland)
-				.addPoint(0.45, plainsRidges)
-				.addPoint(0.55, plainsRidges)
+				.addPoint(0.45, extremeHills)
+				.addPoint(0.55, extremeHills)
 				.addPoint(0.58, plainsFarInland)
 		}
 		erosion.addPoint(0.7, swampsRidges)

@@ -1,5 +1,5 @@
 # Deepslate
-Library for rendering Minecraft structures
+Library for rendering and emulating parts of Minecraft
 
 ## Install
 ```
@@ -46,9 +46,13 @@ mat4.translate(view, view, [0, 0, -5])
 renderer.drawStructure(view)
 ```
 
-## Demo
-Demo of rendering a simple structure to a canvas, read from an NBT file
+## [Demo](https://misode.github.io/deepslate/)
+A collection of examples showcasing the utility of deepslate
 
-https://misode.github.io/deepslate/
+#### [Render](https://misode.github.io/deepslate/render/)
+Rendering a simple structure to a canvas, read from an NBT file.
+Includes mouse controls and loading of an arbitrary resource pack.
 
-![image](https://user-images.githubusercontent.com/17352009/129830601-4ca1ad76-3b3c-4708-bad8-3d565ade4969.png)
+![3D structure rendered](https://user-images.githubusercontent.com/17352009/131235802-ed6c6617-f054-4312-b567-f2692196bfaa.png)
+
+#### [Terrain Shaper](https://misode.github.io/deepslate/terrainshaper/)
