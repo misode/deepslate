@@ -35,34 +35,38 @@ export class ImprovedNoise {
 		const x4 = x2 - x3
 		const y4 = y2 - y3
 		const z4 = z2 - z3
-		const x5 = smoothstep(x4)
-		const y5 = smoothstep(y4)
-		const z5 = smoothstep(z4)
 
-		const y6 = yScale === 0 ? 0 : Math.floor(Math.min(yLimit, y4) / yScale) * yScale
+		let y6 = 0
+		if (yScale !== 0) {
+			const t = yLimit >= 0 && yLimit < y4 ? yLimit : y4
+			y6 = Math.floor(t / yScale + 1e-7) * yScale
+		}
 
-		return this.sampleAndLerp(x3, y3, z3, x4, y4 - y6, z4, x5, y5, z5)
+		return this.sampleAndLerp(x3, y3, z3, x4, y4 - y6, z4, y4)
 	}
 
-	private sampleAndLerp(a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number) {
-		const j = this.P(a) + b
-		const k = this.P(j) + c
-		const l = this.P(j + 1) + c
-		const m = this.P(a + 1) + b
-		const n = this.P(m) + c
-		const o = this.P(m + 1) + c
+	private sampleAndLerp(a: number, b: number, c: number, d: number, e: number, f: number, g: number) {
+		const h = this.P(a)
+		const i = this.P(a + 1)
+		const j = this.P(h + b)
+		const k = this.P(h + b + 1)
+		const l = this.P(i + b)
+		const m = this.P(i + b + 1)
 
-		const p = SimplexNoise.gradDot(this.P(k), d, e, f)
-		const q = SimplexNoise.gradDot(this.P(n), d - 1, e, f)
-		const r = SimplexNoise.gradDot(this.P(l), d, e - 1, f)
-		const s = SimplexNoise.gradDot(this.P(o), d - 1, e - 1, f)
-    
-		const t = SimplexNoise.gradDot(this.P(k + 1), d, e, f - 1)
-		const u = SimplexNoise.gradDot(this.P(n + 1), d - 1, e, f - 1)
-		const v = SimplexNoise.gradDot(this.P(l + 1), d, e - 1, f - 1)
-		const w = SimplexNoise.gradDot(this.P(o + 1), d - 1, e - 1, f - 1)
+		const n = SimplexNoise.gradDot(this.P(j + c), d, e, f)
+		const o = SimplexNoise.gradDot(this.P(l + c), d - 1.0, e, f)
+		const p = SimplexNoise.gradDot(this.P(k + c), d, e - 1.0, f)
+		const q = SimplexNoise.gradDot(this.P(m + c), d - 1.0, e - 1.0, f)
+		const r = SimplexNoise.gradDot(this.P(j + c + 1), d, e, f - 1.0)
+		const s = SimplexNoise.gradDot(this.P(l + c + 1), d - 1.0, e, f - 1.0)
+		const t = SimplexNoise.gradDot(this.P(k + c + 1), d, e - 1.0, f - 1.0)
+		const u = SimplexNoise.gradDot(this.P(m + c + 1), d - 1.0, e - 1.0, f - 1.0)
 
-		return lerp3(g, h, i, p, q, r, s, t, u, v, w)
+		const v = smoothstep(d)
+		const w = smoothstep(g)
+		const x = smoothstep(f)
+
+		return lerp3(v, w, x, n, o, p, q, r, s, t, u)
 	}
 
 	private P(i: number) {

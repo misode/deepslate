@@ -1,5 +1,6 @@
 import { NormalNoise, WorldgenRandom } from '../../math'
 import { NoiseSampler } from '../NoiseSampler'
+import type { BiomeSource } from './BiomeSource'
 import { Climate } from './Climate'
 import { TerrainShaper } from './TerrainShaper'
 
@@ -8,7 +9,7 @@ export type NoiseParams = {
 	amplitudes: number[],
 }
 
-export class MultiNoise {
+export class MultiNoise implements BiomeSource {
 	private readonly temperature: NormalNoise
 	private readonly humidity: NormalNoise
 	private readonly continentalness: NormalNoise
@@ -55,8 +56,8 @@ export class MultiNoise {
 		const erosion = this.erosion.sample(xx, 0, zz)
 		const weirdness = this.weirdness.sample(xx, 0, zz)
 		const point = TerrainShaper.point(continentalness, erosion, weirdness)
-		const isCoastal = TerrainShaper.isCoastal(continentalness, weirdness)
-		return TerrainShaper.shape(point, isCoastal)
+		const nearWater = TerrainShaper.nearWater(continentalness, weirdness)
+		return TerrainShaper.shape(point, nearWater)
 	}
 
 	public getOffset(x: number, y: number, z: number) {

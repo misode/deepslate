@@ -12,7 +12,7 @@ export namespace TerrainShaper {
 		readonly offset: number,
 		readonly factor: number,
 		readonly peaks: number,
-		readonly isCoastal: boolean,
+		readonly nearWater: boolean,
 	}
 
 	export function offset(point: Point) {
@@ -40,7 +40,7 @@ export namespace TerrainShaper {
 		}
 	}
 
-	export function isCoastal(continentalness: number, weirdness: number) {
+	export function nearWater(continentalness: number, weirdness: number) {
 		if (continentalness < -0.2) {
 			return false
 		}
@@ -50,12 +50,12 @@ export namespace TerrainShaper {
 		return Math.abs(weirdness) < 0.15
 	}
 
-	export function shape(point: Point, isCoastal: boolean): Shape {
+	export function shape(point: Point, nearWater: boolean): Shape {
 		return {
 			offset: offset(point),
 			factor: factor(point),
 			peaks: peaks(point),
-			isCoastal,
+			nearWater,
 		}
 	}
 
