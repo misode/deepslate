@@ -1,5 +1,5 @@
 # Deepslate
-Library for rendering and emulating parts of Minecraft
+> Library for rendering and emulating parts of Minecraft
 
 ## Install
 ```
@@ -37,7 +37,7 @@ structure.addBlock([0, 1, 3], "minecraft:cactus", { "age": "1" })
 // Obtain the WebGL context of a canvas element
 const gl = canvas.getContext('webgl')
 
-// See the demo on how to create a resources object
+// See the example on how to create a resources object
 const renderer = new StructureRenderer(gl, structure, resources)
 
 const view = mat4.create()
@@ -46,13 +46,26 @@ mat4.translate(view, view, [0, 0, -5])
 renderer.drawStructure(view)
 ```
 
-## [Demo](https://misode.github.io/deepslate/)
-A collection of examples showcasing the utility of deepslate
+## [Examples](https://misode.github.io/deepslate/)
+A collection of examples showcasing the use cases of deepslate.
 
 #### [Render](https://misode.github.io/deepslate/render/)
 Rendering a simple structure to a canvas, read from an NBT file.
 Includes mouse controls and loading of an arbitrary resource pack.
 
-![3D structure rendered](https://user-images.githubusercontent.com/17352009/131235802-ed6c6617-f054-4312-b567-f2692196bfaa.png)
+![image](https://user-images.githubusercontent.com/17352009/131235802-ed6c6617-f054-4312-b567-f2692196bfaa.png)
 
-#### [Terrain Shaper](https://misode.github.io/deepslate/terrainshaper/)
+#### [Splines](https://misode.github.io/deepslate/splines/)
+![image](https://user-images.githubusercontent.com/17352009/132134408-e140b1f2-d5df-4f6c-9913-6a8a5c01fd3c.png)
+
+#### [Noise](https://misode.github.io/deepslate/noise/)
+![image](https://user-images.githubusercontent.com/17352009/132598742-7f9fc32c-58b7-45f0-8d4b-ae132a94b2b5.png)
+
+#### [MultiNoise](https://misode.github.io/deepslate/multinoise/) 
+![image](https://user-images.githubusercontent.com/17352009/132134430-f21970b6-aaa8-4a95-9aa3-a52ea60bc0b0.png)
+
+#### [Noise Sampler](https://misode.github.io/deepslate/noisesampler/)
+![image](https://user-images.githubusercontent.com/17352009/132598802-417d7934-a389-4733-a191-748794db63bf.png)
+
+#### [Chunk Generator](https://misode.github.io/deepslate/generator/)
+![image](https://user-images.githubusercontent.com/17352009/132598866-d2d61f8a-0d82-447d-a74b-97401f1a2425.png)

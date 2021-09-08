@@ -6,7 +6,7 @@
 	--accent1: #183c72;
 	--accent2: #2658a3;
 	--accent3: #6083b8;
-	--text1: #b0b7c0;
+	--text1: #cfd3d8;
 }
 
 body {
@@ -40,8 +40,10 @@ header {
 	position: fixed;
 	padding: 15px;
 	height: 40px;
+	width: 100%;
 	display: flex;
 	align-items: center;
+	background: linear-gradient(#000b, #0000);
 }
 
 .back svg {
@@ -67,6 +69,12 @@ header + main {
 .collection {
 	display: flex;
 	flex-wrap: wrap;
+}
+
+.collection hr {
+	flex-grow: 1;
+	width: 100%;
+	border: none;
 }
 
 .plot {
