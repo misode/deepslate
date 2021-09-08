@@ -17,7 +17,7 @@ export class NoiseSampler {
 		this.mountainPeakNoise = new NormalNoise(new WorldgenRandom(BigInt(42)), -16, [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1])
 	}
 
-	public noiseColumn(x: number, z: number, minY: number, height: number) {
+	public fillNoiseColumn(column: number[], x: number, z: number, minY: number, height: number) {
 		const biomeX = x * this.cellWidth >> 2
 		const biomeZ = z * this.cellWidth >> 2
 		const { offset, factor, peaks } = this.biomeSource.getTerrainShape(biomeX, biomeZ)
@@ -27,15 +27,13 @@ export class NoiseSampler {
 		const xzMainScale = xzLimitScale / this.settings.sampling.xzFactor
 		const yMainScale = yLimitScale / this.settings.sampling.yFactor
 
-		const arr = Array(height + 1)
 		for (let i = 0; i <= height; i += 1) {
 			const y = i + minY
 			const noise = this.blendedNoise.sample(x, y, z, xzLimitScale, yLimitScale, xzMainScale, yMainScale)
 			const peakNoise = this.samplePeakNoise(peaks, x * this.cellHeight, z * this.cellHeight) / 128
 			const density = this.computeInitialDensity(y * this.cellHeight, offset, factor, 0, peakNoise) + noise
-			arr[i] = this.applySlide(density, y)
+			column[i] = this.applySlide(density, y)
 		}
-		return arr
 	}
 
 	public samplePeakNoise(peaks: number, x: number, z: number) {

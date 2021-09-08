@@ -4,11 +4,11 @@ import { TerrainShaper } from '../../../src/worldgen'
 describe('TerrainShaper', () => {
 	const DELTA = 1e-6
 
-	it('isCoastal', () => {
-		expect(TerrainShaper.isCoastal(-0.3, 0)).false
-		expect(TerrainShaper.isCoastal(-0.1, 0)).true
-		expect(TerrainShaper.isCoastal(0, 0)).true
-		expect(TerrainShaper.isCoastal(0, 0.2)).false
+	it('nearWater', () => {
+		expect(TerrainShaper.nearWater(-0.3, 0)).false
+		expect(TerrainShaper.nearWater(-0.1, 0)).true
+		expect(TerrainShaper.nearWater(0, 0)).true
+		expect(TerrainShaper.nearWater(0, 0.2)).false
 	})
 
 	it('peaksAndValleys', () => {

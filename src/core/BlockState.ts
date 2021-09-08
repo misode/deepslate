@@ -2,6 +2,8 @@ import type { NamedNbtTag } from '../nbt'
 import { getOptional, getTag } from '../nbt'
 
 export class BlockState {
+	public static readonly AIR = new BlockState('minecraft:air')
+
 	constructor(
 		private readonly name: string,
 		private readonly properties: { [key: string]: string } = {}
@@ -15,7 +17,7 @@ export class BlockState {
 		return this.properties
 	}
 
-	public getProperty(key: string) {
+	public getProperty(key: string): string | undefined {
 		return this.properties[key]
 	}
 
@@ -33,6 +35,9 @@ export class BlockState {
 	}
 
 	public toString() {
+		if (Object.keys(this.properties).length === 0) {
+			return this.name
+		}
 		return `${this.name}[${Object.entries(this.properties).map(([k, v]) => k + '=' + v).join(',')}]`
 	}
 

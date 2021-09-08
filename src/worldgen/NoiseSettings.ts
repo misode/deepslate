@@ -8,6 +8,10 @@ export type NoiseSettings = {
 	sampling: NoiseSamplingSettings,
 	topSlide: NoiseSlideSettings,
 	bottomSlide: NoiseSlideSettings,
+	useSimplexSurfaceNoise: boolean,
+	randomDensityOffset: boolean,
+	islandNoiseOverride: boolean,
+	isAmplified: boolean,
 }
 
 export type NoiseSamplingSettings = {
