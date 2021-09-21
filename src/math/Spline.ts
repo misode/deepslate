@@ -1,14 +1,11 @@
 import { binarySearch, lerp } from './Util'
 
-type Func<C> = (c: C) => number
-
 export class Spline<C> {
-
 	constructor(
 		public name: string,
-		public coordinate: Func<C>,
+		public coordinate: (c: C) => number,
 		public locations: number[] = [],
-		public values: Func<C>[] = [],
+		public values: ((c: C) => number)[] = [],
 		public derivatives: number[] = [],
 	) {}
 
@@ -46,5 +43,3 @@ export class Spline<C> {
 		return this
 	}
 }
-
-const s = new Spline('a', () => 1, [], [], [])

@@ -66,4 +66,28 @@ describe('BlockState', () => {
 
 		expect(stateA).deep.equal(stateB)
 	})
+
+	it('fromJson (no properties)', () => {
+		const json = {
+			Name: 'minecraft:stone',
+		}
+		const stateA = BlockState.fromJson(json)
+		const stateB = new BlockState('minecraft:stone')
+
+		expect(stateA).deep.equal(stateB)
+	})
+
+	it('fromJson (properties)', () => {
+		const json = {
+			Name: 'minecraft:piston',
+			Properties: {
+				extended: 'false',
+				facing: 'up',
+			},
+		}
+		const stateA = BlockState.fromJson(json)
+		const stateB = new BlockState('minecraft:piston', { extended: 'false', facing: 'up' })
+
+		expect(stateA).deep.equal(stateB)
+	})
 })

@@ -1,10 +1,6 @@
+import { Json } from '../../core'
 import type { Random } from '../random'
 import { PerlinNoise } from './PerlinNoise'
-
-export type NoiseParameters = {
-	firstOctave: number,
-	amplitudes: number[],
-}
 
 export class NormalNoise {
 	private static readonly INPUT_FACTOR = 1.0181268882175227
@@ -35,5 +31,19 @@ export class NormalNoise {
 		const y2 = y * NormalNoise.INPUT_FACTOR
 		const z2 = z * NormalNoise.INPUT_FACTOR
 		return (this.first.sample(x, y, z) + this.second.sample(x2, y2, z2)) * this.valueFactor
+	}
+}
+
+export type NoiseParameters = {
+	firstOctave: number,
+	amplitudes: number[],
+}
+export namespace NoiseParameters {
+	export function fromJson(obj: unknown): NoiseParameters {
+		const root = Json.readObject(obj) ?? {}
+		return {
+			firstOctave: Json.readInt(root.firstOctave) ?? 0,
+			amplitudes: Json.readArray(root.amplitudes, e => Json.readNumber(e) ?? 0) ?? [],
+		}
 	}
 }

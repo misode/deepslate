@@ -1,3 +1,4 @@
+import { Json } from '../core'
 import type { NamedNbtTag } from '../nbt'
 import { getOptional, getTag } from '../nbt'
 
@@ -46,6 +47,13 @@ export class BlockState {
 		const propsTag = getOptional(() => getTag(nbt.value, 'Properties', 'compound'), {})
 		const properties = Object.keys(propsTag)
 			.reduce((acc, k) => ({...acc, [k]: getTag(propsTag, k, 'string')}), {})
+		return new BlockState(name, properties)
+	}
+
+	public static fromJson(obj: unknown) {
+		const root = Json.readObject(obj) ?? {}
+		const name = Json.readString(root.Name) ?? 'minecraft:stone'
+		const properties = Json.readMap(root.Properties, p => Json.readString(p) ?? '')
 		return new BlockState(name, properties)
 	}
 }
