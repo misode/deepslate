@@ -12,6 +12,10 @@ export class Random {
 		this.setSeed(seed)
 	}
 
+	public fork() {
+		return new Random(this.nextLong())
+	}
+
 	public setSeed(seed: bigint) {
 		this.seed = seed ^ Random.MULTIPLIER & Random.MODULUS_MASK
 	}
@@ -42,6 +46,10 @@ export class Random {
 		let a, b
 		while ((a = this.next(31)) - (b = a % max) + (max - 1) < 0) {}
 		return b
+	}
+
+	public nextLong() {
+		return (BigInt(this.next(32)) << BigInt(32)) + BigInt(this.next(32))
 	}
 
 	public nextFloat(): number {

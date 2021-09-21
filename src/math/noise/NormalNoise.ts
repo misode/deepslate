@@ -1,6 +1,11 @@
 import type { Random } from '../random'
 import { PerlinNoise } from './PerlinNoise'
 
+export type NoiseParameters = {
+	firstOctave: number,
+	amplitudes: number[],
+}
+
 export class NormalNoise {
 	private static readonly INPUT_FACTOR = 1.0181268882175227
 
@@ -8,7 +13,7 @@ export class NormalNoise {
 	public readonly first: PerlinNoise
 	public readonly second: PerlinNoise
 
-	constructor(random: Random, firstOctave: number, amplitudes: number[]) {
+	constructor(random: Random, { firstOctave, amplitudes }: NoiseParameters) {
 		this.first = new PerlinNoise(random, firstOctave, amplitudes)
 		this.second = new PerlinNoise(random, firstOctave, amplitudes)
 

@@ -11,12 +11,11 @@ export namespace Climate {
 		return new ParamPoint(param(temperature), param(humidity), param(continentalness), param(erosion), param(depth), param(weirdness), offset)
 	}
 
-	export function param(value: number | Param) {
-		return typeof value === 'number' ? new Param(value, value) : value
-	}
-
-	export function range(min: number, max: number) {
-		return new Param(min, max)
+	export function param(value: number | Param, max?: number) {
+		if (typeof value === 'number') {
+			return new Param(value, max ?? value)
+		}
+		return value
 	}
 
 	export class Param {
@@ -196,7 +195,7 @@ export namespace Climate {
 
 		public distance(values: number[]) {
 			let result = 0
-			for (let i = 0; i < 7; i += 1) {
+			for (let i = 0; i < PARAMETER_SPACE; i += 1) {
 				result += square(this.space[i].distance(values[i]))
 			}
 			return result

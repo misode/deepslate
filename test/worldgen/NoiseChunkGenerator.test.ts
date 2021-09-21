@@ -12,7 +12,6 @@ describe('NoiseChunkGenerator', () => {
 			bedrockRoofPosition: 0,
 			bedrockFloorPosition: 0,
 			seaLevel: 63,
-			minSurfaceLevel: 0,
 			disableMobGeneration: false,
 			aquifersEnabled: false,
 			noiseCavesEnabled: false,
@@ -34,7 +33,16 @@ describe('NoiseChunkGenerator', () => {
 				randomDensityOffset: false,
 				islandNoiseOverride: false,
 				isAmplified: false,
+				useLegacyRandom: false,
 				...noiseSettings,
+			},
+			octaves: {
+				temperature: { firstOctave: 0, amplitudes: [0] },
+				humidity: { firstOctave: 0, amplitudes: [0] },
+				continentalness: { firstOctave: 0, amplitudes: [0] },
+				erosion: { firstOctave: 0, amplitudes: [0] },
+				weirdness: { firstOctave: 0, amplitudes: [0] },
+				shift: { firstOctave: 0, amplitudes: [0] },
 			},
 			...generatorSettings,
 		}
@@ -47,7 +55,7 @@ describe('NoiseChunkGenerator', () => {
 
 		const chunk = new Chunk(0, 64, ChunkPos.create(4, 1))
 		generator.fill(chunk)
-		expect(printSlice(chunk)).equal('~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~XXXXXX|~~~~~~~~~~~~XXXX|~~~~~~~~~~~~~~XX|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|                |                |                |                |                |                |                |                |                |                |              XX|         XXXXXXX|       XXXXXXXXX|      XXXXXXXXXX|     XXXXXXXXXXX|    XXXXXXXXXXXX|    XXXXXXXXXXXX|    XXXXXXXXXXXX|     XXXXXXXXXXX|       XXXXXXXXX|          XXXXXX|             XXX|               X|                |                |                |                |               X|             XXX|         XXXXXXX| XXXXXXXXXXXXXXX|XXXXXXXXXXXXXXXX|XXXXXXXXXXXXXXXX')
+		expect(printSlice(chunk)).equal('~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|XX~~~~~~~~~~~~~~|XXXX~~~~~~~~~~~~|XXX~~~~~~~~~~~~~|XX~~~~~~~~~~~~~~|X~~~~~~~~~~~~~~~|X~~~~~~~~~~~~~~~|X~~~~~~~~~~~~~~~|X~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|                |                |                |                |                |                |                |                |                |                |                |                |                |                |           XXXXX|         XXXXXXX|       XXXXXXXXX|      XXXXXXXXXX|XXXXXXXXXXXXXXXX|XXXXXXXXXXXXXXXX|XXXXXXXXXXXXXXXX|XXXXXXXXXXXXXXXX|XXXXXXXXXXXXXXXX|XXXXXXXXXXXXXXXX|XXXXXXXX  XXXXX |XXXXXXXX        |XXXXXXXX        |XXXXXXXX        |XXXXXXXX        |XXXXXXX         |XXXXXXX         |XXXXXX          |XXXXXX          ')
 	})
 })
 

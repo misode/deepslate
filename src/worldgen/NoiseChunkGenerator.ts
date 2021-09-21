@@ -1,6 +1,6 @@
 import type { Chunk } from '../core'
 import { BlockState, ChunkPos } from '../core'
-import { BlendedNoise, clamp, PerlinNoise, PerlinSimplexNoise, WorldgenRandom } from '../math'
+import { clamp } from '../math'
 import type { BiomeSource } from './biome'
 import type { NoiseGeneratorSettings } from './NoiseGeneratorSettings'
 import { NoiseInterpolator } from './NoiseInterpolator'
@@ -23,13 +23,7 @@ export class NoiseChunkGenerator {
 		this.cellCountXZ = Math.floor(16 / this.cellWidth)
 		this.cellCountY = Math.floor(settings.noise.height / this.cellHeight)
 
-		const random = new WorldgenRandom(seed)
-		const blendedNoise = new BlendedNoise(random)
-		settings.noise.useSimplexSurfaceNoise ? new PerlinSimplexNoise(random, [-3, -2, -1, 0]) : new PerlinNoise(random, -3, [1, 1, 1, 1])
-		random.consume(2620)
-		new PerlinNoise(random, -15, [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1])
-
-		this.sampler = new NoiseSampler(this.cellWidth, this.cellHeight, this.cellCountY, biomeSource, settings.noise, blendedNoise)
+		this.sampler = new NoiseSampler(this.cellWidth, this.cellHeight, this.cellCountY, biomeSource, settings.noise, settings.octaves, seed)
 	}
 
 	public fill(chunk: Chunk) {

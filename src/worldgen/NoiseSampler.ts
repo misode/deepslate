@@ -1,9 +1,10 @@
-import type { BlendedNoise } from '../math'
-import { clampedLerp, NormalNoise, WorldgenRandom } from '../math'
+import { BlendedNoise, clampedLerp, NormalNoise, Random } from '../math'
 import type { BiomeSource } from './biome'
+import type { NoiseOctaves } from './NoiseGeneratorSettings'
 import type { NoiseSettings } from './NoiseSettings'
 
 export class NoiseSampler {
+	private readonly blendedNoise: BlendedNoise
 	private readonly mountainPeakNoise: NormalNoise
 
 	constructor(
@@ -12,9 +13,14 @@ export class NoiseSampler {
 		private readonly cellCountY: number,
 		private readonly biomeSource: BiomeSource,
 		private readonly settings: NoiseSettings,
-		private readonly blendedNoise: BlendedNoise,
+		octaves: NoiseOctaves,
+		seed: bigint,
 	) {
-		this.mountainPeakNoise = new NormalNoise(new WorldgenRandom(BigInt(42)), -16, [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1])
+		const random = new Random(seed)
+		const blendedRandom = settings.useLegacyRandom ? new Random(seed) : random.fork()
+		this.blendedNoise = new BlendedNoise(blendedRandom)
+		random.consume(8)
+		this.mountainPeakNoise = new NormalNoise(random.fork(), { firstOctave: -16, amplitudes: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1] })
 	}
 
 	public fillNoiseColumn(column: number[], x: number, z: number, minY: number, height: number) {

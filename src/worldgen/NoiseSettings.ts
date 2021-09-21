@@ -12,6 +12,7 @@ export type NoiseSettings = {
 	randomDensityOffset: boolean,
 	islandNoiseOverride: boolean,
 	isAmplified: boolean,
+	useLegacyRandom: boolean,
 }
 
 export type NoiseSamplingSettings = {

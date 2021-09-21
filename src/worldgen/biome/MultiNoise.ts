@@ -1,3 +1,4 @@
+import type { NoiseOctaves } from '..'
 import { NormalNoise, WorldgenRandom } from '../../math'
 import { NoiseSampler } from '../NoiseSampler'
 import type { BiomeSource } from './BiomeSource'
@@ -20,18 +21,14 @@ export class MultiNoise implements BiomeSource {
 	constructor(
 		seed: bigint,
 		private readonly parameters: Climate.Parameters<string>,
-		temperatureParams: NoiseParams,
-		humidityParams: NoiseParams,
-		continentalnessParams: NoiseParams,
-		erosionParams: NoiseParams,
-		weirdnessParams: NoiseParams,
+		octaves: NoiseOctaves
 	) {
-		this.temperature = new NormalNoise(new WorldgenRandom(seed), temperatureParams.firstOctave, temperatureParams.amplitudes)
-		this.humidity = new NormalNoise(new WorldgenRandom(seed + BigInt(1)), humidityParams.firstOctave, humidityParams.amplitudes)
-		this.continentalness = new NormalNoise(new WorldgenRandom(seed + BigInt(2)), continentalnessParams.firstOctave, continentalnessParams.amplitudes)
-		this.erosion = new NormalNoise(new WorldgenRandom(seed + BigInt(3)), erosionParams.firstOctave, erosionParams.amplitudes)
-		this.weirdness = new NormalNoise(new WorldgenRandom(seed + BigInt(4)), weirdnessParams.firstOctave, weirdnessParams.amplitudes)
-		this.offset = new NormalNoise(new WorldgenRandom(seed + BigInt(5)), -3, [1, 1, 1, 1])
+		this.temperature = new NormalNoise(new WorldgenRandom(seed), octaves.temperature)
+		this.humidity = new NormalNoise(new WorldgenRandom(seed + BigInt(1)), octaves.humidity)
+		this.continentalness = new NormalNoise(new WorldgenRandom(seed + BigInt(2)), octaves.continentalness)
+		this.erosion = new NormalNoise(new WorldgenRandom(seed + BigInt(3)), octaves.erosion)
+		this.weirdness = new NormalNoise(new WorldgenRandom(seed + BigInt(4)), octaves.weirdness)
+		this.offset = new NormalNoise(new WorldgenRandom(seed + BigInt(5)), octaves.shift)
 	}
 
 	public getBiome(x: number, y: number, z: number) {
