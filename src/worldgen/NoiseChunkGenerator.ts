@@ -1,7 +1,7 @@
 import type { Chunk } from '../core'
 import { BlockState, ChunkPos } from '../core'
 import { clamp } from '../math'
-import type { BiomeSource } from './biome'
+import type { BiomeSource, TerrainShaper } from './biome'
 import type { NoiseGeneratorSettings } from './NoiseGeneratorSettings'
 import { NoiseInterpolator } from './NoiseInterpolator'
 import { NoiseSampler } from './NoiseSampler'
@@ -17,13 +17,14 @@ export class NoiseChunkGenerator {
 		private readonly seed: bigint,
 		private readonly biomeSource: BiomeSource,
 		private readonly settings: NoiseGeneratorSettings,
+		shapeOverride?: TerrainShaper.Shape,
 	) {
 		this.cellHeight = settings.noise.ySize << 2
 		this.cellWidth = settings.noise.xzSize << 2
 		this.cellCountXZ = Math.floor(16 / this.cellWidth)
 		this.cellCountY = Math.floor(settings.noise.height / this.cellHeight)
 
-		this.sampler = new NoiseSampler(this.cellWidth, this.cellHeight, this.cellCountY, biomeSource, settings.noise, settings.octaves, seed)
+		this.sampler = new NoiseSampler(this.cellWidth, this.cellHeight, this.cellCountY, biomeSource, settings.noise, settings.octaves, seed, shapeOverride)
 	}
 
 	public fill(chunk: Chunk) {

@@ -3,9 +3,10 @@ import { BlockState, Chunk, ChunkPos } from '../../src/core'
 import type { NoiseGeneratorSettings, NoiseSettings } from '../../src/worldgen'
 import { FixedBiome, NoiseChunkGenerator } from '../../src/worldgen'
 
+
 describe('NoiseChunkGenerator', () => {
 	const setup = (seed: number, generatorSettings: Partial<NoiseGeneratorSettings> = {}, noiseSettings: Partial<NoiseSettings>) => {
-		const biomeSource = new FixedBiome('minecraft:plains', { offset: 0, factor: 1, peaks: 0, nearWater: false })
+		const biomeSource = new FixedBiome('minecraft:plains')
 		const settings: NoiseGeneratorSettings = {
 			defaultBlock: new BlockState('minecraft:stone'),
 			defaultFluid: new BlockState('minecraft:water', { level: '8' }),
@@ -46,7 +47,7 @@ describe('NoiseChunkGenerator', () => {
 			},
 			...generatorSettings,
 		}
-		const generator = new NoiseChunkGenerator(BigInt(seed), biomeSource, settings)
+		const generator = new NoiseChunkGenerator(BigInt(seed), biomeSource, settings, { offset: 0, factor: 1, peaks: 0, nearWater: false })
 		return { biomeSource, settings, generator }
 	}
 

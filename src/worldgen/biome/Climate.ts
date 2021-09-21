@@ -1,3 +1,4 @@
+import { Json } from '../../core'
 import { square } from '../../math'
 
 export namespace Climate {
@@ -39,6 +40,12 @@ export namespace Climate {
 				Math.max(this.max, param.max)
 			)
 		}
+
+		public static fromJson(obj: unknown) {
+			if (typeof obj === 'number') return new Param(obj, obj)
+			const [min, max] = Json.readArray(obj, e => Json.readNumber(e)) ?? []
+			return new Param(min ?? 0, max ?? 0)
+		}
 	}
 
 	export class ParamPoint {
@@ -64,6 +71,19 @@ export namespace Climate {
 
 		public space() {
 			return [this.temperature, this.humidity, this.continentalness, this.erosion, this.depth, this.weirdness, new Param(this.offset, this.offset)]
+		}
+
+		public static fromJson(obj: unknown) {
+			const root = Json.readObject(obj) ?? {}
+			return new ParamPoint(
+				Param.fromJson(root.temperature),
+				Param.fromJson(root.humidity),
+				Param.fromJson(root.continentalness),
+				Param.fromJson(root.erosion),
+				Param.fromJson(root.depth),
+				Param.fromJson(root.weirdness),
+				Json.readInt(root.offset) ?? 0,
+			)
 		}
 	}
 
@@ -97,6 +117,8 @@ export namespace Climate {
 			return this.index.search(target, (node, values) => node.distance(values))
 		}
 	}
+
+	export type Sampler = (x: number, y: number, z: number) => TargetPoint
 
 	type DistanceMetric<T> = (node: RNode<T>, values: number[]) => number
 

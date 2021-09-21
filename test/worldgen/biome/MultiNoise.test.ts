@@ -1,6 +1,6 @@
 import { expect } from 'chai'
 import type { NoiseOctaves } from '../../../src/worldgen'
-import { Climate, MultiNoise } from '../../../src/worldgen'
+import { Climate, MultiNoise, NoiseSampler, NoiseSettings } from '../../../src/worldgen'
 
 describe('MultiNoise', () => {
 	it('nether', () => {
@@ -19,13 +19,15 @@ describe('MultiNoise', () => {
 			weirdness: { firstOctave: -7, amplitudes: [1, 1] },
 			shift: { firstOctave: 0, amplitudes: [0] },
 		}
-		const nether = new MultiNoise(BigInt(5392), netherBiomes, octaves)
+		const nether = new MultiNoise(netherBiomes)
+		const sampler = new NoiseSampler(4, 4, 32, nether, NoiseSettings.fromJson(null), octaves, BigInt(5392))
+		const climate: Climate.Sampler = (x, y, z) => sampler.getClimate(x, y, z)
 
-		expect(nether.getBiome(0, 0, 0)).equal('minecraft:soul_sand_valley')
-		expect(nether.getBiome(100, 0, 0)).equal('minecraft:crimson_forest')
-		expect(nether.getBiome(200, 0, 0)).equal('minecraft:crimson_forest')
-		expect(nether.getBiome(300, 0, 0)).equal('minecraft:nether_wastes')
-		expect(nether.getBiome(400, 0, 0)).equal('minecraft:warped_forest')
-		expect(nether.getBiome(500, 0, 0)).equal('minecraft:soul_sand_valley')
+		expect(nether.getBiome(0, 0, 0, climate)).equal('minecraft:soul_sand_valley')
+		expect(nether.getBiome(100, 0, 0, climate)).equal('minecraft:crimson_forest')
+		expect(nether.getBiome(200, 0, 0, climate)).equal('minecraft:crimson_forest')
+		expect(nether.getBiome(300, 0, 0, climate)).equal('minecraft:nether_wastes')
+		expect(nether.getBiome(400, 0, 0, climate)).equal('minecraft:warped_forest')
+		expect(nether.getBiome(500, 0, 0, climate)).equal('minecraft:soul_sand_valley')
 	})
 })

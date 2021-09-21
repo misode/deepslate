@@ -1,10 +1,17 @@
-import { BlendedNoise, clampedLerp, NormalNoise, Random } from '../math'
+import { BlendedNoise, clampedLerp, NormalNoise, Random, WorldgenRandom } from '../math'
 import type { BiomeSource } from './biome'
+import { Climate, TerrainShaper } from './biome'
 import type { NoiseOctaves } from './NoiseGeneratorSettings'
 import type { NoiseSettings } from './NoiseSettings'
 
 export class NoiseSampler {
 	private readonly blendedNoise: BlendedNoise
+	private readonly temperatureNoise: NormalNoise
+	private readonly humidityNoise: NormalNoise
+	private readonly continentalnessNoise: NormalNoise
+	private readonly erosionNoise: NormalNoise
+	private readonly weirdnessNoise: NormalNoise
+	private readonly offsetNoise: NormalNoise
 	private readonly mountainPeakNoise: NormalNoise
 
 	constructor(
@@ -15,18 +22,55 @@ export class NoiseSampler {
 		private readonly settings: NoiseSettings,
 		octaves: NoiseOctaves,
 		seed: bigint,
+		private readonly shapeOverride?: TerrainShaper.Shape,
 	) {
 		const random = new Random(seed)
 		const blendedRandom = settings.useLegacyRandom ? new Random(seed) : random.fork()
 		this.blendedNoise = new BlendedNoise(blendedRandom)
 		random.consume(8)
+		this.temperatureNoise = new NormalNoise(new WorldgenRandom(seed), octaves.temperature)
+		this.humidityNoise = new NormalNoise(new WorldgenRandom(seed + BigInt(1)), octaves.humidity)
+		this.continentalnessNoise = new NormalNoise(new WorldgenRandom(seed + BigInt(2)), octaves.continentalness)
+		this.erosionNoise = new NormalNoise(new WorldgenRandom(seed + BigInt(3)), octaves.erosion)
+		this.weirdnessNoise = new NormalNoise(new WorldgenRandom(seed + BigInt(4)), octaves.weirdness)
+		this.offsetNoise = new NormalNoise(new WorldgenRandom(seed + BigInt(5)), octaves.shift)
 		this.mountainPeakNoise = new NormalNoise(random.fork(), { firstOctave: -16, amplitudes: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1] })
+	}
+
+	public getClimate(x: number, y: number, z: number) {
+		const xx = x + this.getOffset(x, 0, z)
+		const yy = y + this.getOffset(y, z, x)
+		const zz = z + this.getOffset(z, x, 0)
+		const temperature = this.temperatureNoise.sample(xx, yy, zz)
+		const humidity = this.humidityNoise.sample(xx, yy, zz)
+		const continentalness = this.continentalnessNoise.sample(xx, 0, zz)
+		const erosion = this.erosionNoise.sample(xx, 0, zz)
+		const weirdness = this.weirdnessNoise.sample(xx, 0, zz)
+		const offset = TerrainShaper.offset(TerrainShaper.point(continentalness, erosion, weirdness))
+		const depth = NoiseSampler.computeDimensionDensity(1, -0.51875, y * 4) + offset
+		return new Climate.TargetPoint(temperature, humidity, continentalness, erosion, depth, weirdness)
+	}
+
+	public getTerrainShape(x: number, z: number) {
+		if (this.shapeOverride) return this.shapeOverride
+		const xx = x + this.getOffset(x, 0, z)
+		const zz = z + this.getOffset(z, x, 0)
+		const continentalness = this.continentalnessNoise.sample(xx, 0, zz)
+		const erosion = this.erosionNoise.sample(xx, 0, zz)
+		const weirdness = this.weirdnessNoise.sample(xx, 0, zz)
+		const point = TerrainShaper.point(continentalness, erosion, weirdness)
+		const nearWater = TerrainShaper.nearWater(continentalness, weirdness)
+		return TerrainShaper.shape(point, nearWater)
+	}
+
+	private getOffset(x: number, y: number, z: number) {
+		return this.offsetNoise.sample(x, y, z) * 4
 	}
 
 	public fillNoiseColumn(column: number[], x: number, z: number, minY: number, height: number) {
 		const biomeX = x * this.cellWidth >> 2
 		const biomeZ = z * this.cellWidth >> 2
-		const { offset, factor, peaks } = this.biomeSource.getTerrainShape(biomeX, biomeZ)
+		const { offset, factor, peaks } = this.getTerrainShape(biomeX, biomeZ)
 
 		const xzLimitScale = 684.412 * this.settings.sampling.xzScale
 		const yLimitScale = 684.412 * this.settings.sampling.yScale

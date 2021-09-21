@@ -1,6 +1,5 @@
-import type { TerrainShaper } from './TerrainShaper'
+import type { Climate } from './Climate'
 
 export interface BiomeSource {
-	getBiome(x: number, y: number, z: number): string
-	getTerrainShape(x: number, z: number): TerrainShaper.Shape
+	getBiome(x: number, y: number, z: number, climateSampler: Climate.Sampler): string
 }

@@ -7,7 +7,6 @@ describe('NoiseSampler', () => {
 	const setup = (seed: number, settings: Partial<NoiseSettings> = {}, shape: Partial<TerrainShaper.Shape> = {}) => {
 		const source: BiomeSource = {
 			getBiome: () => 'minecraft:plains',
-			getTerrainShape: () => ({offset: 0.03, factor: 342.8571468713332, peaks: 0, nearWater: false, ...shape}),
 		}
 		const noiseSettings: NoiseSettings = {
 			minY: 0,
@@ -39,7 +38,7 @@ describe('NoiseSampler', () => {
 			weirdness: { firstOctave: 0, amplitudes: [0] },
 			shift: { firstOctave: 0, amplitudes: [0] },
 		}
-		const sampler = new NoiseSampler(4, 4, 32, source, noiseSettings, octaves, BigInt(seed))
+		const sampler = new NoiseSampler(4, 4, 32, source, noiseSettings, octaves, BigInt(seed), {offset: 0.03, factor: 342.8571468713332, peaks: 0, nearWater: false, ...shape})
 		return { sampler }
 	}
 	it('computeDimensionDensity', () => {
