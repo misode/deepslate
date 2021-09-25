@@ -1,4 +1,5 @@
 import { Json } from '../core'
+import { NoiseSamplingSettings } from '../math'
 
 export type NoiseSettings = {
 	minY: number,
@@ -34,24 +35,6 @@ export namespace NoiseSettings {
 			islandNoiseOverride: Json.readBoolean(root.island_noise_override) ?? false,
 			isAmplified: Json.readBoolean(root.amplified) ?? false,
 			useLegacyRandom: Json.readBoolean(root.use_legacy_random) ?? false,
-		}
-	}
-}
-
-export type NoiseSamplingSettings = {
-	xzScale: number,
-	yScale: number,
-	xzFactor: number,
-	yFactor: number,
-}
-export namespace NoiseSamplingSettings {
-	export function fromJson(obj: any): NoiseSamplingSettings {
-		const root = Json.readObject(obj) ?? {}
-		return {
-			xzScale: Json.readNumber(root.xz_scale) ?? 1,
-			yScale: Json.readNumber(root.y_scale) ?? 1,
-			xzFactor: Json.readNumber(root.xz_factor) ?? 80,
-			yFactor: Json.readNumber(root.y_factor) ?? 80,
 		}
 	}
 }

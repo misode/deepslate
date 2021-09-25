@@ -1,6 +1,6 @@
-import { Json } from '../core'
 import type { NamedNbtTag } from '../nbt'
 import { getOptional, getTag } from '../nbt'
+import { Json } from './Json'
 
 export class BlockState {
 	public static readonly AIR = new BlockState('minecraft:air')

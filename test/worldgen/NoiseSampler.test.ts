@@ -1,13 +1,10 @@
 import { expect } from 'chai'
-import type { BiomeSource, NoiseSettings, TerrainShaper } from '../../src/worldgen'
+import type { NoiseSettings, TerrainShaper } from '../../src/worldgen'
 import { NoiseSampler } from '../../src/worldgen'
 
 describe('NoiseSampler', () => {
 	const DELTA = 1e-5
 	const setup = (seed: number, settings: Partial<NoiseSettings> = {}, shape: Partial<TerrainShaper.Shape> = {}) => {
-		const source: BiomeSource = {
-			getBiome: () => 'minecraft:plains',
-		}
 		const noiseSettings: NoiseSettings = {
 			minY: 0,
 			height: 128,
@@ -38,7 +35,7 @@ describe('NoiseSampler', () => {
 			weirdness: { firstOctave: 0, amplitudes: [0] },
 			shift: { firstOctave: 0, amplitudes: [0] },
 		}
-		const sampler = new NoiseSampler(4, 4, 32, source, noiseSettings, octaves, BigInt(seed), {offset: 0.03, factor: 342.8571468713332, peaks: 0, nearWater: false, ...shape})
+		const sampler = new NoiseSampler(4, 4, 32, noiseSettings, octaves, BigInt(seed), {offset: 0.03, factor: 342.8571468713332, peaks: 0, nearWater: false, ...shape})
 		return { sampler }
 	}
 	it('computeDimensionDensity', () => {
@@ -74,7 +71,7 @@ describe('NoiseSampler', () => {
 		expect(sampler2.computeInitialDensity(128, 0.03, 600, 0, 0)).equal(552)
 	})
 	it('applySlides', () => {
-		const { sampler } = setup(123, { bottomSlide: { offset: 0, size: 4, target: 30 }, topSlide: { offset: 2, size: 5, target: -29 } })
+		const { sampler } = setup(123, { bottomSlide: { offset: 0, size: 4, target: 0.234375 }, topSlide: { offset: 2, size: 5, target: -0.2265625 } })
 
 		expect(sampler.applySlide(10, 1)).equal(25)
 		expect(sampler.applySlide(-4, 31)).equal(-29)
