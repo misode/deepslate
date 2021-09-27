@@ -77,5 +77,13 @@
 	"minecraft:warped_forest": [73,144,123],
 	"minecraft:wooded_badlands_plateau": [176,151,101],
 	"minecraft:wooded_hills": [34,85,28],
-	"minecraft:wooded_mountains": [80,112,80]
+	"minecraft:wooded_mountains": [80,112,80],
+	"minecraft:snowy_slopes": [140, 195, 222],
+	"minecraft:lofty_peaks": [196, 168, 193],
+	"minecraft:snowcapped_peaks": [200, 198, 200],
+	"minecraft:stony_peaks": [82, 92, 103],
+	"minecraft:grove": [150, 150, 189],
+	"minecraft:meadow": [169, 197, 80],
+	"minecraft:lush_caves": [112, 255, 79],
+	"minecraft:dripstone_caves": [140, 124, 0]
 }

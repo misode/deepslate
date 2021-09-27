@@ -1,0 +1,50 @@
+---
+title: Multi Noise
+---
+import { Climate, MultiNoise, NoiseSampler, NoiseSettings } from 'deepslate'
+import Plot from '@site/src/components/Plot'
+import colors from './biomeColors.json'
+import { netherOctaves, overworldOctaves } from './noisesampler.mdx'
+
+```ts
+const biomeSource = new MultiNoise(new Climate.Parameters([
+	[Climate.parameters(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0), () => 'minecraft:nether_wastes'],
+	[Climate.parameters(0.0, -0.5, 0.0, 0.0, 0.0, 0.0, 0.0), () => 'minecraft:soul_sand_valley'],
+	[Climate.parameters(0.4, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0), () => 'minecraft:crimson_forest'],
+	[Climate.parameters(0.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.375), () => 'minecraft:warped_forest'],
+	[Climate.parameters(-0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.175), () => 'minecraft:basalt_deltas'],
+]))
+const noiseSampler = new NoiseSampler(4, 4, 32, biomeSource, NoiseSettings.fromJson(null),netherOctaves, BigInt(5392))
+const climateSampler = (x, y, z) => noiseSampler.getClimate(x, y, z)
+
+biomeSource.getBiome(x, 64, y, climateSampler)
+```
+
+<Plot name="Nether" width={160} scale={2}
+	initializer={() => {
+		const source = new MultiNoise(new Climate.Parameters([
+			[Climate.parameters(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0), () => 'minecraft:nether_wastes'],
+			[Climate.parameters(0.0, -0.5, 0.0, 0.0, 0.0, 0.0, 0.0), () => 'minecraft:soul_sand_valley'],
+			[Climate.parameters(0.4, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0), () => 'minecraft:crimson_forest'],
+			[Climate.parameters(0.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.375), () => 'minecraft:warped_forest'],
+			[Climate.parameters(-0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.175), () => 'minecraft:basalt_deltas'],
+		]))
+		const sampler = new NoiseSampler(4, 4, 32, source, NoiseSettings.fromJson(null), netherOctaves, BigInt(5392))
+		const climate = (x, y, z) => sampler.getClimate(x, y, z)
+		return { source, climate }
+	}}
+	sampler={({ source, climate }) => (x, y) => source.getBiome(x, 64, y, climate)}
+	colorizer={id => colors[id] ?? [0, 0, 0]}
+/>
+
+<Plot name="Overworld" width={160} scale={2}
+	fetcher={() => fetch('https://raw.githubusercontent.com/misode/vanilla-worldgen/master/dimension/overworld.json').then(r => r.json())}
+	initializer={data => {
+		const source = MultiNoise.fromJson(data.generator.biome_source)
+		const sampler = new NoiseSampler(4, 4, 32, source, NoiseSettings.fromJson(null), overworldOctaves, BigInt(5392))
+		const climate = (x, y, z) => sampler.getClimate(x, y, z)
+		return { source, climate }
+	}}
+	sampler={({ source, climate }) => (x, y) => source.getBiome(x, 64, y, climate)}
+	colorizer={id => colors[id] ?? [0, 0, 0]}
+/>

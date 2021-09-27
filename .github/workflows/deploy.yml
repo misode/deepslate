@@ -1,11 +1,11 @@
-name: Deploy demo to GitHub Pages
+name: Deploy website to GitHub Pages
 
 on:
   push:
     branches:
       - master
     paths: 
-      - 'demo/**'
+      - 'website/**'
       - '.github/workflows/deploy.yml'
 
 jobs:
@@ -17,13 +17,13 @@ jobs:
 
     - name: Build
       run: |
-        cd demo
+        cd website
         npm install
         npm run build
 
     - name: Deploy
-      uses: JamesIves/github-pages-deploy-action@releases/v3
+      uses: JamesIves/github-pages-deploy-action@4.1.5
       with:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        BRANCH: gh-pages
-        FOLDER: demo/dist
+        token: ${{ secrets.GITHUB_TOKEN }}
+        branch: gh-pages
+        folder: website/build

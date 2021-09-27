@@ -3,6 +3,7 @@
 	"include": [
     "./**/*.ts",
 		"rollup.config.js",
-		"demo/vite.config.js"
+		"./website/**/*.tsx",
+		"./website/*.js"
 	]
 }

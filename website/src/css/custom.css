@@ -1,0 +1,41 @@
+:root {
+	--ifm-color-primary: #5381c7;
+	--ifm-color-primary-dark: #3e72bf;
+	--ifm-color-primary-darker: #3b6bb5;
+	--ifm-color-primary-darkest: #305895;
+	--ifm-color-primary-light: #6891ce;
+	--ifm-color-primary-lighter: #7398d1;
+	--ifm-color-primary-lightest: #93b0dc;
+}
+
+canvas {
+	display: block;
+	background-color: black;
+}
+
+canvas.full {
+	width: 100vw;
+	height: 100vh;
+	background: none;
+	margin: 0;
+}
+
+.collection {
+	display: flex;
+	flex-wrap: wrap;
+}
+
+.collection hr {
+	flex-grow: 1;
+	width: 100%;
+	border: none;
+}
+
+.plot {
+	display: inline-block;
+	margin: 8px;
+}
+
+.plot.pixelated canvas {
+	image-rendering: pixelated;
+}

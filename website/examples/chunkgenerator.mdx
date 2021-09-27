@@ -1,0 +1,59 @@
+---
+title: Chunk Generator
+---
+import { BlockState, Chunk, ChunkPos, FixedBiome, NoiseChunkGenerator, NoiseSampler } from 'deepslate'
+import Plot from '@site/src/components/Plot'
+import { overworldSettings as overworldNoiseSettings, overworldOctaves, netherSettings as netherNoiseSettings, netherOctaves } from './noisesampler.mdx'
+
+export const colors = {
+	'minecraft:air': [150, 160, 170],
+	'minecraft:water': [20, 80, 170],
+	'minecraft:lava': [200, 100, 0],
+	'minecraft:stone': [50, 50, 50],
+	'minecraft:netherrack': [100, 40, 40],
+}
+
+export const overworldSettings = {
+	defaultBlock: new BlockState('minecraft:stone'),
+	defaultFluid: new BlockState('minecraft:water', { level: '0' }),
+	bedrockRoofPosition: -2147483648,
+	bedrockFloorPosition: 0,
+	seaLevel: 63,
+	noise: { ...overworldNoiseSettings, densityOffset: -0.51875 },
+	octaves: overworldOctaves,
+}
+
+export const netherSettings = {
+	defaultBlock: new BlockState('minecraft:netherrack'),
+	defaultFluid: new BlockState('minecraft:lava', { level: '0' }),
+	bedrockRoofPosition: 0,
+	bedrockFloorPosition: 0,
+	seaLevel: 32,
+	noise: netherNoiseSettings,
+	octaves: netherOctaves,
+}
+
+export function GeneratorPlot({ z, width, height, scale, settings, shape }) {
+	return <Plot name="Overworld" width={width} height={height} scale={scale ?? undefined}
+		initializer={() => {
+			const generator = new NoiseChunkGenerator(BigInt(125), null, settings, shape)
+			const chunks = [...Array(Math.ceil(width / 16))].map((_, i) => new Chunk(0, height, ChunkPos.create(i, z >> 4)))
+			chunks.forEach(chunk => generator.fill(chunk))
+			return chunks
+		}}
+		sampler={chunks => (x, y) => chunks[x >> 4].getBlockState([x & 0xF, height - y - 1, z & 0xF])}
+		colorizer={state => colors[state.getName()] ?? [0, 0, 0]}
+	/>
+}
+
+<GeneratorPlot z={37} width={384} height={256} settings={overworldSettings}
+	shape={{ offset: -0.22, factor: 800, peaks: 0, nearWater: false }} />
+
+<GeneratorPlot z={37} width={384} height={256} settings={overworldSettings}
+	shape={{ offset: 0.06, factor: 600, peaks: 0, nearWater: false }} />
+
+<GeneratorPlot z={37} width={384} height={256} settings={overworldSettings}
+	shape={{ offset: 0.27, factor: 600, peaks: 70, nearWater: false }} />
+
+<GeneratorPlot z={150} width={196} height={128} scale={2} settings={netherSettings}
+	shape={{ offset: 0, factor: 1, peaks: 0, nearWater: false }} />
