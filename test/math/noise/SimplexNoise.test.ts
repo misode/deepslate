@@ -1,10 +1,10 @@
 import { expect } from 'chai'
-import { Random, SimplexNoise } from '../../../src/math'
+import { LegacyRandom, SimplexNoise } from '../../../src/math'
 
 describe('SimplexNoise', () => {
 	const DELTA = 1e-5
 	const setup = () => {
-		const random = new Random(BigInt(912))
+		const random = new LegacyRandom(BigInt(912))
 		const noise = new SimplexNoise(random)
 		return { random, noise }
 	}

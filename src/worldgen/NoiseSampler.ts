@@ -1,4 +1,4 @@
-import { BlendedNoise, clampedLerp, NormalNoise, Random, WorldgenRandom } from '../math'
+import { BlendedNoise, clampedLerp, LegacyRandom, NormalNoise } from '../math'
 import { Climate, TerrainShaper } from './biome'
 import type { NoiseOctaves } from './NoiseGeneratorSettings'
 import type { NoiseSettings } from './NoiseSettings'
@@ -23,16 +23,16 @@ export class NoiseSampler {
 		/** @deprecated */
 		private readonly shapeOverride?: TerrainShaper.Shape,
 	) {
-		const random = new Random(seed)
-		const blendedRandom = settings.useLegacyRandom ? new Random(seed) : random.fork()
+		const random = new LegacyRandom(seed)
+		const blendedRandom = settings.useLegacyRandom ? new LegacyRandom(seed) : random.fork()
 		this.blendedNoise = new BlendedNoise(blendedRandom, settings.sampling)
 		random.consume(8)
-		this.temperatureNoise = new NormalNoise(new WorldgenRandom(seed), octaves.temperature)
-		this.humidityNoise = new NormalNoise(new WorldgenRandom(seed + BigInt(1)), octaves.humidity)
-		this.continentalnessNoise = new NormalNoise(new WorldgenRandom(seed + BigInt(2)), octaves.continentalness)
-		this.erosionNoise = new NormalNoise(new WorldgenRandom(seed + BigInt(3)), octaves.erosion)
-		this.weirdnessNoise = new NormalNoise(new WorldgenRandom(seed + BigInt(4)), octaves.weirdness)
-		this.offsetNoise = new NormalNoise(new WorldgenRandom(seed + BigInt(5)), octaves.shift)
+		this.temperatureNoise = new NormalNoise(new LegacyRandom(seed), octaves.temperature)
+		this.humidityNoise = new NormalNoise(new LegacyRandom(seed + BigInt(1)), octaves.humidity)
+		this.continentalnessNoise = new NormalNoise(new LegacyRandom(seed + BigInt(2)), octaves.continentalness)
+		this.erosionNoise = new NormalNoise(new LegacyRandom(seed + BigInt(3)), octaves.erosion)
+		this.weirdnessNoise = new NormalNoise(new LegacyRandom(seed + BigInt(4)), octaves.weirdness)
+		this.offsetNoise = new NormalNoise(new LegacyRandom(seed + BigInt(5)), octaves.shift)
 		this.mountainPeakNoise = new NormalNoise(random.fork(), { firstOctave: -16, amplitudes: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1] })
 	}
 
