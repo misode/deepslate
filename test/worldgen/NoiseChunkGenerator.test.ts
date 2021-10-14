@@ -25,8 +25,8 @@ describe('NoiseChunkGenerator', () => {
 				height: 128,
 				xzSize: 1,
 				ySize: 2,
-				densityFactor: 1,
-				densityOffset: 0,
+				densityFactor: 0,
+				densityOffset: -0.030078125,
 				sampling: { xzScale: 1, yScale: 1, xzFactor: 80, yFactor: 80 },
 				topSlide: { target: 0, size: 0, offset: 0 },
 				bottomSlide: { target: 0, size: 0, offset: 0 },
@@ -47,7 +47,7 @@ describe('NoiseChunkGenerator', () => {
 			},
 			...generatorSettings,
 		}
-		const generator = new NoiseChunkGenerator(BigInt(seed), biomeSource, settings, { offset: 0, factor: 1, peaks: 0, nearWater: false })
+		const generator = new NoiseChunkGenerator(BigInt(seed), biomeSource, settings)
 		return { biomeSource, settings, generator }
 	}
 

@@ -1,4 +1,6 @@
 export * from './biome'
+export * from './MaterialRule'
+export * from './NoiseChunk'
 export * from './NoiseChunkGenerator'
 export * from './NoiseGeneratorSettings'
 export * from './NoiseInterpolator'

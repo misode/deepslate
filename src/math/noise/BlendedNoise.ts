@@ -16,6 +16,8 @@ export class BlendedNoise {
 	constructor(
 		random: Random,
 		sampling: NoiseSamplingSettings,
+		public readonly cellWidth: number,
+		public readonly cellHeight: number,
 	) {
 		this.minLimitNoise = new PerlinNoise(random, -15, [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
 		this.maxLimitNoise = new PerlinNoise(random, -15, [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
@@ -27,6 +29,9 @@ export class BlendedNoise {
 	}
 
 	public sample(x: number, y: number, z: number) {
+		x = Math.floor(x / this.cellWidth)
+		y = Math.floor(y / this.cellHeight)
+		z = Math.floor(z / this.cellWidth)
 		let noise: ImprovedNoise | undefined
 		let value = 0
 		let factor = 1
@@ -62,7 +67,7 @@ export class BlendedNoise {
 			factor /= 2
 		}
 
-		return clampedLerp(min / 512, max / 512, value)
+		return clampedLerp(min / 512, max / 512, value) / 128
 	}
 }
 

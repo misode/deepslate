@@ -21,7 +21,7 @@ describe('MultiNoise', () => {
 		}
 		const nether = new MultiNoise(netherBiomes)
 		const sampler = new NoiseSampler(4, 4, 32, NoiseSettings.fromJson(null), octaves, BigInt(5392))
-		const climate: Climate.Sampler = (x, y, z) => sampler.getClimate(x, y, z)
+		const climate: Climate.Sampler = (x, y, z) => sampler.sample(x, y, z)
 
 		expect(nether.getBiome(0, 0, 0, climate)).equal('minecraft:soul_sand_valley')
 		expect(nether.getBiome(100, 0, 0, climate)).equal('minecraft:crimson_forest')

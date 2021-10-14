@@ -152,7 +152,7 @@ export namespace Climate {
 			let n3 = -1
 			let result: RSubTree<T>[] = []
 			for (let n2 = 0; n2 < PARAMETER_SPACE; ++n2) {
-				RTree.sort(nodes, n2, false)
+				nodes = RTree.sort(nodes, n2, false)
 				result = RTree.bucketize(nodes)
 				let f2 = 0.0
 				for (const subTree2 of result) {
