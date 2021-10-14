@@ -5,10 +5,10 @@ import { NoiseSampler } from 'deepslate'
 import Plot from '@site/src/components/Plot'
 
 export const overworldSettings = {
-	minY: 0,
-	height: 256,
+	minY: -64,
+	height: 384,
 	densityFactor: 1,
-	densityOffset: 0,
+	densityOffset: -0.51,
 	xzSize: 1,
 	ySize: 2,
 	sampling: { xzScale: 1, yScale: 1, xzFactor: 80, yFactor: 160 },
@@ -25,30 +25,21 @@ export const overworldOctaves = {
 }
 
 ```ts
-const sampler = new NoiseSampler(4, 8, 48, noiseSettings, noiseOctaves,
-	BigInt(40162), { offset: 0.03, factor: 343, peaks: 0, nearWater: false })
-const column = Array(49)
-sampler.fillNoiseColumn(column, x, 0, 0, 48)
+const sampler = new NoiseSampler(4, 8, 48, noiseSettings, noiseOctaves, BigInt(40162))
+const terrainInfo = { offset: 0, factor: 1, jaggedness: 0 }
+sampler.calculateBaseNoise(x, y, z, terrainInfo)
 ```
 
 <Plot name="Overworld" width={96} height={48} scale={6}
-	initializer={() => ({
-		sampler: new NoiseSampler(4, 8, 48, null, overworldSettings, overworldOctaves, BigInt(40162), { offset: 0.03, factor: 343, peaks: 0, nearWater: false }),
-		column: Array(49)
-	})}
-	column={({ sampler, column }, x) => sampler.fillNoiseColumn(column, x, 0, 0, 48)}
-	sampler={({ column }) => (x, y) => column[48 - y]}
-	colorizer={value => (Math.max(-1, Math.min(1, value / -200)) + 1) * 128}
+	initializer={() => new NoiseSampler(4, 8, 48, overworldSettings, overworldOctaves, BigInt(40162))}
+	sampler={sampler => (x, y) => sampler.calculateBaseNoise(x * 4, 256 - y * 8, 0, { offset: 0, factor: 1, jaggedness: 0 })}
+	colorizer={value => -64 * value + 128}
 />
 
-<Plot name="Overworld peaks" width={96} height={49} scale={6}
-	initializer={() => ({
-		sampler: new NoiseSampler(4, 8, 48, null, overworldSettings, overworldOctaves, BigInt(40162), { offset: 0.3, factor: 600, peaks: 80, nearWater: false }),
-		column: Array(49)
-	})}
-	column={({ sampler, column }, x) => sampler.fillNoiseColumn(column, x, 0, 0, 48)}
-	sampler={({ column }) => (x, y) => column[48 - y]}
-	colorizer={value => (Math.max(-1, Math.min(1, value / -200)) + 1) * 128}
+<Plot name="Overworld jaggedness" width={96} height={49} scale={6}
+	initializer={() => new NoiseSampler(4, 8, 48, overworldSettings, overworldOctaves, BigInt(40162))}
+	sampler={sampler => (x, y) => sampler.calculateBaseNoise(x * 4, 256 - y * 8, 0, { offset: 0.3, factor: 6, jaggedness: 1 })}
+	colorizer={value => -64 * value + 128}
 />
 
 export const netherSettings = {
@@ -56,11 +47,11 @@ export const netherSettings = {
 	height: 128,
 	densityFactor: 0,
 	densityOffset: -0.03,
-	xzSize: 2,
-	ySize: 1,
-	sampling: { xzScale: 1, yScale: 1, xzFactor: 80, yFactor: 80 },
-	bottomSlide: { offset: -1, size: 4, target: 320 },
-	topSlide: { offset: 0, size: 3, target: 120 },
+	xzSize: 1,
+	ySize: 2,
+	sampling: { xzScale: 1, yScale: 3, xzFactor: 80, yFactor: 60 },
+	bottomSlide: { offset: -1, size: 4, target: 2.5 },
+	topSlide: { offset: 0, size: 3, target: 0.9375 },
 }
 
 export const netherOctaves = {
@@ -74,13 +65,9 @@ export const netherOctaves = {
 
 export function NetherPlot({ z }) {
 	return <Plot name={`Nether z=${z}`} width={32} height={17} scale={6}
-		initializer={() => ({
-			sampler: new NoiseSampler(4, 8, 16, null, netherSettings, netherOctaves, BigInt(40162), { offset: 0, factor: 1, peaks: 0, nearWater: false }),
-			column: Array(17)
-		})}
-		column={({ sampler, column }, x) => sampler.fillNoiseColumn(column, x, z, 0, 16)}
-		sampler={({ column }) => (x, y) => column[16 - y]}
-		colorizer={value => (Math.max(-1, Math.min(1, value / -200)) + 1) * 128}
+		initializer={() => new NoiseSampler(4, 8, 16, netherSettings, netherOctaves, BigInt(40162))}
+		sampler={sampler => (x, y) => sampler.calculateBaseNoise(x * 4, 128 - y * 8, z * 4)}
+		colorizer={value => -64 * value + 128}
 	/>
 }
 
@@ -92,13 +79,7 @@ export function NetherPlot({ z }) {
 <NetherPlot z={5} />
 
 <Plot name="Nether top-down y=64" width={64} height={64} scale={6}
-	initializer={() => ({
-		sampler: new NoiseSampler(4, 8, 16, null, netherSettings, netherOctaves, BigInt(40162), { offset: 0, factor: 1, peaks: 0, nearWater: false }),
-		column: Array(17)
-	})}
-	sampler={({ sampler, column }) => (x, y) => {
-		sampler.fillNoiseColumn(column, x, y, 0, 16)
-		return column[8]
-	}}
-	colorizer={value => (Math.max(-1, Math.min(1, value / -200)) + 1) * 128}
+	initializer={() => new NoiseSampler(4, 8, 16, netherSettings, netherOctaves, BigInt(40162))}
+	sampler={sampler => (x, y) => sampler.calculateBaseNoise(x * 4, 64, y * 4)}
+		colorizer={value => -64 * value + 128}
 />

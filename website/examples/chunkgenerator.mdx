@@ -33,8 +33,8 @@ export const netherSettings = {
 	octaves: netherOctaves,
 }
 
-export function GeneratorPlot({ z, width, height, scale, settings, shape }) {
-	return <Plot name="Overworld" width={width} height={height} scale={scale ?? undefined}
+export function GeneratorPlot({ name, z, width, height, scale, settings, shape }) {
+	return <Plot name={name} width={width} height={height} scale={scale ?? undefined}
 		initializer={() => {
 			const generator = new NoiseChunkGenerator(BigInt(125), null, settings, shape)
 			const chunks = [...Array(Math.ceil(width / 16))].map((_, i) => new Chunk(0, height, ChunkPos.create(i, z >> 4)))
@@ -46,14 +46,22 @@ export function GeneratorPlot({ z, width, height, scale, settings, shape }) {
 	/>
 }
 
-<GeneratorPlot z={37} width={384} height={256} settings={overworldSettings}
-	shape={{ offset: -0.22, factor: 800, peaks: 0, nearWater: false }} />
+<GeneratorPlot name="Overworld" z={37} width={384} height={256}
+	settings={overworldSettings}
+	shape={{ offset: -0.22, factor: 6.25, jaggedness: 0 }} />
 
-<GeneratorPlot z={37} width={384} height={256} settings={overworldSettings}
-	shape={{ offset: 0.06, factor: 600, peaks: 0, nearWater: false }} />
+<GeneratorPlot name="Overworld (ocean)" z={37} width={384} height={256}
+	settings={overworldSettings}
+	shape={{ offset: 0.06, factor: 4.6875, jaggedness: 0 }} />
 
-<GeneratorPlot z={37} width={384} height={256} settings={overworldSettings}
-	shape={{ offset: 0.27, factor: 600, peaks: 70, nearWater: false }} />
+<GeneratorPlot name="Overworld (peaks)" z={37} width={384} height={256}
+	settings={overworldSettings}
+	shape={{ offset: 0.27, factor: 4.6875, jaggedness: 0.7 }} />
 
-<GeneratorPlot z={150} width={196} height={128} scale={2} settings={netherSettings}
-	shape={{ offset: 0, factor: 1, peaks: 0, nearWater: false }} />
+<GeneratorPlot name="Nether" z={150} width={196} height={128} scale={2}
+	settings={netherSettings}
+	shape={{ offset: 0, factor: 1, jaggedness: 0 }} />
+
+<GeneratorPlot name="Overworld (wide)" z={4000} width={2400} height={256} scale={0.25}
+	settings={overworldSettings}
+/>

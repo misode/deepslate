@@ -1,5 +1,5 @@
 import { Json } from '../core'
-import { NoiseSamplingSettings } from '../math'
+import { clampedLerp, NoiseSamplingSettings } from '../math'
 
 export type NoiseSettings = {
 	minY: number,
@@ -52,5 +52,11 @@ export namespace NoiseSlideSettings {
 			size: Json.readInt(root.size) ?? 0,
 			offset: Json.readInt(root.offset) ?? 0,
 		}
+	}
+
+	export function apply(slide: NoiseSlideSettings, density: number, y: number) {
+		if (slide.size <= 0) return density
+		const t = (y - slide.offset) / slide.size
+		return clampedLerp(slide.target, density, t)
 	}
 }

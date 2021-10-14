@@ -51,12 +51,12 @@ const value = spline.apply(0.4)
 	spline={x => TerrainShaper.factor(TerrainShaper.point(x, -0.45, 0))}
 />
 
-<SplinePlot name="Peaks from continentalness [-0.3, 0.3]" width={WIDTH} height={HEIGHT} range={[-0.3, 0.3]}
-	spline={x => TerrainShaper.peaks(TerrainShaper.point(x, -0.8, 0.6))}
+<SplinePlot name="Jaggedness from continentalness [-0.3, 0.3]" width={WIDTH} height={HEIGHT} range={[-0.3, 0.3]}
+	spline={x => TerrainShaper.jaggedness(TerrainShaper.point(x, -0.8, 0.6))}
 />
 
-<SplinePlot name="Peaks from ridges [0, 1]" width={WIDTH} height={HEIGHT} range={[0, 1]}
-	spline={x => TerrainShaper.peaks({ continents: 0.11, erosion: -0.45, weirdness: 0, ridges: x })}
+<SplinePlot name="Jaggedness from ridges [0, 1]" width={WIDTH} height={HEIGHT} range={[0, 1]}
+	spline={x => TerrainShaper.jaggedness({ continents: 0.11, erosion: -0.45, weirdness: 0, ridges: x })}
 />
 
 export function ridgeSpline(f1, f2, f3, f4, f5, f6) {

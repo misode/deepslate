@@ -4,7 +4,7 @@ import type { ChunkPos } from './ChunkPos'
 import { ChunkSection } from './ChunkSection'
 
 export class Chunk {
-	private sections: ChunkSection[]
+	public sections: ChunkSection[]
 
 	constructor(
 		public readonly minY: number,

@@ -72,9 +72,14 @@ const value = noise.sample(x, y, 0)
 
 ## BlendedNoise
 
+```ts
+const sampling = { xzScale: 1, yScale: 1, xzFactor: 80, yFactor: 160 }
+const noise = new BlendedNoise(new Random(BigInt(6203)), sampling)
+const value = noise.sample(x, y, 0)
+```
 <Plot name="Blended" width={SIZE} colorizer={gray(-256, 256)}
-	initializer={() => new BlendedNoise(new Random(SEED))}
-	sampler={noise => (x, y) => noise.sample(x / 2, y / 2, 0, 600, 600, 8, 4)}
+	initializer={() => new BlendedNoise(new Random(SEED), { xzScale: 1, yScale: 1, xzFactor: 80, yFactor: 160 })}
+	sampler={noise => (x, y) => noise.sample(x / 2, y / 2, 0)}
 />
 
 ## SimplexNoise

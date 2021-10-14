@@ -1,11 +1,7 @@
-import type { ChunkPos } from '../core'
 import { lerp } from '../math'
-
-export type NoiseColumnFiller = (column: number[], x: number, z: number, cellMinY: number, cellCountY: number) => void
+import type { NoiseChunk, NoiseFiller } from './NoiseChunk'
 
 export class NoiseInterpolator {
-	private readonly minCellX: number
-	private readonly minCellZ: number
 	private slice0: number[][]
 	private slice1: number[][]
 	private noise000: number = 0
@@ -22,19 +18,14 @@ export class NoiseInterpolator {
 	private valueXZ11: number = 0
 	private valueZ0: number = 0
 	private valueZ1: number = 0
+	private value: number = 0
 
 	constructor(
-		cellCountX: number,
-		private readonly cellCountY: number,
-		private readonly cellCountZ: number,
-		chunkPos: ChunkPos,
-		private readonly cellMinY: number,
-		private readonly filler: NoiseColumnFiller
+		private readonly chunk: NoiseChunk,
+		private readonly filler: NoiseFiller
 	) {
-		this.minCellX = chunkPos[0] * cellCountX
-		this.minCellZ = chunkPos[1] * cellCountZ
-		this.slice0 = NoiseInterpolator.allocateSlice(cellCountY, cellCountZ)
-		this.slice1 = NoiseInterpolator.allocateSlice(cellCountY, cellCountZ)
+		this.slice0 = NoiseInterpolator.allocateSlice(chunk.cellCountY, chunk.cellCountXZ)
+		this.slice1 = NoiseInterpolator.allocateSlice(chunk.cellCountY, chunk.cellCountXZ)
 	}
 
 	private static allocateSlice(cellCountY: number, cellCountZ: number) {
@@ -46,16 +37,21 @@ export class NoiseInterpolator {
 	}
 
 	public initializeForFirstCellX() {
-		this.fillSlice(this.slice0, this.minCellX)
+		this.fillSlice(this.slice0, this.chunk.firstCellX)
 	}
 
 	public advanceCellX(x: number) {
-		this.fillSlice(this.slice1, this.minCellX + x + 1)
+		this.fillSlice(this.slice1, this.chunk.firstCellX + x + 1)
 	}
 
 	private fillSlice(slice: number[][], x: number) {
-		for (let z = 0; z < this.cellCountZ + 1; z += 1) {
-			this.filler(slice[z], x, this.minCellZ + z, this.cellMinY, this.cellCountY)
+		const xx = x * this.chunk.cellWidth
+		for (let z = 0; z < this.chunk.cellCountXZ + 1; z += 1) {
+			const zz = (this.chunk.firstCellZ + z) * this.chunk.cellWidth
+			for (let y = 0; y < this.chunk.cellCountY + 1; y += 1) {
+				const yy = (this.chunk.cellCountNoiseMinY + y) * this.chunk.cellHeight
+				slice[z][y] = this.filler(xx, yy, zz)
+			}
 		}
 	}
 
@@ -82,8 +78,12 @@ export class NoiseInterpolator {
 		this.valueZ1 = lerp(x, this.valueXZ01, this.valueXZ11)
 	}
 
-	public calculateValue(z: number) {
-		return lerp(z, this.valueZ0, this.valueZ1)
+	public updateForZ(z: number) {
+		this.value = lerp(z, this.valueZ0, this.valueZ1)
+	}
+
+	public sample() {
+		return this.value
 	}
 
 	public swapSlices() {
