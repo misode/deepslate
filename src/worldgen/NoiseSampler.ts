@@ -1,5 +1,6 @@
 import { BlockState } from '../core'
 import { BlendedNoise, clamp, LegacyRandom, NormalNoise } from '../math'
+import { XoroshiroRandom } from '../math/random/XoroshiroRandom'
 import { Climate, TerrainShaper } from './biome'
 import type { BlockStateFiller, InterpolatableNoise, NoiseChunk, NoiseFiller } from './NoiseChunk'
 import { TerrainInfo } from './NoiseChunk'
@@ -26,20 +27,33 @@ export class NoiseSampler {
 		private readonly settings: NoiseSettings,
 		octaves: NoiseOctaves,
 		seed: bigint,
+		legacyRandomSource: boolean = false,
 		/** @deprecated */
 		terrainOverride?: TerrainInfo,
 	) {
-		const random = new Random(seed)
-		const blendedRandom = settings.useLegacyRandom ? new LegacyRandom(seed) : random.fork()
-		this.blendedNoise = new BlendedNoise(blendedRandom, settings.sampling, cellWidth, cellHeight)
-		random.consume(8)
-		this.temperatureNoise = new NormalNoise(new LegacyRandom(seed), octaves.temperature)
-		this.humidityNoise = new NormalNoise(new LegacyRandom(seed + BigInt(1)), octaves.humidity)
-		this.continentalnessNoise = new NormalNoise(new LegacyRandom(seed + BigInt(2)), octaves.continentalness)
-		this.erosionNoise = new NormalNoise(new LegacyRandom(seed + BigInt(3)), octaves.erosion)
-		this.weirdnessNoise = new NormalNoise(new LegacyRandom(seed + BigInt(4)), octaves.weirdness)
-		this.offsetNoise = new NormalNoise(new LegacyRandom(seed + BigInt(5)), octaves.shift)
-		this.jaggedNoise = new NormalNoise(random.fork(), { firstOctave: -16, amplitudes: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1] })
+		if (!legacyRandomSource) {
+			const random = XoroshiroRandom.create(seed).fork()
+			this.blendedNoise = new BlendedNoise(random.forkWithHashOf("terrain"), settings.sampling, cellWidth, cellHeight)
+			this.temperatureNoise = new NormalNoise(random.forkWithHashOf("temperature"), octaves.temperature)
+			this.humidityNoise = new NormalNoise(random.forkWithHashOf("vegetation"), octaves.humidity)
+			this.continentalnessNoise = new NormalNoise(random.forkWithHashOf("continentalness"), octaves.continentalness)
+			this.erosionNoise = new NormalNoise(random.forkWithHashOf("erosion"), octaves.erosion)
+			this.weirdnessNoise = new NormalNoise(random.forkWithHashOf("ridge"), octaves.weirdness)
+			this.offsetNoise = new NormalNoise(random.forkWithHashOf("offset"), octaves.shift)
+			this.jaggedNoise = new NormalNoise(random.forkWithHashOf("jagged"), { firstOctave: -16, amplitudes: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1] })
+		} else {
+			const random = new LegacyRandom(seed)
+			const blendedRandom = settings.useLegacyRandom ? new LegacyRandom(seed) : random.fork()
+			this.blendedNoise = new BlendedNoise(blendedRandom, settings.sampling, cellWidth, cellHeight)
+			random.consume(8)
+			this.temperatureNoise = new NormalNoise(new LegacyRandom(seed), octaves.temperature)
+			this.humidityNoise = new NormalNoise(new LegacyRandom(seed + BigInt(1)), octaves.humidity)
+			this.continentalnessNoise = new NormalNoise(new LegacyRandom(seed + BigInt(2)), octaves.continentalness)
+			this.erosionNoise = new NormalNoise(new LegacyRandom(seed + BigInt(3)), octaves.erosion)
+			this.weirdnessNoise = new NormalNoise(new LegacyRandom(seed + BigInt(4)), octaves.weirdness)
+			this.offsetNoise = new NormalNoise(new LegacyRandom(seed + BigInt(5)), octaves.shift)
+			this.jaggedNoise = new NormalNoise(random.fork(), { firstOctave: -16, amplitudes: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1] })
+		}
 
 		this.baseNoise = chunk => {
 			const sampler = chunk.createNoiseInterpolator((x, y, z) => this.calculateBaseNoise(x, y, z, terrainOverride ?? chunk.getTerrainInfo(x >> 2, z >> 2)))
