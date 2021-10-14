@@ -24,6 +24,9 @@ export class XoroshiroRandom implements Random {
 	}
 
 	private static upgradeSeedTo128bit(seed: bigint): [bigint, bigint] {
+		if (seed < 0)
+			seed += BigInt("0x10000000000000000")
+			
 		const seedLo = seed ^ XoroshiroRandom.SILVER_RATIO_64;
 		const seedHi = (seedLo + XoroshiroRandom.GOLDEN_RATIO_64) & BigInt("0xFFFFFFFFFFFFFFFF");
 		return [XoroshiroRandom.mixStafford13(seedLo), XoroshiroRandom.mixStafford13(seedHi)];
@@ -31,9 +34,6 @@ export class XoroshiroRandom implements Random {
 
 	public static rotateLeft(value: bigint, shift: bigint): bigint {
 		var v = (value << shift) & (BigInt("0xFFFFFFFFFFFFFFFF")) | (value >> (BigInt(64) - shift))
-
-		//if (v > BigInt("0x8FFFFFFFFFFFFFFF"))
-		//	v -= BigInt("0x10000000000000000")
 
 		return v
 	}
