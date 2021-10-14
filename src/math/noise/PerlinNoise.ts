@@ -1,4 +1,4 @@
-import type { Random } from '../random'
+import { Random, XoroshiroRandom } from '../random'
 import { ImprovedNoise } from './ImprovedNoise'
 
 export class PerlinNoise {
@@ -12,12 +12,24 @@ export class PerlinNoise {
 			throw new Error('Positive octaves are not allowed')
 		}
 
-		this.noiseLevels = Array(amplitudes.length)
-		for (let i = -firstOctave; i >= 0; i -= 1) {
-			if (i < amplitudes.length && amplitudes[i] !== 0) {
-				this.noiseLevels[i] = new ImprovedNoise(random)
-			} else {
-				random.consume(262)
+		if (random instanceof XoroshiroRandom){
+			const forkedRandom = random.fork()
+
+			this.noiseLevels = Array(amplitudes.length)
+            for(let i = 0; i < amplitudes.length; i++) {
+                if (amplitudes[i] !== 0.0) {
+                    const octave = firstOctave + i;
+                    this.noiseLevels[i] = new ImprovedNoise(forkedRandom.forkWithHashOf("octave_" + octave));
+                }
+            }
+		} else {
+			this.noiseLevels = Array(amplitudes.length)
+			for (let i = -firstOctave; i >= 0; i -= 1) {
+				if (i < amplitudes.length && amplitudes[i] !== 0) {
+					this.noiseLevels[i] = new ImprovedNoise(random)
+				} else {
+					random.consume(262)
+				}
 			}
 		}
 
