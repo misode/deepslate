@@ -8,10 +8,6 @@ export class PerlinNoise {
 	public readonly lowestFreqValueFactor: number
 
 	constructor(random: Random, firstOctave: number, amplitudes: number[]) {
-		if (1 - firstOctave < amplitudes.length) {
-			throw new Error('Positive octaves are not allowed')
-		}
-
 		if (random instanceof XoroshiroRandom){
 			const forkedRandom = random.fork()
 
@@ -23,6 +19,10 @@ export class PerlinNoise {
                 }
             }
 		} else {
+			if (1 - firstOctave < amplitudes.length) {
+				throw new Error('Positive octaves are not allowed when using LegacyRandom')
+			}
+	
 			this.noiseLevels = Array(amplitudes.length)
 			for (let i = -firstOctave; i >= 0; i -= 1) {
 				if (i < amplitudes.length && amplitudes[i] !== 0) {
