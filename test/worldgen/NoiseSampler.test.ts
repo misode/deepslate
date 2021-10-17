@@ -35,7 +35,7 @@ describe('NoiseSampler', () => {
 			weirdness: { firstOctave: 0, amplitudes: [0] },
 			shift: { firstOctave: 0, amplitudes: [0] },
 		}
-		const sampler = new NoiseSampler(4, 4, 32, noiseSettings, octaves, BigInt(seed))
+		const sampler = new NoiseSampler(4, 4, 32, noiseSettings, octaves, BigInt(seed), true)
 		return { sampler }
 	}
 	it('sampleJaggedNoise', () => {

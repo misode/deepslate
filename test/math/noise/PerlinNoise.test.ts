@@ -1,16 +1,16 @@
 import { expect } from 'chai'
-import { PerlinNoise, Random } from '../../../src/math'
+import { LegacyRandom, PerlinNoise } from '../../../src/math'
 
 describe('PerlinNoise', () => {
 	const DELTA = 1e-5
 	const setup = () => {
-		const random = new Random(BigInt(381))
+		const random = new LegacyRandom(BigInt(381))
 		const noise = new PerlinNoise(random, -6, [1.0, 1.0])
 		return { random, noise }
 	}
 
 	it('create (throw)', () => {
-		const random = new Random(BigInt(381))
+		const random = new LegacyRandom(BigInt(381))
 
 		expect(() => new PerlinNoise(random, -2, [1.0, 1.0, 1.0])).not.throw()
 		expect(() => new PerlinNoise(random, -2, [1.0, 1.0, 1.0, 1.0])).throw()

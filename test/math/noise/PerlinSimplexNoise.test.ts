@@ -1,10 +1,10 @@
 import { expect } from 'chai'
-import { PerlinSimplexNoise, Random } from '../../../src/math'
+import { LegacyRandom, PerlinSimplexNoise } from '../../../src/math'
 
 describe('PerlinSimplexNoise', () => {
 	const DELTA = 1e-5
 	const setup = () => {
-		const random = new Random(BigInt(912))
+		const random = new LegacyRandom(BigInt(912))
 		const noise = new PerlinSimplexNoise(random, [-5, -3])
 		return { random, noise }
 	}

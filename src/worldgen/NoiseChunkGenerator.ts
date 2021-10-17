@@ -27,7 +27,7 @@ export class NoiseChunkGenerator {
 		this.cellCountXZ = Math.floor(16 / this.cellWidth)
 		this.cellCountY = Math.floor(settings.noise.height / this.cellHeight)
 
-		this.sampler = new NoiseSampler(this.cellWidth, this.cellHeight, this.cellCountY, settings.noise, settings.octaves, seed, terrainOverride)
+		this.sampler = new NoiseSampler(this.cellWidth, this.cellHeight, this.cellCountY, settings.noise, settings.octaves, seed, settings.legacyRandomSource, terrainOverride)
 
 		this.materialRule = MaterialRule.fromList([
 			(chunk, x, y, z) => chunk.updateNoiseAndGenerateBaseState(x, y, z),

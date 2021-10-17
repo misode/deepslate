@@ -1,4 +1,5 @@
 import type { Random } from '../random'
+import { XoroshiroRandom } from '../random'
 import { ImprovedNoise } from './ImprovedNoise'
 
 export class PerlinNoise {
@@ -8,16 +9,28 @@ export class PerlinNoise {
 	public readonly lowestFreqValueFactor: number
 
 	constructor(random: Random, firstOctave: number, amplitudes: number[]) {
-		if (1 - firstOctave < amplitudes.length) {
-			throw new Error('Positive octaves are not allowed')
-		}
+		if (random instanceof XoroshiroRandom){
+			const forkedRandom = random.fork()
 
-		this.noiseLevels = Array(amplitudes.length)
-		for (let i = -firstOctave; i >= 0; i -= 1) {
-			if (i < amplitudes.length && amplitudes[i] !== 0) {
-				this.noiseLevels[i] = new ImprovedNoise(random)
-			} else {
-				random.consume(262)
+			this.noiseLevels = Array(amplitudes.length)
+			for(let i = 0; i < amplitudes.length; i++) {
+				if (amplitudes[i] !== 0.0) {
+					const octave = firstOctave + i
+					this.noiseLevels[i] = new ImprovedNoise(forkedRandom.forkWithHashOf('octave_' + octave))
+				}
+			}
+		} else {
+			if (1 - firstOctave < amplitudes.length) {
+				throw new Error('Positive octaves are not allowed when using LegacyRandom')
+			}
+
+			this.noiseLevels = Array(amplitudes.length)
+			for (let i = -firstOctave; i >= 0; i -= 1) {
+				if (i < amplitudes.length && amplitudes[i] !== 0) {
+					this.noiseLevels[i] = new ImprovedNoise(random)
+				} else {
+					random.consume(262)
+				}
 			}
 		}
 

@@ -17,6 +17,7 @@ export type NoiseGeneratorSettings = {
 	deepslateEnabled: boolean,
 	oreVeinsEnabled: boolean,
 	noodleCavesEnabled: boolean,
+	legacyRandomSource: boolean,
 }
 export namespace NoiseGeneratorSettings {
 	export function fromJson(obj: unknown): NoiseGeneratorSettings {
@@ -36,6 +37,7 @@ export namespace NoiseGeneratorSettings {
 			deepslateEnabled: Json.readBoolean(root.deepslate_enabled) ?? false,
 			oreVeinsEnabled: Json.readBoolean(root.ore_veins_enabled) ?? false,
 			noodleCavesEnabled: Json.readBoolean(root.noodle_caves_enabled) ?? false,
+			legacyRandomSource: Json.readBoolean(root.legacy_random_source) ?? false,
 		}
 	}
 }

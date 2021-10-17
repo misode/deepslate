@@ -19,6 +19,7 @@ describe('NoiseChunkGenerator', () => {
 			deepslateEnabled: false,
 			oreVeinsEnabled: false,
 			noodleCavesEnabled: false,
+			legacyRandomSource: true,
 			structures: { structures: {} },
 			noise: {
 				minY: 0,
