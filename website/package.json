@@ -20,7 +20,7 @@
     "@mdx-js/react": "^1.6.21",
     "@svgr/webpack": "^5.5.0",
     "clsx": "^1.1.1",
-    "deepslate": "^0.9.0-beta.2",
+    "deepslate": "^0.9.0-beta.3",
     "file-loader": "^6.2.0",
     "gl-matrix": "^3.3.0",
     "jszip": "^3.7.1",
