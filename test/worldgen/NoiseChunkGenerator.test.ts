@@ -48,16 +48,16 @@ describe('NoiseChunkGenerator', () => {
 			},
 			...generatorSettings,
 		}
-		const generator = new NoiseChunkGenerator(BigInt(seed), biomeSource, settings)
+		const generator = new NoiseChunkGenerator(BigInt(seed), biomeSource, settings, { offset: 0, factor: 1, jaggedness: 0 })
 		return { biomeSource, settings, generator }
 	}
 
 	it('fill', () => {
-		const { generator } = setup(123, { seaLevel: 31 }, { height: 64, densityFactor: 0, sampling: { xzScale: 1, yScale: 3, xzFactor: 80, yFactor: 60 } })
+		const { generator } = setup(123, { seaLevel: 31 }, { height: 64, densityOffset: 0.02, sampling: { xzScale: 1, yScale: 1, xzFactor: 80, yFactor: 60 } })
 
 		const chunk = new Chunk(0, 64, ChunkPos.create(4, 1))
 		generator.fill(chunk)
-		expect(printSlice(chunk)).equal('~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|XX~~~~~~~~~~~~~~|XXXX~~~~~~~~~~~~|XXX~~~~~~~~~~~~~|XX~~~~~~~~~~~~~~|X~~~~~~~~~~~~~~~|X~~~~~~~~~~~~~~~|X~~~~~~~~~~~~~~~|X~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|                |                |                |                |                |                |                |                |                |                |                |                |                |                |           XXXXX|         XXXXXXX|       XXXXXXXXX|      XXXXXXXXXX|XXXXXXXXXXXXXXXX|XXXXXXXXXXXXXXXX|XXXXXXXXXXXXXXXX|XXXXXXXXXXXXXXXX|XXXXXXXXXXXXXXXX|XXXXXXXXXXXXXXXX|XXXXXXXX  XXXXX |XXXXXXXX        |XXXXXXXX        |XXXXXXXX        |XXXXXXXX        |XXXXXXX         |XXXXXXX         |XXXXXX          |XXXXXX          ')
+		expect(printSlice(chunk)).equal('~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|XXXXX~~~~~~~~~~~|XXXXXXX~~~~~~~~~|XXXXXXXX~~~~~~~~|XXXXXXXX~~~~~~~~|XXXXXXX~~~~~~~~~|XXXXXX~~~~~~~~~~|XXXXX~~~~~~~~~~~|XXXX~~~~~~~~~~~~|XXX~~~~~~~~~~~~~|XXX             |XX              |XXX             |XXXX            |XXXXX           |XXXXX           |XXXXXX          |XXXXXX          |XXXXXX          |XXXXXX          |XXXXXX          |XXXXX           |XXXX            |XXX             |XXX             |XX              |XX              |XX              |X               |X               |                |                |                |                |                |                |                |                |                |                |                |                |                ')
 	})
 })
 

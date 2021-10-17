@@ -108,9 +108,13 @@ export class NoiseChunkGenerator {
 								const sectionZ = worldZ & 0xF
 								const z = offZ / this.cellWidth
 								noiseChunk.updateForZ(z)
-								const state = this.materialRule(noiseChunk, worldX, worldY, worldZ) ?? this.settings.defaultBlock
+								let state = this.materialRule(noiseChunk, worldX, worldY, worldZ) ?? this.settings.defaultBlock
 								if (state.equals(BlockState.AIR)) {
-									continue
+									if (worldY < this.settings.seaLevel) {
+										state = this.settings.defaultFluid
+									} else {
+										continue
+									}
 								}
 								section.setBlockState(sectionX, sectionY, sectionZ, state)
 							}

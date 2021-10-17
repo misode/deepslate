@@ -13,7 +13,7 @@ export default defineConfig([
 		plugins: [commonjs(), resolve(), typescript(), terser()],
 	},
 	{
-		external: ['pako', 'gl-matrix'],
+		external: ['pako', 'gl-matrix', 'md5'],
 		input: 'src/index.ts',
 		output: [
 			{ file: pkg.main, format: 'cjs', sourcemap: true },
