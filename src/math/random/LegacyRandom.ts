@@ -1,4 +1,4 @@
-import { Random } from "."
+import type { Random } from './Random'
 
 export class LegacyRandom implements Random{
 	private static readonly MODULUS_BITS = 48

@@ -5,32 +5,32 @@ import { XoroshiroRandom } from '../../../src/math'
 describe('XoroshiroRandom', () => {
 	it('seedUpgrade', () => {
 		const seed = XoroshiroRandom.create(BigInt(1)).parityConfigString()
-		const expected = "seedLo: 5272463233947570727, seedHi: 1927618558350093866"
+		const expected = 'seedLo: 5272463233947570727, seedHi: 1927618558350093866'
 		expect(seed).equal(expected)
 	})
 
 	it('fork', () => {
 		const seed = XoroshiroRandom.create(BigInt(1)).fork().parityConfigString()
-		const expected = "seedLo: 17413076366490032638, seedHi: 6451672561743293322"
+		const expected = 'seedLo: 17413076366490032638, seedHi: 6451672561743293322'
 		expect(seed).equal(expected)
 	})
 
 	it('md5Bytes', () => {
-		expect(md5("dummy", { asBytes: true })).deep.equal([39, 88, 118, 227, 76, 246, 9, 219, 17, 143, 61, 132, 183, 153, 167, 144])
+		expect(md5('dummy', { asBytes: true })).deep.equal([39, 88, 118, 227, 76, 246, 9, 219, 17, 143, 61, 132, 183, 153, 167, 144])
 	})
 
 	it('forkWithHashOf', () => {
-		const random = XoroshiroRandom.create(BigInt(1)).fork().forkWithHashOf("dummy")
-		expect(random.nextLong()).equal(BigInt("3076308294949899828"))
-		expect(random.nextLong()).equal(BigInt("-1260105900060890724"))
-		expect(random.nextLong()).equal(BigInt("-6035452165539399711"))
+		const random = XoroshiroRandom.create(BigInt(1)).fork().forkWithHashOf('dummy')
+		expect(random.nextLong()).equal(BigInt('3076308294949899828'))
+		expect(random.nextLong()).equal(BigInt('-1260105900060890724'))
+		expect(random.nextLong()).equal(BigInt('-6035452165539399711'))
 	})
 
 
 	it('nextLong', () => {
 		const random = XoroshiroRandom.create(BigInt(1))
 		const actual = [...Array(10)].map(() => random.nextLong())
-		const expected = [BigInt("-1033667707219518978"), BigInt("6451672561743293322"), BigInt("-1821890263888393630"), BigInt("890086654470169703"), BigInt("8094835630745194324"), BigInt("2779418831538184155"), BigInt("-2153570570747265786"), BigInt("2631759950516672506"), BigInt("1341645417244425603"), BigInt("-2886123833362855573")]
+		const expected = [BigInt('-1033667707219518978'), BigInt('6451672561743293322'), BigInt('-1821890263888393630'), BigInt('890086654470169703'), BigInt('8094835630745194324'), BigInt('2779418831538184155'), BigInt('-2153570570747265786'), BigInt('2631759950516672506'), BigInt('1341645417244425603'), BigInt('-2886123833362855573')]
 		expect(actual).deep.equal(expected)
 	})
 
@@ -52,7 +52,7 @@ describe('XoroshiroRandom', () => {
 	it ('nextFloat', () => {
 		const random = XoroshiroRandom.create(BigInt(1))
 		const actual = [...Array(10)].map(() => random.nextFloat())
-		const expected = [0.9439647, 0.34974587, 0.9012351, 0.04825169, 0.4388219, 0.15067255, 0.88325465, 0.14266795, 0.07273072, 0.8435429,]
+		const expected = [0.9439647, 0.34974587, 0.9012351, 0.04825169, 0.4388219, 0.15067255, 0.88325465, 0.14266795, 0.07273072, 0.8435429]
 		actual.forEach((a, i) => {
 			expect(a).closeTo(expected[i], 1e-7)
 		})

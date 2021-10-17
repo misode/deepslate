@@ -1,4 +1,5 @@
-import { Random, XoroshiroRandom } from '../random'
+import type { Random } from '../random'
+import { XoroshiroRandom } from '../random'
 import { ImprovedNoise } from './ImprovedNoise'
 
 export class PerlinNoise {
@@ -12,12 +13,12 @@ export class PerlinNoise {
 			const forkedRandom = random.fork()
 
 			this.noiseLevels = Array(amplitudes.length)
-            for(let i = 0; i < amplitudes.length; i++) {
-                if (amplitudes[i] !== 0.0) {
-                    const octave = firstOctave + i;
-                    this.noiseLevels[i] = new ImprovedNoise(forkedRandom.forkWithHashOf("octave_" + octave));
-                }
-            }
+			for(let i = 0; i < amplitudes.length; i++) {
+				if (amplitudes[i] !== 0.0) {
+					const octave = firstOctave + i
+					this.noiseLevels[i] = new ImprovedNoise(forkedRandom.forkWithHashOf('octave_' + octave))
+				}
+			}
 		} else {
 			if (1 - firstOctave < amplitudes.length) {
 				throw new Error('Positive octaves are not allowed when using LegacyRandom')
