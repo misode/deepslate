@@ -24,18 +24,16 @@ export class XoroshiroRandom implements Random {
 	}
 
 	private static upgradeSeedTo128bit(seed: bigint): [bigint, bigint] {
-		if (seed < 0)
-			seed += BigInt('0x10000000000000000')
-			
+		if (seed < 0) {
+			seed += BigInt('0x10000000000000000')	
+		}
 		const seedLo = seed ^ XoroshiroRandom.SILVER_RATIO_64
 		const seedHi = (seedLo + XoroshiroRandom.GOLDEN_RATIO_64) & BigInt('0xFFFFFFFFFFFFFFFF')
 		return [XoroshiroRandom.mixStafford13(seedLo), XoroshiroRandom.mixStafford13(seedHi)]
 	}
 
 	public static rotateLeft(value: bigint, shift: bigint): bigint {
-		var v = (value << shift) & (BigInt('0xFFFFFFFFFFFFFFFF')) | (value >> (BigInt(64) - shift))
-
-		return v
+		return (value << shift) & (BigInt('0xFFFFFFFFFFFFFFFF')) | (value >> (BigInt(64) - shift))
 	}
 
 	setSeed(seed: bigint) {
@@ -50,8 +48,7 @@ export class XoroshiroRandom implements Random {
 		let p = (x * BigInt(3129871)) ^ (z * BigInt(116129781) ^ y)
 		p = p * p * BigInt(42317861) + p * BigInt(11)
 		return p >> BigInt(16)
-	 }
-  
+	}
 
 	public forkAt(x: bigint, y: bigint, z: bigint){
 		const positionSeed = XoroshiroRandom.getSeed(x, y, z)
@@ -60,14 +57,14 @@ export class XoroshiroRandom implements Random {
 	}
 
 	private static LongfromBytes(b1: number, b2: number, b3: number, b4: number, b5: number, b6: number, b7: number, b8: number): bigint {
-	  return BigInt(b1) << BigInt(56)
-		  | BigInt(b2) << BigInt(48)
-		  | BigInt(b3) << BigInt(40)
-		  | BigInt(b4) << BigInt(32)
-		  | BigInt(b5) << BigInt(24)
-		  | BigInt(b6) << BigInt(16)
-		  | BigInt(b7) << BigInt(8)
-		  | BigInt(b8)
+		return BigInt(b1) << BigInt(56)
+			| BigInt(b2) << BigInt(48)
+			| BigInt(b3) << BigInt(40)
+			| BigInt(b4) << BigInt(32)
+			| BigInt(b5) << BigInt(24)
+			| BigInt(b6) << BigInt(16)
+			| BigInt(b7) << BigInt(8)
+			| BigInt(b8)
 	}
 
 	public forkWithHashOf(string: string){
@@ -81,10 +78,12 @@ export class XoroshiroRandom implements Random {
 		const seedLo = this.seed[0]
 		let seedHi = this.seed[1]
 		const value = (XoroshiroRandom.rotateLeft((seedLo + seedHi) & BigInt('0xFFFFFFFFFFFFFFFF'), BigInt(17)) + seedLo) & BigInt('0xFFFFFFFFFFFFFFFF')
-		
+
 		seedHi ^= seedLo
-		this.seed = [XoroshiroRandom.rotateLeft(seedLo, BigInt(49)) ^ seedHi ^ ((seedHi << BigInt(21)) & BigInt('0xFFFFFFFFFFFFFFFF') ),
-					 XoroshiroRandom.rotateLeft(seedHi, BigInt(28))]
+		this.seed = [
+			XoroshiroRandom.rotateLeft(seedLo, BigInt(49)) ^ seedHi ^ ((seedHi << BigInt(21)) & BigInt('0xFFFFFFFFFFFFFFFF') ),
+			XoroshiroRandom.rotateLeft(seedHi, BigInt(28)),
+		]
 
 		return value
 	}
@@ -112,7 +111,7 @@ export class XoroshiroRandom implements Random {
 
 	private nextBits(bits: number) {
 		return this.next() >> (BigInt(64 - bits))
-	 }
+	}
 
 	public nextInt(max?: number): number {
 		if (!max){
@@ -138,5 +137,4 @@ export class XoroshiroRandom implements Random {
 	public parityConfigString(): string {
 		return 'seedLo: ' + this.seed[0] + ', seedHi: ' + this.seed[1]
 	}
-
 }
