@@ -114,15 +114,28 @@ export class XoroshiroRandom implements Random {
 	}
 
 	public nextInt(max?: number): number {
+		var value = this.next() & BigInt(0xFFFFFFFF)
 		if (!max){
-			var value = Number(this.next() & BigInt(0xFFFFFFFF))
+			var result = Number(value)
+			if (result >= 0x80000000)
+			result -= 0x100000000
 
-			if (value >= 0x80000000)
-				value -= 0x100000000
-
-			return value
+			return result
 		} else {
-			return Math.abs(Number(this.nextLong() % BigInt(max)))
+			const max_bigint = BigInt(max);
+			var product = value * max_bigint;
+			var product_lo = product & BigInt(0xFFFFFFFF);
+			if (product_lo < max_bigint) {
+				var new_max = ((~max_bigint & BigInt(0xFFFFFFFF)) + BigInt(1)) % max_bigint
+				while (product_lo < new_max) {
+					value = this.next() & BigInt(0xFFFFFFFF)
+					product = value * max_bigint; 
+					product_lo = product & BigInt(0xFFFFFFFF)
+				}
+			}
+
+			var product_hi = product >> BigInt(32);
+			return Number(product_hi);
 		}
 	}
 
