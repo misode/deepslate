@@ -33,14 +33,14 @@ export class NoiseSampler {
 	) {
 		if (!legacyRandomSource) {
 			const random = XoroshiroRandom.create(seed).fork()
-			this.blendedNoise = new BlendedNoise(random.forkWithHashOf('terrain'), settings.sampling, cellWidth, cellHeight)
-			this.temperatureNoise = new NormalNoise(random.forkWithHashOf('temperature'), octaves.temperature)
-			this.humidityNoise = new NormalNoise(random.forkWithHashOf('vegetation'), octaves.humidity)
-			this.continentalnessNoise = new NormalNoise(random.forkWithHashOf('continentalness'), octaves.continentalness)
-			this.erosionNoise = new NormalNoise(random.forkWithHashOf('erosion'), octaves.erosion)
-			this.weirdnessNoise = new NormalNoise(random.forkWithHashOf('ridge'), octaves.weirdness)
-			this.offsetNoise = new NormalNoise(random.forkWithHashOf('offset'), octaves.shift)
-			this.jaggedNoise = new NormalNoise(random.forkWithHashOf('jagged'), { firstOctave: -16, amplitudes: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1] })
+			this.blendedNoise = new BlendedNoise(random.forkWithHashOf('minecraft:terrain'), settings.sampling, cellWidth, cellHeight)
+			this.temperatureNoise = new NormalNoise(random.forkWithHashOf('minecraft:temperature'), octaves.temperature)
+			this.humidityNoise = new NormalNoise(random.forkWithHashOf('minecraft:vegetation'), octaves.humidity)
+			this.continentalnessNoise = new NormalNoise(random.forkWithHashOf('minecraft:continentalness'), octaves.continentalness)
+			this.erosionNoise = new NormalNoise(random.forkWithHashOf('minecraft:erosion'), octaves.erosion)
+			this.weirdnessNoise = new NormalNoise(random.forkWithHashOf('minecraft:ridge'), octaves.weirdness)
+			this.offsetNoise = new NormalNoise(random.forkWithHashOf('minecraft:offset'), octaves.shift)
+			this.jaggedNoise = new NormalNoise(random.forkWithHashOf('minecraft:jagged'), { firstOctave: -16, amplitudes: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1] })
 		} else {
 			const random = new LegacyRandom(seed)
 			const blendedRandom = settings.useLegacyRandom ? new LegacyRandom(seed) : random.fork()

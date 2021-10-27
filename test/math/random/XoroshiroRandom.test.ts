@@ -44,9 +44,11 @@ describe('XoroshiroRandom', () => {
 	it('nextInt (max)', () => {
 		const random = XoroshiroRandom.create(BigInt(1))
 
-		expect(random.nextInt(256)).equal(2)
-		expect(random.nextInt(255)).equal(87)
-		expect(random.nextInt(254)).equal(194)
+		expect(random.nextInt(25)).equal(10)
+		expect(random.nextInt(256)).equal(49)
+		expect(random.nextInt(255)).equal(48)
+		expect(random.nextInt(254)).equal(169)
+		expect(random.nextInt(0x7FFFFFFF)).equal(383715241)
 	})
 
 	it ('nextFloat', () => {
