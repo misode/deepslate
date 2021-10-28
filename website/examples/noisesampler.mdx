@@ -1,19 +1,20 @@
 ---
 title: Noise Sampler
 ---
-import { NoiseSampler } from 'deepslate'
+import { NoiseSampler, TerrainShaper } from 'deepslate'
 import Plot from '@site/src/components/Plot'
 
 export const overworldSettings = {
 	minY: -64,
 	height: 384,
 	densityFactor: 1,
-	densityOffset: -0.51,
+	densityOffset: 0,
 	xzSize: 1,
 	ySize: 2,
 	sampling: { xzScale: 1, yScale: 1, xzFactor: 80, yFactor: 160 },
 	bottomSlide: { offset: 0, size: 0, target: 0 },
 	topSlide: { offset: 0, size: 0, target: 0 },
+	terrainShaper: TerrainShaper.overworld(),
 }
 export const overworldOctaves = {
 	temperature: { firstOctave: -9, amplitudes: [1.5, 0, 1, 0, 0, 0] },
@@ -52,6 +53,7 @@ export const netherSettings = {
 	sampling: { xzScale: 1, yScale: 3, xzFactor: 80, yFactor: 60 },
 	bottomSlide: { offset: -1, size: 4, target: 2.5 },
 	topSlide: { offset: 0, size: 3, target: 0.9375 },
+	terrainShaper: new TerrainShaper(() => 0, () => 1, () => 0),
 }
 
 export const netherOctaves = {

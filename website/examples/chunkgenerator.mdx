@@ -1,7 +1,7 @@
 ---
 title: Chunk Generator
 ---
-import { BlockState, Chunk, ChunkPos, FixedBiome, NoiseChunkGenerator, NoiseSampler } from 'deepslate'
+import { BlockState, Chunk, ChunkPos, FixedBiome, NoiseChunkGenerator, NoiseSampler, TerrainShaper } from 'deepslate'
 import Plot from '@site/src/components/Plot'
 import { overworldSettings as overworldNoiseSettings, overworldOctaves, netherSettings as netherNoiseSettings, netherOctaves } from './noisesampler.mdx'
 
@@ -19,7 +19,7 @@ export const overworldSettings = {
 	bedrockRoofPosition: -2147483648,
 	bedrockFloorPosition: 0,
 	seaLevel: 63,
-	noise: { ...overworldNoiseSettings, densityOffset: -0.51875 },
+	noise: { ...overworldNoiseSettings },
 	octaves: overworldOctaves,
 }
 
@@ -34,9 +34,13 @@ export const netherSettings = {
 }
 
 export function GeneratorPlot({ name, z, width, height, scale, settings, shape }) {
+	const terrainShaper = shape === undefined
+		? TerrainShaper.overworld()
+		: new TerrainShaper(() => shape.offset, () => shape.factor, () => shape.jaggedness)
+	settings = { ...settings, noise: { ...settings.noise, terrainShaper } }
 	return <Plot name={name} width={width} height={height} scale={scale ?? undefined}
 		initializer={() => {
-			const generator = new NoiseChunkGenerator(BigInt(125), null, settings, shape)
+			const generator = new NoiseChunkGenerator(BigInt(125), null, settings)
 			const chunks = [...Array(Math.ceil(width / 16))].map((_, i) => new Chunk(0, height, ChunkPos.create(i, z >> 4)))
 			chunks.forEach(chunk => generator.fill(chunk))
 			return chunks
@@ -60,7 +64,7 @@ export function GeneratorPlot({ name, z, width, height, scale, settings, shape }
 
 <GeneratorPlot name="Nether" z={150} width={196} height={128} scale={2}
 	settings={netherSettings}
-	shape={{ offset: 0, factor: 1, jaggedness: 0 }} />
+	shape={{ offset: 0.51875, factor: 1, jaggedness: 0 }} />
 
 <GeneratorPlot name="Overworld (wide)" z={4000} width={2400} height={256} scale={0.25}
 	settings={overworldSettings}
