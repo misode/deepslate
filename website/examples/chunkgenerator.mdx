@@ -41,7 +41,7 @@ export function GeneratorPlot({ name, z, width, height, scale, settings, shape }
 	return <Plot name={name} width={width} height={height} scale={scale ?? undefined}
 		initializer={() => {
 			const generator = new NoiseChunkGenerator(BigInt(125), null, settings)
-			const chunks = [...Array(Math.ceil(width / 16))].map((_, i) => new Chunk(0, height, ChunkPos.create(i, z >> 4)))
+			const chunks = Array(Math.ceil(width / 16)).fill(0).map((_, i) => new Chunk(0, height, ChunkPos.create(i, z >> 4)))
 			chunks.forEach(chunk => generator.fill(chunk))
 			return chunks
 		}}
