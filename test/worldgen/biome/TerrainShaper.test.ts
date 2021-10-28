@@ -3,6 +3,7 @@ import { TerrainShaper } from '../../../src/worldgen'
 
 describe('TerrainShaper', () => {
 	const DELTA = 1e-6
+	const shaper = TerrainShaper.overworld()
 
 	it('peaksAndValleys', () => {
 		expect(TerrainShaper.peaksAndValleys(-1.1)).closeTo(-0.29999998, DELTA)
@@ -15,7 +16,7 @@ describe('TerrainShaper', () => {
 	})
 
 	it('offset', () => {
-		const test = (a: number, b: number, c: number) => TerrainShaper.offset(TerrainShaper.point(a, b, c))
+		const test = (a: number, b: number, c: number) => shaper.offset(TerrainShaper.point(a, b, c)) + 0.51875
 
 		expect(test(-1.05, 0, 0)).closeTo(-0.12297286, DELTA)
 		expect(test(-0.6, 0, 0)).closeTo(-0.2072, DELTA)
@@ -31,7 +32,7 @@ describe('TerrainShaper', () => {
 
 	it('factor', () => {
 		const delta = 1e-4
-		const test = (a: number, b: number, c: number) => TerrainShaper.factor(TerrainShaper.point(a, b, c))
+		const test = (a: number, b: number, c: number) => shaper.factor(TerrainShaper.point(a, b, c))
 
 		expect(test(-0.19, 0, 0)).closeTo(3.95, delta)
 		expect(test(-0.16, 0, 0)).closeTo(5.707548, delta)
@@ -43,7 +44,7 @@ describe('TerrainShaper', () => {
 
 	it('jaggedness', () => {
 		const delta = 1e-4
-		const test = (a: number, b: number, c: number) => TerrainShaper.jaggedness(TerrainShaper.point(a, b, c))
+		const test = (a: number, b: number, c: number) => shaper.jaggedness(TerrainShaper.point(a, b, c))
 
 		expect(test(-0.6, 0, 0)).closeTo(0, delta)
 		expect(test(0, 0, 0)).closeTo(0, delta)

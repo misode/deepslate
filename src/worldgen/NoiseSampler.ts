@@ -18,6 +18,7 @@ export class NoiseSampler {
 	private readonly offsetNoise: NormalNoise
 	private readonly jaggedNoise: NormalNoise
 
+	public readonly shaper: TerrainShaper
 	private readonly baseNoise: InterpolatableNoise
 
 	constructor(
@@ -28,8 +29,6 @@ export class NoiseSampler {
 		octaves: NoiseOctaves,
 		seed: bigint,
 		legacyRandomSource: boolean = false,
-		/** @deprecated */
-		terrainOverride?: TerrainInfo,
 	) {
 		if (!legacyRandomSource) {
 			const random = XoroshiroRandom.create(seed).fork()
@@ -55,8 +54,10 @@ export class NoiseSampler {
 			this.jaggedNoise = new NormalNoise(random.fork(), { firstOctave: -16, amplitudes: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1] })
 		}
 
+		this.shaper = settings.terrainShaper
 		this.baseNoise = chunk => {
-			const sampler = chunk.createNoiseInterpolator((x, y, z) => this.calculateBaseNoise(x, y, z, terrainOverride ?? chunk.getTerrainInfo(x >> 2, z >> 2)))
+			const sampler = chunk.createNoiseInterpolator((x, y, z) =>
+				this.calculateBaseNoise(x, y, z, chunk.getTerrainInfo(x >> 2, z >> 2)))
 			return () => sampler.sample()
 		}
 	}
@@ -67,7 +68,7 @@ export class NoiseSampler {
 		const continentalness = this.getContinentalness(xx, zz)
 		const erosion = this.getErosion(xx, zz)
 		const weirdness = this.getWeirdness(xx, zz)
-		const offset = TerrainShaper.offset(TerrainShaper.point(continentalness, erosion, weirdness))
+		const offset = this.shaper.offset(TerrainShaper.point(continentalness, erosion, weirdness))
 		return this.target(x, y, z, xx, zz, continentalness, erosion, weirdness, offset)
 	}
 
@@ -105,7 +106,7 @@ export class NoiseSampler {
 
 	public getTerrainInfo(x: number, z: number, continentalness: number, erosion: number, weirdness: number) {
 		const point = TerrainShaper.point(continentalness, erosion, weirdness)
-		return TerrainInfo.create(TerrainShaper.offset(point), TerrainShaper.factor(point), TerrainShaper.jaggedness(point))
+		return TerrainInfo.create(this.shaper.offset(point), this.shaper.factor(point), this.shaper.jaggedness(point))
 	}
 
 	public makeBaseNoiseFiller(noiseChunk: NoiseChunk, filler: NoiseFiller): BlockStateFiller {

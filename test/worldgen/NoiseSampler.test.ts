@@ -1,6 +1,6 @@
 import { expect } from 'chai'
 import type { NoiseSettings } from '../../src/worldgen'
-import { NoiseSampler } from '../../src/worldgen'
+import { NoiseSampler, TerrainShaper } from '../../src/worldgen'
 
 describe('NoiseSampler', () => {
 	const DELTA = 1e-5
@@ -20,6 +20,7 @@ describe('NoiseSampler', () => {
 			},
 			bottomSlide: { offset: 0, size: 0, target: 0 },
 			topSlide: { offset: 0, size: 0, target: 0 },
+			terrainShaper: new TerrainShaper(() => 0, () => 1, () => 0),
 			useSimplexSurfaceNoise: false,
 			randomDensityOffset: false,
 			islandNoiseOverride: false,

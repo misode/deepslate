@@ -1,7 +1,7 @@
 import { expect } from 'chai'
 import { BlockState, Chunk, ChunkPos } from '../../src/core'
 import type { NoiseGeneratorSettings, NoiseSettings } from '../../src/worldgen'
-import { FixedBiome, NoiseChunkGenerator } from '../../src/worldgen'
+import { FixedBiome, NoiseChunkGenerator, TerrainShaper } from '../../src/worldgen'
 
 
 describe('NoiseChunkGenerator', () => {
@@ -31,6 +31,7 @@ describe('NoiseChunkGenerator', () => {
 				sampling: { xzScale: 1, yScale: 1, xzFactor: 80, yFactor: 80 },
 				topSlide: { target: 0, size: 0, offset: 0 },
 				bottomSlide: { target: 0, size: 0, offset: 0 },
+				terrainShaper: new TerrainShaper(() => 0.51875, () => 1, () => 0),
 				useSimplexSurfaceNoise: false,
 				randomDensityOffset: false,
 				islandNoiseOverride: false,
@@ -48,7 +49,7 @@ describe('NoiseChunkGenerator', () => {
 			},
 			...generatorSettings,
 		}
-		const generator = new NoiseChunkGenerator(BigInt(seed), biomeSource, settings, { offset: 0, factor: 1, jaggedness: 0 })
+		const generator = new NoiseChunkGenerator(BigInt(seed), biomeSource, settings)
 		return { biomeSource, settings, generator }
 	}
 
@@ -57,7 +58,7 @@ describe('NoiseChunkGenerator', () => {
 
 		const chunk = new Chunk(0, 64, ChunkPos.create(4, 1))
 		generator.fill(chunk)
-		expect(printSlice(chunk)).equal('~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~|XXXXX~~~~~~~~~~~|XXXXXXX~~~~~~~~~|XXXXXXXX~~~~~~~~|XXXXXXXX~~~~~~~~|XXXXXXX~~~~~~~~~|XXXXXX~~~~~~~~~~|XXXXX~~~~~~~~~~~|XXXX~~~~~~~~~~~~|XXX~~~~~~~~~~~~~|XXX             |XX              |XXX             |XXXX            |XXXXX           |XXXXX           |XXXXXX          |XXXXXX          |XXXXXX          |XXXXXX          |XXXXXX          |XXXXX           |XXXX            |XXX             |XXX             |XX              |XX              |XX              |X               |X               |                |                |                |                |                |                |                |                |                |                |                |                |                ')
+		expect(printSlice(chunk)).equal('~~~~~~~~~~~~~~~X|~~~~~~~~~~~~~~~X|~~~~~~~~~~~~~~~X|~~~~~~~~~~~~~~XX|~~~~~~~~~~~~~~XX|~~~~~~~~~~~~~~XX|~~~~~~~~~~~~~~XX|~~~~~~~~~~~~~~XX|~~~~~~~~~~~~~~XX|~~~~~~~~~~~~~~XX|~~~~~~~~~~~~~~XX|~~~~~~~~~~~~~XXX|~~~~~~~~~~~~~XXX|~~~~~~~~~~~~~XXX|~~~~~~~~~~~~~XXX|~~~~~~~~~~~~XXXX|~~~~~~~~~~~~XXXX|~~~~~~~~~~~XXXXX|~~~~~~~~~~~XXXXX|XXX~~~~~~~XXXXXX|XXXXXXXXXXXXXXXX|XXXXXXXXXXXXXXXX|XXXXXXXXXXXXXXXX|XXXXXXXXXXXXXXXX|XXXXXXXXXXXXXXXX|XXXXXXXXXXXXXXXX|XXXXXXXXXXXXXXXX|XXXXXXXXXXXXXXXX|XXXXXXXXXXXXXXXX|XXXXXXXXXXXXXXXX|XXXXXXXXXXXXXXXX|XXXXXXXXXXXXXXXX|XXXXXXXXXXXXXXXX|XXXXXXXXXXXXXXXX|XXXXXXXX..XXXXXX|XXXXXXXX........|XXXXXXX.........|XXXXXXX.........|XXXXXXX.........|XXXXXXX.........|XXXXXXX.........|XXXXXXX.........|XXXXXX..........|XXXXXX..........|XXXXX...........|XXXX............|XXX.............|XXX.............|XXX.............|XX..............|XX..............|X...............|................|................|................|................|................|................|................|................|................|................|................|................')
 	})
 })
 
@@ -65,7 +66,7 @@ function printSlice(chunk: Chunk, z = 0) {
 	return [...Array(chunk.height)].map((_, y) =>
 		[...Array(16)]
 			.map((_, x) => chunk.getBlockState([x & 0xF, chunk.minY + y, z & 0xF]))
-			.map(state => state.getName() === 'minecraft:air' ? ' ' :
+			.map(state => state.getName() === 'minecraft:air' ? '.' :
 				state.isFluid() ? '~' : 'X')
 			.join('')
 	).join('|')

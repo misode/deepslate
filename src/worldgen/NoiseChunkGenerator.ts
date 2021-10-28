@@ -1,4 +1,3 @@
-import type { TerrainInfo } from '.'
 import type { Chunk } from '../core'
 import { BlockState, ChunkPos } from '../core'
 import type { BiomeSource } from './biome'
@@ -19,15 +18,13 @@ export class NoiseChunkGenerator {
 		seed: bigint,
 		private readonly biomeSource: BiomeSource,
 		private readonly settings: NoiseGeneratorSettings,
-		/** @deprecated */
-		terrainOverride?: TerrainInfo,
 	) {
 		this.cellHeight = settings.noise.ySize << 2
 		this.cellWidth = settings.noise.xzSize << 2
 		this.cellCountXZ = Math.floor(16 / this.cellWidth)
 		this.cellCountY = Math.floor(settings.noise.height / this.cellHeight)
 
-		this.sampler = new NoiseSampler(this.cellWidth, this.cellHeight, this.cellCountY, settings.noise, settings.octaves, seed, settings.legacyRandomSource, terrainOverride)
+		this.sampler = new NoiseSampler(this.cellWidth, this.cellHeight, this.cellCountY, settings.noise, settings.octaves, seed, settings.legacyRandomSource)
 
 		this.materialRule = MaterialRule.fromList([
 			(chunk, x, y, z) => chunk.updateNoiseAndGenerateBaseState(x, y, z),

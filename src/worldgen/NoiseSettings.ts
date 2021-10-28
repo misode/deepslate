@@ -1,5 +1,6 @@
 import { Json } from '../core'
 import { clampedLerp, NoiseSamplingSettings } from '../math'
+import { TerrainShaper } from './biome/TerrainShaper'
 
 export type NoiseSettings = {
 	minY: number,
@@ -11,6 +12,7 @@ export type NoiseSettings = {
 	sampling: NoiseSamplingSettings,
 	topSlide: NoiseSlideSettings,
 	bottomSlide: NoiseSlideSettings,
+	terrainShaper: TerrainShaper,
 	useSimplexSurfaceNoise: boolean,
 	randomDensityOffset: boolean,
 	islandNoiseOverride: boolean,
@@ -30,6 +32,7 @@ export namespace NoiseSettings {
 			sampling: NoiseSamplingSettings.fromJson(root.sampling),
 			topSlide: NoiseSlideSettings.fromJson(root.top_slide),
 			bottomSlide: NoiseSlideSettings.fromJson(root.bottom_slide),
+			terrainShaper: TerrainShaper.fromJson(root.terrain_shaper),
 			useSimplexSurfaceNoise: Json.readBoolean(root.simplex_surface_noise) ?? false,
 			randomDensityOffset: Json.readBoolean(root.random_density_offset) ?? false,
 			islandNoiseOverride: Json.readBoolean(root.island_noise_override) ?? false,

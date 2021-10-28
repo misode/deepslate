@@ -25,7 +25,6 @@ export class NoiseChunk {
 		blockX: number,
 		blockZ: number,
 		noiseFiller: NoiseFiller,
-
 	) {
 		this.firstCellX = Math.floor(blockX / cellWidth)
 		this.firstCellZ = Math.floor(blockZ / cellWidth)

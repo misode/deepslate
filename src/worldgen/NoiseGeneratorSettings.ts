@@ -5,6 +5,7 @@ import { NoiseSettings } from './NoiseSettings'
 export type NoiseGeneratorSettings = {
 	structures: StructureSettings,
 	noise: NoiseSettings,
+	/** @deprecated */
 	octaves: NoiseOctaves,
 	defaultBlock: BlockState,
 	defaultFluid: BlockState,
