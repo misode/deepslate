@@ -1,49 +1,50 @@
 import { Json } from '../../core'
-import { lerp, Spline } from '../../math'
+import { lerp, NumberProvider, Spline } from '../../math'
 
-type Point = {
-	readonly continents: number,
-	readonly erosion: number,
-	readonly weirdness: number,
-	readonly ridges: number,
-}
+const COORDINATES = ['continents', 'erosion', 'weirdness', 'ridges'] as const
+type Point = Record<typeof COORDINATES[number], number>
 
 export class TerrainShaper {
 	private static readonly GLOBAL_OFFSET = -0.50375
 
+	private static readonly EXTRACTOR = (coordinate: unknown) => {
+		const key = Json.readString(coordinate) ?? 'continents'
+		return TerrainShaper.extractor(key as keyof Point)
+	}
+
+	public static readonly CONTINENTS = TerrainShaper.extractor('continents')
+	public static readonly EROSION = TerrainShaper.extractor('erosion')
+	public static readonly WEIRDNESS = TerrainShaper.extractor('weirdness')
+	public static readonly RIDGES = TerrainShaper.extractor('ridges')
+
+	private static extractor(key: keyof Point): NumberProvider<Point> {
+		return {
+			apply: p => p[key],
+			toJson: () => key,
+		}
+	}
+
 	constructor (
-		private readonly offsetSampler: { apply: (p: Point) => number },
-		private readonly factorSampler: { apply: (p: Point) => number },
-		private readonly jaggednessSampler: { apply: (p: Point) => number },
+		private readonly offsetSampler: NumberProvider<Point>,
+		private readonly factorSampler: NumberProvider<Point>,
+		private readonly jaggednessSampler: NumberProvider<Point>,
 	) {}
 
 	public static fromJson(obj: unknown): TerrainShaper {
 		const root = Json.readObject(obj) ?? {}
 		return new TerrainShaper(
-			this.splineFromJson(root.offset),
-			this.splineFromJson(root.factor),
-			this.splineFromJson(root.offset),
+			NumberProvider.fromJson(root.offset, this.EXTRACTOR),
+			NumberProvider.fromJson(root.factor, this.EXTRACTOR),
+			NumberProvider.fromJson(root.jaggedness, this.EXTRACTOR),
 		)
 	}
 
-	private static splineFromJson(obj: unknown) {
-		if (typeof obj === 'number') {
-			return () => obj
+	public toJson() {
+		return {
+			offset: this.offsetSampler.toJson(),
+			factor: this.factorSampler.toJson(),
+			jaggedness: this.jaggednessSampler.toJson(),
 		}
-		const root = Json.readObject(obj) ?? {}
-		const coordinate = Json.readString(root.coordinate) ?? 'continents'
-		const spline = new Spline<Point>(coordinate, p => (p as any)[coordinate])
-		const points = Json.readArray(root.points, e => Json.readObject(e) ?? {}) ?? []
-		if (points.length === 0) {
-			return () => 0
-		}
-		for (const point of points) {
-			const location = Json.readNumber(point.location) ?? 0
-			const value = this.splineFromJson(point.value)
-			const derivative = Json.readNumber(point.derivative) ?? 0
-			spline.addPoint(location, value, derivative)
-		}
-		return spline
 	}
 
 	public offset(point: Point) {
@@ -72,12 +73,12 @@ export class TerrainShaper {
 	}
 
 	public static overworld() {
-		const beachSpline = this.buildErosionOffsetSpline('beachSpline', -0.05, 0.0, 0.0, 0.1, 0.0, -0.03, false, false)
-		const lowSpline = this.buildErosionOffsetSpline('lowSpline', -0.1, 0.03, 0.1, 0.1, 0.01, -0.03, false, false)
-		const midSpline = this.buildErosionOffsetSpline('midSpline', -0.1, 0.03, 0.1, 0.7, 0.01, -0.03, true, true)
-		const highSpline = this.buildErosionOffsetSpline('highSpline', 0.3, 0.03, 0.1, 1.0, 0.01, 0.01, true, true)
+		const beachSpline = this.buildErosionOffsetSpline(-0.05, 0.0, 0.0, 0.1, 0.0, -0.03, false, false)
+		const lowSpline = this.buildErosionOffsetSpline(-0.1, 0.03, 0.1, 0.1, 0.01, -0.03, false, false)
+		const midSpline = this.buildErosionOffsetSpline(-0.1, 0.03, 0.1, 0.7, 0.01, -0.03, true, true)
+		const highSpline = this.buildErosionOffsetSpline(0.3, 0.03, 0.1, 1.0, 0.01, 0.01, true, true)
 	
-		const offsetSampler = new Spline<Point>('Offset', p => p.continents)
+		const offsetSampler = new Spline<Point>(this.CONTINENTS)
 			.addPoint(-1.1, 0.044)
 			.addPoint(-1.02, -0.2222)
 			.addPoint(-0.51, -0.2222)
@@ -89,14 +90,14 @@ export class TerrainShaper {
 			.addPoint(0.25, midSpline)
 			.addPoint(1.0, highSpline)
 	
-		const factorSampler = new Spline<Point>('Factor', p => p.continents)
+		const factorSampler = new Spline<Point>(this.CONTINENTS)
 			.addPoint(-0.19, 3.95)
-			.addPoint(-0.15, this.getErosionFactor('erosionCoast', 6.25, true))
-			.addPoint(-0.1, this.getErosionFactor('erosionInland', 5.47, true))
-			.addPoint(0.03, this.getErosionFactor('erosionMidInland', 5.08, true))
-			.addPoint(0.06, this.getErosionFactor('erosionFarInland', 4.69, false))
+			.addPoint(-0.15, this.getErosionFactor(6.25, true))
+			.addPoint(-0.1, this.getErosionFactor(5.47, true))
+			.addPoint(0.03, this.getErosionFactor(5.08, true))
+			.addPoint(0.06, this.getErosionFactor(4.69, false))
 	
-		const jaggednessSampler = new Spline<Point>('Jaggedness', p => p.continents)
+		const jaggednessSampler = new Spline<Point>(this.CONTINENTS)
 			.addPoint(0.11, 0.0)
 			.addPoint(0.03, this.buildErosionJaggednessSpline(1, 0.5, 0, 0))
 			.addPoint(0.65, this.buildErosionJaggednessSpline(1, 1, 1, 0))
@@ -104,32 +105,32 @@ export class TerrainShaper {
 		return new TerrainShaper(offsetSampler, factorSampler, jaggednessSampler)
 	}
 
-	private static getErosionFactor(string: string, f: number, bl: boolean) {
-		const base = new Spline<Point>('weirdness', p => p.weirdness)
+	private static getErosionFactor(f: number, bl: boolean) {
+		const base = new Spline<Point>(this.WEIRDNESS)
 			.addPoint(-0.2, 6.3)
 			.addPoint(0.2, f)
-		const spline = new Spline<Point>(string, p => p.erosion)
+		const spline = new Spline<Point>(this.EROSION)
 			.addPoint(-0.6, base)
-			.addPoint(-0.5, new Spline<Point>('weirdness', p => p.weirdness)
+			.addPoint(-0.5, new Spline<Point>(this.WEIRDNESS)
 				.addPoint(-0.05, 6.3)
 				.addPoint(0.05, 2.67))
 			.addPoint(-0.35, base)
 			.addPoint(-0.25, base)
-			.addPoint(-0.1, new Spline<Point>('weirdness', p => p.weirdness)
+			.addPoint(-0.1, new Spline<Point>(this.WEIRDNESS)
 				.addPoint(-0.05, 2.67)
 				.addPoint(0.05, 6.3))
 			.addPoint(0.03, base)
 		if (bl) {
-			const spline1 = new Spline<Point>('weirdnessShattered', p => p.weirdness).addPoint(0.0, f).addPoint(0.1, 0.625)
-			const spline2 = new Spline<Point>('ridgesShattered', p => p.ridges).addPoint(-0.9, f).addPoint(-0.69, spline1)
+			const spline1 = new Spline<Point>(this.WEIRDNESS).addPoint(0.0, f).addPoint(0.1, 0.625)
+			const spline2 = new Spline<Point>(this.RIDGES).addPoint(-0.9, f).addPoint(-0.69, spline1)
 			spline
 				.addPoint(0.35, f)
 				.addPoint(0.45, spline2)
 				.addPoint(0.55, spline2)
 				.addPoint(0.62, f)
 		} else {
-			const spline1 = new Spline<Point>('ridges', p => p.ridges).addPoint(-0.7, base).addPoint(-0.15, 1.37)
-			const spline2 = new Spline<Point>('ridges', p => p.ridges).addPoint(0.45, base).addPoint(0.7, 1.56)
+			const spline1 = new Spline<Point>(this.RIDGES).addPoint(-0.7, base).addPoint(-0.15, 1.37)
+			const spline2 = new Spline<Point>(this.RIDGES).addPoint(0.45, base).addPoint(0.7, 1.56)
 			spline
 				.addPoint(0.05, spline2)
 				.addPoint(0.4, spline2)
@@ -140,21 +141,21 @@ export class TerrainShaper {
 		return spline
 	}
 
-	private static buildErosionOffsetSpline(name: string, f: number, f2: number, f3: number, f4: number, f5: number, f6: number, bl: boolean, bl2: boolean) {
+	private static buildErosionOffsetSpline(f: number, f2: number, f3: number, f4: number, f5: number, f6: number, bl: boolean, bl2: boolean) {
 		const mountain1 = this.buildMountainRidgeSplineWithPoints(lerp(f4, 0.6, 1.5), bl2)
 		const mountain2 = this.buildMountainRidgeSplineWithPoints(lerp(f4, 0.6, 1.0), bl2)
 		const mountain3 = this.buildMountainRidgeSplineWithPoints(f4,bl2)
-		const widePlateau = this.ridgeSpline(name + '-widePlateau', f - 0.15, 0.5 * f4, lerp(0.5, 0.5, 0.5) * f4, 0.5 * f4, 0.6 * f4, 0.5)
-		const narrowPlateau = this.ridgeSpline(name + '-narrowPlateau', f, f5 * f4, f2 * f4, 0.5 * f4, 0.6 * f4, 0.5)
-		const plains = this.ridgeSpline(name + '-plains', f, f5, f5, f2, f3, 0.5)
-		const plainsFarInland = this.ridgeSpline(name + '-plainsFarInland',f, f5, f5, f2, f3, 0.5)
-		const extremeHills = new Spline<Point>(name, p => p.ridges)
+		const widePlateau = this.ridgeSpline(f - 0.15, 0.5 * f4, lerp(0.5, 0.5, 0.5) * f4, 0.5 * f4, 0.6 * f4, 0.5)
+		const narrowPlateau = this.ridgeSpline(f, f5 * f4, f2 * f4, 0.5 * f4, 0.6 * f4, 0.5)
+		const plains = this.ridgeSpline(f, f5, f5, f2, f3, 0.5)
+		const plainsFarInland = this.ridgeSpline(f, f5, f5, f2, f3, 0.5)
+		const extremeHills = new Spline<Point>(this.RIDGES)
 			.addPoint(-1.0, f)
 			.addPoint(-0.4, plains)
 			.addPoint(0.0, f3 + 0.07)
-		const swampsRidges = this.ridgeSpline(name + '-swamps', -0.02, f6, f6, f2, f3, 0.0)
+		const swampsRidges = this.ridgeSpline(-0.02, f6, f6, f2, f3, 0.0)
 
-		const erosion = new Spline<Point>(name, p => p.erosion)
+		const erosion = new Spline<Point>(this.EROSION)
 			.addPoint(-0.85, mountain1)
 			.addPoint(-0.7, mountain2)
 			.addPoint(-0.4, mountain3)
@@ -173,7 +174,7 @@ export class TerrainShaper {
 	}
 
 	private static buildMountainRidgeSplineWithPoints(f: number, bl: boolean) {
-		const spline = new Spline<Point>(`M-spline for continentalness: ${f} ${bl}`, p => p.ridges)
+		const spline = new Spline<Point>(this.RIDGES)
 		const f4 = this.mountainContinentalness(-1.0, f, -0.7)
 		const f6 = this.mountainContinentalness(1.0, f, -0.7)
 		const f7 = this.calculateMountainRidgeZeroContinentalnessPoint(f)
@@ -224,10 +225,10 @@ export class TerrainShaper {
 		return (f2 - f) / (f4 - f3)
 	}
 
-	private static ridgeSpline(name: string, f: number, f2: number, f3: number, f4: number, f5: number, f6: number) {
+	private static ridgeSpline(f: number, f2: number, f3: number, f4: number, f5: number, f6: number) {
 		const f7 = Math.max(0.5 * (f2 - f), f6)
 		const f8 = 5.0 * (f3 - f2)
-		return new Spline<Point>(name, (p) => p.ridges)
+		return new Spline<Point>(this.RIDGES)
 			.addPoint(-1.0, f, f7)
 			.addPoint(-0.4, f2, Math.min(f7, f8))
 			.addPoint(0.0, f3, f8)
@@ -238,7 +239,7 @@ export class TerrainShaper {
 	private static buildErosionJaggednessSpline(f: number, f2: number, f3: number, f4: number) {
 		const ridgeSpline1 = this.buildRidgeJaggednessSpline(f, f3)
 		const ridgeSpline2 = this.buildRidgeJaggednessSpline(f2, f4)
-		return new Spline<Point>('Jaggedness-erosion', p => p.erosion)
+		return new Spline<Point>(this.EROSION)
 			.addPoint(-1, ridgeSpline1)
 			.addPoint(-0.78, ridgeSpline2)
 			.addPoint(-0.5775, ridgeSpline2)
@@ -249,14 +250,14 @@ export class TerrainShaper {
 		const f3 = TerrainShaper.peaksAndValleys(0.4)
 		const f4 = TerrainShaper.peaksAndValleys(0.56666666)
 		const f5 = (f3 + f4) / 2
-		return new Spline<Point>('Jaggedness-ridges', p => p.ridges)
+		return new Spline<Point>(this.RIDGES)
 			.addPoint(f3, 0)
 			.addPoint(f5, f2 > 0 ? this.buildWeirdnessJaggednessSpline(f2) : 0)
 			.addPoint(1, f > 0 ? this.buildWeirdnessJaggednessSpline(f) : 0)
 	}
 
 	private static buildWeirdnessJaggednessSpline(f: number) {
-		return new Spline<Point>('Jaggedness-weirdness', p => p.weirdness)
+		return new Spline<Point>(TerrainShaper.WEIRDNESS)
 			.addPoint(-0.01, 0.63 * f)
 			.addPoint(0.01, 0.3 * f)
 	}

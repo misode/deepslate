@@ -20,7 +20,7 @@ describe('NoiseSampler', () => {
 			},
 			bottomSlide: { offset: 0, size: 0, target: 0 },
 			topSlide: { offset: 0, size: 0, target: 0 },
-			terrainShaper: new TerrainShaper(() => 0, () => 1, () => 0),
+			terrainShaper: TerrainShaper.fromJson({ offset: 0, factor: 1, jaggedness: 0 }),
 			useSimplexSurfaceNoise: false,
 			randomDensityOffset: false,
 			islandNoiseOverride: false,

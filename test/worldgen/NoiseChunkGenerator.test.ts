@@ -31,7 +31,7 @@ describe('NoiseChunkGenerator', () => {
 				sampling: { xzScale: 1, yScale: 1, xzFactor: 80, yFactor: 80 },
 				topSlide: { target: 0, size: 0, offset: 0 },
 				bottomSlide: { target: 0, size: 0, offset: 0 },
-				terrainShaper: new TerrainShaper(() => 0.51875, () => 1, () => 0),
+				terrainShaper: TerrainShaper.fromJson({ offset: 0.51875, factor: 1, jaggedness: 0 }),
 				useSimplexSurfaceNoise: false,
 				randomDensityOffset: false,
 				islandNoiseOverride: false,
