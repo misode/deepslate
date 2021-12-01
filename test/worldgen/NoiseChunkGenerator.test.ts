@@ -26,17 +26,13 @@ describe('NoiseChunkGenerator', () => {
 				height: 128,
 				xzSize: 1,
 				ySize: 2,
-				densityFactor: 0,
-				densityOffset: -0.030078125,
 				sampling: { xzScale: 1, yScale: 1, xzFactor: 80, yFactor: 80 },
 				topSlide: { target: 0, size: 0, offset: 0 },
 				bottomSlide: { target: 0, size: 0, offset: 0 },
-				terrainShaper: TerrainShaper.fromJson({ offset: 0.51875, factor: 1, jaggedness: 0 }),
-				useSimplexSurfaceNoise: false,
-				randomDensityOffset: false,
+				terrainShaper: TerrainShaper.fromJson({ offset: 0, factor: 0.1, jaggedness: 0 }),
 				islandNoiseOverride: false,
 				isAmplified: false,
-				useLegacyRandom: false,
+				hasLargeBiomes: false,
 				...noiseSettings,
 			},
 			octaves: {
@@ -54,11 +50,11 @@ describe('NoiseChunkGenerator', () => {
 	}
 
 	it('fill', () => {
-		const { generator } = setup(123, { seaLevel: 31 }, { height: 64, densityOffset: 0.02, sampling: { xzScale: 1, yScale: 1, xzFactor: 80, yFactor: 60 } })
+		const { generator } = setup(123, { seaLevel: 31 }, { height: 64, sampling: { xzScale: 1, yScale: 1, xzFactor: 80, yFactor: 60 } })
 
 		const chunk = new Chunk(0, 64, ChunkPos.create(4, 1))
 		generator.fill(chunk)
-		expect(printSlice(chunk)).equal('~~~~~~~~~~~~~~~X|~~~~~~~~~~~~~~~X|~~~~~~~~~~~~~~~X|~~~~~~~~~~~~~~XX|~~~~~~~~~~~~~~XX|~~~~~~~~~~~~~~XX|~~~~~~~~~~~~~~XX|~~~~~~~~~~~~~~XX|~~~~~~~~~~~~~~XX|~~~~~~~~~~~~~~XX|~~~~~~~~~~~~~~XX|~~~~~~~~~~~~~XXX|~~~~~~~~~~~~~XXX|~~~~~~~~~~~~~XXX|~~~~~~~~~~~~~XXX|~~~~~~~~~~~~XXXX|~~~~~~~~~~~~XXXX|~~~~~~~~~~~XXXXX|~~~~~~~~~~~XXXXX|XXX~~~~~~~XXXXXX|XXXXXXXXXXXXXXXX|XXXXXXXXXXXXXXXX|XXXXXXXXXXXXXXXX|XXXXXXXXXXXXXXXX|XXXXXXXXXXXXXXXX|XXXXXXXXXXXXXXXX|XXXXXXXXXXXXXXXX|XXXXXXXXXXXXXXXX|XXXXXXXXXXXXXXXX|XXXXXXXXXXXXXXXX|XXXXXXXXXXXXXXXX|XXXXXXXXXXXXXXXX|XXXXXXXXXXXXXXXX|XXXXXXXXXXXXXXXX|XXXXXXXX..XXXXXX|XXXXXXXX........|XXXXXXX.........|XXXXXXX.........|XXXXXXX.........|XXXXXXX.........|XXXXXXX.........|XXXXXXX.........|XXXXXX..........|XXXXXX..........|XXXXX...........|XXXX............|XXX.............|XXX.............|XXX.............|XX..............|XX..............|X...............|................|................|................|................|................|................|................|................|................|................|................|................')
+		expect(printSlice(chunk)).equal('X~~~~~XXXXXXXXXX|~~~~~~~XXXXXXXXX|~~~~~~~~XXXXXXXX|~~~~~~~~XXXXXXXX|~~~~~~~~~XXXXXXX|~~~~~~~~~XXXXXXX|~~~~~~~~~~XXXXXX|~~~~~~~~~~XXXXXX|~~~~~~~~~~~XXXXX|~~~~~~~~~~~XXXXX|~~~~~~~~~~~XXXXX|~~~~~~~~~~~XXXXX|~~~~~~~~~~~XXXXX|~~~~~~~~~~~XXXXX|~~~~~~~~~~~XXXXX|~~~~~~~~~~~XXXXX|~~~~~~~~~~~XXXXX|~~~~~~~~~~~XXXXX|~~~~~~~~~~XXXXXX|XX~~~~~~~~XXXXXX|XXXXXXXXXXXXXXXX|XXXXXXXXXXXXXXXX|XXXXXXXXXXXXXXXX|XXXXXXXXXXXXXXXX|XXXXXXXXXXXXXXXX|XXXXXXXXXXXXXXXX|XXXXXXXXXXXXXXXX|XXXXXXXXXXXXXXXX|XXXXXXXXXXXXXXXX|XXXXXXXX~XXXXXXX|XXXXXX~~~~XXXXX~|XXXX........XX..|XXX.............|XXXX............|XXXXX...........|XXXXX...........|XXXXXX..........|XXXXXX..........|XXXXXX..........|XXXXXX..........|XXXXXX..........|XXXXX...........|XXXXX...........|XXX.............|XXX.............|XX..............|XX..............|XX..............|X...............|X...............|................|................|................|................|................|................|................|................|................|................|................|................|................|................')
 	})
 })
 

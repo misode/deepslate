@@ -1,6 +1,6 @@
 import type { Random } from './Random'
 
-export class LegacyRandom implements Random{
+export class LegacyRandom implements Random {
 	private static readonly MODULUS_BITS = 48
 	private static readonly MODULUS_MASK = BigInt('281474976710655')
 	private static readonly MULTIPLIER = BigInt('25214903917')

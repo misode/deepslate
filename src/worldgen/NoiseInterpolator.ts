@@ -1,5 +1,6 @@
 import { lerp } from '../math'
 import type { NoiseChunk, NoiseFiller } from './NoiseChunk'
+import { NoiseSettings } from './NoiseSettings'
 
 export class NoiseInterpolator {
 	private slice0: number[][]
@@ -45,11 +46,13 @@ export class NoiseInterpolator {
 	}
 
 	private fillSlice(slice: number[][], x: number) {
-		const xx = x * this.chunk.cellWidth
+		const cellWidth = NoiseSettings.cellWidth(this.chunk.settings.noise)
+		const cellHeight = NoiseSettings.cellHeight(this.chunk.settings.noise)
+		const xx = x * cellWidth
 		for (let z = 0; z < this.chunk.cellCountXZ + 1; z += 1) {
-			const zz = (this.chunk.firstCellZ + z) * this.chunk.cellWidth
+			const zz = (this.chunk.firstCellZ + z) * cellWidth
 			for (let y = 0; y < this.chunk.cellCountY + 1; y += 1) {
-				const yy = (this.chunk.cellCountNoiseMinY + y) * this.chunk.cellHeight
+				const yy = (this.chunk.cellCountNoiseMinY + y) * cellHeight
 				slice[z][y] = this.filler(xx, yy, zz)
 			}
 		}

@@ -1,23 +1,19 @@
 import type { BlockState } from '../core'
+import type { NoiseGeneratorSettings } from './NoiseGeneratorSettings'
 import { NoiseInterpolator } from './NoiseInterpolator'
-import type { NoiseSampler } from './NoiseSampler'
+import type { FlatNoiseData, NoiseSampler } from './NoiseSampler'
+import { NoiseSettings } from './NoiseSettings'
 
 export class NoiseChunk {
 	public readonly firstCellX: number
 	public readonly firstCellZ: number
+	public readonly firstNoiseX: number
+	public readonly firstNoiseZ: number
 	private readonly interpolators: NoiseInterpolator[]
-	private readonly shiftedX: number[][]
-	private readonly shiftedZ: number[][]
-	private readonly continentalness: number[][]
-	private readonly weirdness: number[][]
-	private readonly erosion: number[][]
-	private readonly terrainInfoBuffer: TerrainInfo[][]
-	private readonly terrainInfo: Map<number, TerrainInfo>
+	private readonly noiseData: FlatNoiseData[][]
 	private readonly baseNoise: BlockStateFiller
 
 	constructor(
-		public readonly cellWidth: number,
-		public readonly cellHeight: number,
 		public readonly cellCountXZ: number,
 		public readonly cellCountY: number,
 		public readonly cellCountNoiseMinY: number,
@@ -25,63 +21,30 @@ export class NoiseChunk {
 		blockX: number,
 		blockZ: number,
 		noiseFiller: NoiseFiller,
+		public readonly settings: NoiseGeneratorSettings,
 	) {
+		const cellWidth = NoiseSettings.cellWidth(settings.noise)
 		this.firstCellX = Math.floor(blockX / cellWidth)
 		this.firstCellZ = Math.floor(blockZ / cellWidth)
+		this.firstNoiseX = blockX >> 2
+		this.firstNoiseZ = blockZ >> 2
 		this.interpolators = []
-		this.terrainInfo = new Map()
 
-		const length = cellCountXZ * cellWidth + 1
-		this.shiftedX = Array(length)
-		this.shiftedZ = Array(length)
-		this.continentalness = Array(length)
-		this.weirdness = Array(length)
-		this.erosion = Array(length)
-		this.terrainInfoBuffer = Array(length)
-		for (let x = 0; x < length; x += 1) {
-			const xx = this.firstCellX + x
-			this.shiftedX[x] = Array(length)
-			this.shiftedZ[x] = Array(length)
-			this.continentalness[x] = Array(length)
-			this.weirdness[x] = Array(length)
-			this.erosion[x] = Array(length)
-			this.terrainInfoBuffer[x] = Array(length)
-			for (let z = 0; z < length; z += 1) {
-				const zz = this.firstCellZ + z
-				const data = FlatNoiseData.create(sampler, xx, zz)
-				this.shiftedX[x][z] = data.shiftedX
-				this.shiftedZ[x][z] = data.shiftedZ
-				this.continentalness[x][z] = data.continentalness
-				this.weirdness[x][z] = data.weirdness
-				this.erosion[x][z] = data.erosion
-				this.terrainInfoBuffer[x][z] = data.terrainInfo
+		const n = (cellCountXZ * cellWidth) >> 2
+		this.noiseData = Array(n + 1)
+		for (let x = 0; x <= n; x += 1) {
+			const xx = this.firstNoiseX + x
+			this.noiseData[x] = Array(n + 1)
+			for (let z = 0; z <= n; z += 1) {
+				const zz = this.firstNoiseZ + z
+				this.noiseData[x][z] = sampler.noiseData(xx, zz)
 			}
 		}
 		this.baseNoise = sampler.makeBaseNoiseFiller(this, noiseFiller)
 	}
 
-	public getShiftedX(x: number, z: number) {
-		return this.shiftedX[x - this.firstCellX][z - this.firstCellZ]
-	}
-
-	public getShiftedZ(x: number, z: number) {
-		return this.shiftedZ[x - this.firstCellX][z - this.firstCellZ]
-	}
-
-	public getContinentalness(x: number, z: number) {
-		return this.continentalness[x - this.firstCellX][z - this.firstCellZ]
-	}
-
-	public getWeirdness(x: number, z: number) {
-		return this.weirdness[x - this.firstCellX][z - this.firstCellZ]
-	}
-
-	public getErosion(x: number, z: number) {
-		return this.erosion[x - this.firstCellX][z - this.firstCellZ]
-	}
-
-	public getTerrainInfo(x: number, z: number) {
-		return this.terrainInfoBuffer[x - this.firstCellX][z - this.firstCellZ]
+	public getNoiseData(x: number, z: number) {
+		return this.noiseData[x - this.firstNoiseX][z - this.firstNoiseZ]
 	}
 
 	public createNoiseInterpolator(filler: NoiseFiller) {
@@ -135,26 +98,6 @@ export type TerrainInfo = {
 export namespace TerrainInfo {
 	export function create(offset: number, factor: number, jaggedness: number): TerrainInfo {
 		return { offset, factor, jaggedness }
-	}
-}
-
-export type FlatNoiseData = {
-	shiftedX: number,
-	shiftedZ: number,
-	continentalness: number,
-	weirdness: number,
-	erosion: number,
-	terrainInfo: TerrainInfo,
-}
-export namespace FlatNoiseData {
-	export function create(sampler: NoiseSampler, x: number, z: number): FlatNoiseData {
-		const shiftedX = x + sampler.getOffset(x, 0, z)
-		const shiftedZ = z + sampler.getOffset(z, x, 0)
-		const continentalness = sampler.getContinentalness(shiftedX, shiftedZ)
-		const weirdness = sampler.getWeirdness(shiftedX, shiftedZ)
-		const erosion = sampler.getErosion(shiftedX, shiftedZ)
-		const terrainInfo = sampler.getTerrainInfo(shiftedX << 2, shiftedZ << 2, continentalness, weirdness, erosion)
-		return { shiftedX, shiftedZ, continentalness, weirdness, erosion, terrainInfo }
 	}
 }
 

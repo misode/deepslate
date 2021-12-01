@@ -20,7 +20,7 @@ describe('MultiNoise', () => {
 			shift: { firstOctave: 0, amplitudes: [0] },
 		}
 		const nether = new MultiNoise(netherBiomes)
-		const sampler = new NoiseSampler(4, 4, 32, NoiseSettings.fromJson(null), octaves, BigInt(5392), true)
+		const sampler = new NoiseSampler(NoiseSettings.fromJson(null), BigInt(5392), octaves, true)
 		const climate: Climate.Sampler = (x, y, z) => sampler.sample(x, y, z)
 
 		expect(nether.getBiome(0, 0, 0, climate)).equal('minecraft:soul_sand_valley')
