@@ -1,4 +1,4 @@
-import type { BlockPos } from '.'
+import type { BlockPos } from './BlockPos'
 
 export type ChunkPos = [number, number]
 
@@ -15,6 +15,14 @@ export namespace ChunkPos {
 		return [Number(long) & 0xFFFFFFFF, Number(long >> BigInt(32))]
 	}
 
+	export function toLong(chunkPos: ChunkPos) {
+		return asLong(chunkPos[0], chunkPos[1])
+	}
+
+	export function asLong(x: number, z: number) {
+		return BigInt(x & 0xFFFFFFFF) | BigInt(z & 0xFFFFFFFF) << BigInt(32)
+	}
+
 	export function minBlockX(chunkPos: ChunkPos) {
 		return chunkPos[0] << 4
 	}
@@ -24,10 +32,10 @@ export namespace ChunkPos {
 	}
 
 	export function maxBlockX(chunkPos: ChunkPos) {
-		return chunkPos[0] << 4 + 15
+		return (chunkPos[0] << 4) + 15
 	}
 
 	export function maxBlockZ(chunkPos: ChunkPos) {
-		return chunkPos[1] << 4 + 15
+		return (chunkPos[1] << 4) + 15
 	}
 }

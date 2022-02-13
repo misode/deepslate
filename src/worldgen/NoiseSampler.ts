@@ -51,7 +51,7 @@ export class NoiseSampler {
 		this.shaper = settings.terrainShaper
 		this.baseNoise = chunk => {
 			const sampler = chunk.createNoiseInterpolator((x, y, z) =>
-				this.calculateBaseNoise(x, y, z, chunk.getNoiseData(x >> 2, z >> 2).terrainInfo))
+				this.calculateBlendedBaseNoise(x, y, z, chunk.getNoiseData(x >> 2, z >> 2).terrainInfo))
 			return () => sampler.sample()
 		}
 	}
@@ -124,11 +124,14 @@ export class NoiseSampler {
 		}
 	}
 
-	public calculateBaseNoise(x: number, y: number, z: number, terrain?: TerrainInfo) {
-		let density = this.blendedNoise.sample(x, y, z)
+	public calculateBlendedBaseNoise(x: number, y: number, z: number, terrain: TerrainInfo) {
+		const density = this.blendedNoise.sample(x, y, z)
+		return this.calculateBaseNoise(x, y, z, terrain, density, true, true)
+	}
 
-		if (terrain) {
-			const jaggedness = this.sampleJaggedNoise(terrain.jaggedness, x, z)
+	public calculateBaseNoise(x: number, y: number, z: number, terrain: TerrainInfo, density: number, disableNoiseCaves: boolean, enableJaggedNess: boolean) {
+		if (!this.settings.islandNoiseOverride) {
+			const jaggedness = enableJaggedNess ? this.sampleJaggedNoise(terrain.jaggedness, x, z) : 0
 			const dimensionDensity = this.computeDimensionDensity(y, terrain)
 			const heightDensity = terrain.factor * (jaggedness + dimensionDensity)
 			density += heightDensity > 0 ? heightDensity * 4 : heightDensity
@@ -155,6 +158,20 @@ export class NoiseSampler {
 		density = NoiseSlideSettings.apply(this.settings.topSlide, density, NoiseSettings.cellCountY(this.settings) - yCell)
 		density = NoiseSlideSettings.apply(this.settings.bottomSlide, density, yCell)
 		return density
+	}
+
+	public getPreliminarySurfaceLevel(x: number, z: number, terrainInfo: TerrainInfo) {
+		const maxCellY = NoiseSettings.minCellY(this.settings) + NoiseSettings.cellCountY(this.settings)
+		const minCellY = NoiseSettings.minCellY(this.settings)
+		const cellHeight = NoiseSettings.cellHeight(this.settings)
+		for (let yCell = maxCellY; yCell >=  minCellY; yCell -= 1) {
+			const y = yCell * cellHeight
+			const density = this.calculateBaseNoise(x, y, z, terrainInfo, -0.703125, true, false)
+			if (density >= 0.390625) {
+				return y
+			}
+		}
+		return Number.MAX_SAFE_INTEGER
 	}
 }
 

@@ -1,10 +1,12 @@
 import { BlockState, Json } from '../core'
 import { NoiseParameters } from '../math'
 import { NoiseSettings } from './NoiseSettings'
+import { SurfaceRule } from './SurfaceSystem'
 
 export type NoiseGeneratorSettings = {
 	structures: StructureSettings,
 	noise: NoiseSettings,
+	surfaceRule: SurfaceRule,
 	/** @deprecated */
 	octaves: NoiseOctaves,
 	defaultBlock: BlockState,
@@ -25,6 +27,7 @@ export namespace NoiseGeneratorSettings {
 		const root = Json.readObject(obj) ?? {}
 		return {
 			structures: StructureSettings.fromJson(root.structures),
+			surfaceRule: SurfaceRule.fromJson(root.surface_rule),
 			noise: NoiseSettings.fromJson(root.noise),
 			octaves: NoiseOctaves.fromJson(root.octaves),
 			defaultBlock: BlockState.fromJson(root.default_block),

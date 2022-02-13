@@ -1,15 +1,19 @@
 import type { Chunk } from '../core'
-import { BlockState, ChunkPos } from '../core'
+import { BlockState, ChunkPos, computeIfAbsent } from '../core'
 import type { BiomeSource } from './biome'
 import { MaterialRule } from './MaterialRule'
 import { NoiseChunk } from './NoiseChunk'
 import type { NoiseGeneratorSettings } from './NoiseGeneratorSettings'
 import { NoiseSampler } from './NoiseSampler'
 import { NoiseSettings } from './NoiseSettings'
+import { SurfaceSystem } from './SurfaceSystem'
+import { WorldgenContext } from './VerticalAnchor'
 
 export class NoiseChunkGenerator {
 	private readonly sampler: NoiseSampler
+	private readonly noiseChunkCache: Map<bigint, NoiseChunk>
 	private readonly materialRule: MaterialRule
+	private readonly surfaceSystem: SurfaceSystem
 
 	constructor(
 		seed: bigint,
@@ -18,10 +22,12 @@ export class NoiseChunkGenerator {
 	) {
 
 		this.sampler = new NoiseSampler(settings.noise, seed, settings.octaves, settings.legacyRandomSource)
+		this.noiseChunkCache = new Map()
 
 		this.materialRule = MaterialRule.fromList([
 			(chunk, x, y, z) => chunk.updateNoiseAndGenerateBaseState(x, y, z),
 		])
+		this.surfaceSystem = new SurfaceSystem(settings.surfaceRule, settings.defaultBlock, seed)
 	}
 
 	public fill(chunk: Chunk) {
@@ -38,7 +44,7 @@ export class NoiseChunkGenerator {
 		const minX = ChunkPos.minBlockX(chunk.pos)
 		const minZ = ChunkPos.minBlockZ(chunk.pos)
 
-		const noiseChunk = new NoiseChunk(cellCountXZ, cellCountY, minCellY, this.sampler, minX, minZ, () => 0, this.settings)
+		const noiseChunk = this.getNoiseChunk(chunk)
 
 		noiseChunk.initializeForFirstCellX()
 		for (let cellX = 0; cellX < cellCountXZ; cellX += 1) {
@@ -83,5 +89,29 @@ export class NoiseChunkGenerator {
 			}
 			noiseChunk.swapSlices()
 		}
+	}
+
+	public buildSurface(chunk: Chunk, /** @deprecated */ biome: string = 'minecraft:plains') {
+		const noiseChunk = this.getNoiseChunk(chunk)
+		const context = WorldgenContext.create(this.settings.noise.minY, this.settings.noise.height)
+		this.surfaceSystem.buildSurface(chunk, noiseChunk, context, () => biome)
+	}
+
+	private getNoiseChunk(chunk: Chunk) {
+		return computeIfAbsent(this.noiseChunkCache, ChunkPos.toLong(chunk.pos), () => {
+			const minY = Math.max(chunk.minY, this.settings.noise.minY)
+			const maxY = Math.min(chunk.maxY, this.settings.noise.minY + this.settings.noise.height)
+	
+			const cellWidth = NoiseSettings.cellWidth(this.settings.noise)
+			const cellHeight = NoiseSettings.cellHeight(this.settings.noise)
+			const cellCountXZ = Math.floor(16 / cellWidth)
+	
+			const minCellY = Math.floor(minY / cellHeight)
+			const cellCountY = Math.floor((maxY - minY) / cellHeight)
+			const minX = ChunkPos.minBlockX(chunk.pos)
+			const minZ = ChunkPos.minBlockZ(chunk.pos)
+	
+			return new NoiseChunk(cellCountXZ, cellCountY, minCellY, this.sampler, minX, minZ, () => 0, this.settings)
+		})
 	}
 }

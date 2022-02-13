@@ -1,4 +1,5 @@
 import type { BlockState } from '../core'
+import { ChunkPos, computeIfAbsent } from '../core'
 import type { NoiseGeneratorSettings } from './NoiseGeneratorSettings'
 import { NoiseInterpolator } from './NoiseInterpolator'
 import type { FlatNoiseData, NoiseSampler } from './NoiseSampler'
@@ -11,13 +12,14 @@ export class NoiseChunk {
 	public readonly firstNoiseZ: number
 	private readonly interpolators: NoiseInterpolator[]
 	private readonly noiseData: FlatNoiseData[][]
+	private readonly preliminarySurfaceLevel: Map<bigint, number>
 	private readonly baseNoise: BlockStateFiller
 
 	constructor(
 		public readonly cellCountXZ: number,
 		public readonly cellCountY: number,
 		public readonly cellCountNoiseMinY: number,
-		sampler: NoiseSampler,
+		private readonly sampler: NoiseSampler,
 		blockX: number,
 		blockZ: number,
 		noiseFiller: NoiseFiller,
@@ -40,11 +42,25 @@ export class NoiseChunk {
 				this.noiseData[x][z] = sampler.noiseData(xx, zz)
 			}
 		}
+		this.preliminarySurfaceLevel = new Map()
 		this.baseNoise = sampler.makeBaseNoiseFiller(this, noiseFiller)
 	}
 
 	public getNoiseData(x: number, z: number) {
 		return this.noiseData[x - this.firstNoiseX][z - this.firstNoiseZ]
+	}
+
+	public getPreliminarySurfaceLevel(x: number, z: number) {
+		return computeIfAbsent(this.preliminarySurfaceLevel, ChunkPos.asLong(x, z), () => {
+			const xx = x - this.firstNoiseX
+			const zz = z - this.firstNoiseZ
+			const n = this.noiseData.length
+			const terrainInfo = xx >= 0 && zz >= 0 && xx < n && zz < n
+				? this.noiseData[xx][zz].terrainInfo
+				: this.sampler.noiseData(x, z).terrainInfo
+			const level = this.sampler.getPreliminarySurfaceLevel(x << 2, z << 2, terrainInfo)
+			return level
+		})
 	}
 
 	public createNoiseInterpolator(filler: NoiseFiller) {

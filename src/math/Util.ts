@@ -28,8 +28,16 @@ export function clampedLerp(a: number, b: number, c: number): number {
 	}
 }
 
+export function inverseLerp(a: number, b: number, c: number) {
+	return (a - b) / (c - b)
+}
+
 export function smoothstep(x: number): number {
 	return x * x * x * (x * (x * 6 - 15) + 10)
+}
+
+export function map(a: number, b: number, c: number, d: number, e: number) {
+	return lerp(inverseLerp(a, b, c), d, e)
 }
 
 export function binarySearch(n: number, n2: number, predicate: (value: number) => boolean) {
