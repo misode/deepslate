@@ -1,15 +1,17 @@
-import type { NoiseChunk } from '.'
+
 import type { Chunk } from '../core'
 import { BlockPos, BlockState, ChunkPos, computeIfAbsent, Json, lazy } from '../core'
-import type { Random } from '../math'
-import { lerp2, map, NormalNoise, XoroshiroRandom } from '../math'
+import type { NormalNoise, PositionalRandom, Random } from '../math'
+import { lerp2, map, XoroshiroRandom } from '../math'
+import type { NoiseChunk } from './NoiseChunk'
+import { Noises } from './Noises'
 import type { WorldgenContext } from './VerticalAnchor'
 import { VerticalAnchor } from './VerticalAnchor'
 
 export class SurfaceSystem {
 	private readonly surfaceNoise: NormalNoise
 	private readonly surfaceSecondaryNoise: NormalNoise
-	private readonly random: XoroshiroRandom
+	private readonly random: PositionalRandom
 	private readonly positionalRandoms: Map<string, Random>
 
 	constructor(
@@ -17,9 +19,9 @@ export class SurfaceSystem {
 		private readonly defaultBlock: BlockState,
 		seed: bigint,
 	) {
-		this.random = XoroshiroRandom.create(seed).fork()
-		this.surfaceNoise = new NormalNoise(this.random.forkWithHashOf('minecraft:surface'), { firstOctave: -6, amplitudes: [1, 1, 1] })
-		this.surfaceSecondaryNoise = new NormalNoise(this.random.forkWithHashOf('minecraft:surface_secondary'), { firstOctave: -6, amplitudes: [1, 1, 1, 1] })
+		this.random = XoroshiroRandom.create(seed).forkPositional()
+		this.surfaceNoise = Noises.instantiate(this.random, Noises.SURFACE)
+		this.surfaceSecondaryNoise = Noises.instantiate(this.random, Noises.SURFACE_SECONDARY)
 		this.positionalRandoms = new Map()
 	}
 
@@ -80,7 +82,7 @@ export class SurfaceSystem {
 
 	public getSurfaceDepth(x: number, z: number) {
 		const noise = this.surfaceNoise.sample(x, 0, z)
-		const offset = this.random.forkAt(BigInt(x), BigInt(0), BigInt(z)).nextDouble() * 0.25
+		const offset = this.random.at(x, 0, z).nextDouble() * 0.25
 		return noise * 2.75 + 3 + offset
 	}
 
@@ -90,7 +92,7 @@ export class SurfaceSystem {
 
 	public getRandom(name: string): Random {
 		return computeIfAbsent(this.positionalRandoms, name, () => {
-			return this.random.forkWithHashOf(name)
+			return this.random.fromHashOf(name)
 		})
 	}
 }

@@ -21,7 +21,7 @@ export class NoiseChunkGenerator {
 		private readonly settings: NoiseGeneratorSettings,
 	) {
 
-		this.sampler = new NoiseSampler(settings.noise, seed, settings.octaves, settings.legacyRandomSource)
+		this.sampler = new NoiseSampler(settings.noise, seed, settings.legacyRandomSource)
 		this.noiseChunkCache = new Map()
 
 		this.materialRule = MaterialRule.fromList([

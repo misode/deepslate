@@ -1,9 +1,9 @@
 import { BlockState } from '../core'
-import { BlendedNoise, clamp, LegacyRandom, NormalNoise, XoroshiroRandom } from '../math'
+import { BlendedNoise, clamp, LegacyRandom, NoiseParameters, NormalNoise, XoroshiroRandom } from '../math'
 import { Climate, TerrainShaper } from './biome'
 import type { BlockStateFiller, InterpolatableNoise, NoiseChunk, NoiseFiller } from './NoiseChunk'
 import { TerrainInfo } from './NoiseChunk'
-import type { NoiseOctaves } from './NoiseGeneratorSettings'
+import { Noises } from './Noises'
 import { NoiseSettings, NoiseSlideSettings } from './NoiseSettings'
 
 export class NoiseSampler {
@@ -22,31 +22,25 @@ export class NoiseSampler {
 	constructor(
 		private readonly settings: NoiseSettings,
 		seed: bigint,
-		octaves: NoiseOctaves,
 		legacyRandomSource: boolean = false,
 	) {
+		const large = settings.hasLargeBiomes
+		const random = (legacyRandomSource ? new LegacyRandom(seed) : XoroshiroRandom.create(seed)).forkPositional()
 		if (!legacyRandomSource) {
-			const random = XoroshiroRandom.create(seed).fork()
-			this.blendedNoise = new BlendedNoise(random.forkWithHashOf('minecraft:terrain'), settings.sampling, NoiseSettings.cellWidth(settings), NoiseSettings.cellHeight(settings))
-			this.temperatureNoise = new NormalNoise(random.forkWithHashOf('minecraft:temperature'), octaves.temperature)
-			this.humidityNoise = new NormalNoise(random.forkWithHashOf('minecraft:vegetation'), octaves.humidity)
-			this.continentalnessNoise = new NormalNoise(random.forkWithHashOf('minecraft:continentalness'), octaves.continentalness)
-			this.erosionNoise = new NormalNoise(random.forkWithHashOf('minecraft:erosion'), octaves.erosion)
-			this.weirdnessNoise = new NormalNoise(random.forkWithHashOf('minecraft:ridge'), octaves.weirdness)
-			this.offsetNoise = new NormalNoise(random.forkWithHashOf('minecraft:offset'), octaves.shift)
-			this.jaggedNoise = new NormalNoise(random.forkWithHashOf('minecraft:jagged'), { firstOctave: -16, amplitudes: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1] })
+			this.blendedNoise = new BlendedNoise(random.fromHashOf('minecraft:terrain'), settings.sampling, NoiseSettings.cellWidth(settings), NoiseSettings.cellHeight(settings))
+			this.temperatureNoise = Noises.instantiate(random, large ? Noises.TEMPERATURE_LARGE : Noises.TEMPERATURE)
+			this.humidityNoise = Noises.instantiate(random, large ? Noises.VEGETATION_LARGE : Noises.VEGETATION)
+			this.offsetNoise = Noises.instantiate(random, Noises.SHIFT)
 		} else {
-			const random = new LegacyRandom(seed)
-			this.blendedNoise = new BlendedNoise(random.fork(), settings.sampling, NoiseSettings.cellWidth(settings), NoiseSettings.cellHeight(settings))
-			random.consume(8)
-			this.temperatureNoise = new NormalNoise(new LegacyRandom(seed), octaves.temperature)
-			this.humidityNoise = new NormalNoise(new LegacyRandom(seed + BigInt(1)), octaves.humidity)
-			this.continentalnessNoise = new NormalNoise(new LegacyRandom(seed + BigInt(2)), octaves.continentalness)
-			this.erosionNoise = new NormalNoise(new LegacyRandom(seed + BigInt(3)), octaves.erosion)
-			this.weirdnessNoise = new NormalNoise(new LegacyRandom(seed + BigInt(4)), octaves.weirdness)
-			this.offsetNoise = new NormalNoise(new LegacyRandom(seed + BigInt(5)), octaves.shift)
-			this.jaggedNoise = new NormalNoise(random.fork(), { firstOctave: -16, amplitudes: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1] })
+			this.blendedNoise = new BlendedNoise(new LegacyRandom(seed), settings.sampling, NoiseSettings.cellWidth(settings), NoiseSettings.cellHeight(settings))
+			this.temperatureNoise = new NormalNoise(new LegacyRandom(seed), NoiseParameters.create(-7, [1, 1]))
+			this.humidityNoise = new NormalNoise(new LegacyRandom(seed + BigInt(1)), NoiseParameters.create(-7, [1, 1]))
+			this.offsetNoise = new NormalNoise(new LegacyRandom(seed + BigInt(5)), NoiseParameters.create(0, [0]))
 		}
+		this.continentalnessNoise = Noises.instantiate(random, large ? Noises.CONTINENTALNESS_LARGE : Noises.CONTINENTALNESS)
+		this.erosionNoise = Noises.instantiate(random, large ? Noises.EROSION_LARGE : Noises.EROSION)
+		this.weirdnessNoise = Noises.instantiate(random, Noises.RIDGE)
+		this.jaggedNoise = Noises.instantiate(random, Noises.JAGGED)
 
 		this.shaper = settings.terrainShaper
 		this.baseNoise = chunk => {

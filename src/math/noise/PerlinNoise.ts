@@ -10,13 +10,13 @@ export class PerlinNoise {
 
 	constructor(random: Random, firstOctave: number, amplitudes: number[]) {
 		if (random instanceof XoroshiroRandom){
-			const forkedRandom = random.fork()
+			const forkedRandom = random.forkPositional()
 
 			this.noiseLevels = Array(amplitudes.length)
 			for(let i = 0; i < amplitudes.length; i++) {
 				if (amplitudes[i] !== 0.0) {
 					const octave = firstOctave + i
-					this.noiseLevels[i] = new ImprovedNoise(forkedRandom.forkWithHashOf('octave_' + octave))
+					this.noiseLevels[i] = new ImprovedNoise(forkedRandom.fromHashOf('octave_' + octave))
 				}
 			}
 		} else {

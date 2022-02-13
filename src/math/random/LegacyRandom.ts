@@ -1,4 +1,6 @@
-import type { Random } from './Random'
+import md5 from 'md5'
+import { getSeed, longfromBytes } from '../Util'
+import type { PositionalRandom, Random } from './Random'
 
 export class LegacyRandom implements Random {
 	private static readonly MODULUS_BITS = 48
@@ -16,6 +18,10 @@ export class LegacyRandom implements Random {
 
 	public fork() {
 		return new LegacyRandom(this.nextLong())
+	}
+
+	public forkPositional() {
+		return new LegacyPositionalRandom(this.seed)
 	}
 
 	public setSeed(seed: bigint) {
@@ -62,5 +68,22 @@ export class LegacyRandom implements Random {
 		const a = this.next(30)
 		this.advance()
 		return a * LegacyRandom.DOUBLE_MULTIPLIER
+	}
+}
+
+export class LegacyPositionalRandom implements PositionalRandom {
+	constructor(
+		private readonly seed: bigint,
+	) {}
+
+	public at(x: number, y: number, z: number) {
+		const seed = getSeed(x, y, z)
+		return new LegacyRandom(seed ^ this.seed)
+	}
+
+	public fromHashOf(name: string) {
+		const hash = md5(name, { asBytes: true })
+		const seed = longfromBytes(hash[0], hash[1], hash[2], hash[3], hash[4], hash[5], hash[6], hash[7])
+		return new LegacyRandom(seed ^ this.seed)
 	}
 }

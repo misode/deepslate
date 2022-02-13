@@ -1,5 +1,6 @@
 import md5 from 'md5'
-import type { Random } from './Random'
+import { getSeed, longfromBytes } from '../Util'
+import type { PositionalRandom, Random } from './Random'
 
 export class XoroshiroRandom implements Random {
 	private static readonly SILVER_RATIO_64 = BigInt('7640891576956012809')
@@ -13,7 +14,7 @@ export class XoroshiroRandom implements Random {
 		this.seed = seed
 	}
 
-	public static create(seed: bigint){
+	public static create(seed: bigint) {
 		return new XoroshiroRandom(XoroshiroRandom.upgradeSeedTo128bit(seed))
 	}
 
@@ -40,38 +41,12 @@ export class XoroshiroRandom implements Random {
 		this.seed = XoroshiroRandom.upgradeSeedTo128bit(seed)
 	}
 
-	public fork(){
+	public fork() {
 		return new XoroshiroRandom([this.next(), this.next()])
 	}
 
-	private static getSeed(x: bigint, y: bigint, z: bigint) {
-		let p = (x * BigInt(3129871)) ^ (z * BigInt(116129781) ^ y)
-		p = p * p * BigInt(42317861) + p * BigInt(11)
-		return p >> BigInt(16)
-	}
-
-	public forkAt(x: bigint, y: bigint, z: bigint){
-		const positionSeed = XoroshiroRandom.getSeed(x, y, z)
-		const seedLo = positionSeed ^ this.seed[0]
-		return new XoroshiroRandom([seedLo, this.seed[1]])
-	}
-
-	private static LongfromBytes(b1: number, b2: number, b3: number, b4: number, b5: number, b6: number, b7: number, b8: number): bigint {
-		return BigInt(b1) << BigInt(56)
-			| BigInt(b2) << BigInt(48)
-			| BigInt(b3) << BigInt(40)
-			| BigInt(b4) << BigInt(32)
-			| BigInt(b5) << BigInt(24)
-			| BigInt(b6) << BigInt(16)
-			| BigInt(b7) << BigInt(8)
-			| BigInt(b8)
-	}
-
-	public forkWithHashOf(string: string){
-		const hash = md5(string, { asBytes: true })
-		const lo = XoroshiroRandom.LongfromBytes(hash[0], hash[1], hash[2], hash[3], hash[4], hash[5], hash[6], hash[7])
-		const hi = XoroshiroRandom.LongfromBytes(hash[8], hash[9], hash[10], hash[11], hash[12], hash[13], hash[14], hash[15])
-		return new XoroshiroRandom([lo ^ this.seed[0], hi ^ this.seed[1]])
+	public forkPositional() {
+		return new XoroshiroPositionalRandom(this.next(), this.next())
 	}
 
 	public next(): bigint {
@@ -115,7 +90,7 @@ export class XoroshiroRandom implements Random {
 
 	public nextInt(max?: number): number {
 		let value = this.next() & BigInt(0xFFFFFFFF)
-		if (!max){
+		if (!max) {
 			let result = Number(value)
 			if (result >= 0x80000000) {
 				result -= 0x100000000
@@ -123,20 +98,20 @@ export class XoroshiroRandom implements Random {
 
 			return result
 		} else {
-			const max_bigint = BigInt(max)
-			let product = value * max_bigint
-			let product_lo = product & BigInt(0xFFFFFFFF)
-			if (product_lo < max_bigint) {
-				const new_max = ((~max_bigint & BigInt(0xFFFFFFFF)) + BigInt(1)) % max_bigint
-				while (product_lo < new_max) {
+			const maxBigint = BigInt(max)
+			let product = value * maxBigint
+			let productLo = product & BigInt(0xFFFFFFFF)
+			if (productLo < maxBigint) {
+				const newMax = ((~maxBigint & BigInt(0xFFFFFFFF)) + BigInt(1)) % maxBigint
+				while (productLo < newMax) {
 					value = this.next() & BigInt(0xFFFFFFFF)
-					product = value * max_bigint 
-					product_lo = product & BigInt(0xFFFFFFFF)
+					product = value * maxBigint 
+					productLo = product & BigInt(0xFFFFFFFF)
 				}
 			}
 
-			const product_hi = product >> BigInt(32)
-			return Number(product_hi)
+			const productHi = product >> BigInt(32)
+			return Number(productHi)
 		}
 	}
 
@@ -150,5 +125,25 @@ export class XoroshiroRandom implements Random {
 
 	public parityConfigString(): string {
 		return 'seedLo: ' + this.seed[0] + ', seedHi: ' + this.seed[1]
+	}
+}
+
+export class XoroshiroPositionalRandom implements PositionalRandom {
+	constructor(
+		private readonly seedLo: bigint,
+		private readonly seedHi: bigint,
+	) {}
+
+	public at(x: number, y: number, z: number) {
+		const positionSeed = getSeed(x, y, z)
+		const seedLo = positionSeed ^ this.seedLo
+		return new XoroshiroRandom([seedLo, this.seedHi])
+	}
+
+	public fromHashOf(name: string) {
+		const hash = md5(name, { asBytes: true })
+		const lo = longfromBytes(hash[0], hash[1], hash[2], hash[3], hash[4], hash[5], hash[6], hash[7])
+		const hi = longfromBytes(hash[8], hash[9], hash[10], hash[11], hash[12], hash[13], hash[14], hash[15])
+		return new XoroshiroRandom([lo ^ this.seedLo, hi ^ this.seedHi])
 	}
 }

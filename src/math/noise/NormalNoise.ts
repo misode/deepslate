@@ -39,6 +39,9 @@ export type NoiseParameters = {
 	amplitudes: number[],
 }
 export namespace NoiseParameters {
+	export function create(firstOctave: number, amplitudes: number[]): NoiseParameters {
+		return { firstOctave, amplitudes }
+	}
 	export function fromJson(obj: unknown): NoiseParameters {
 		const root = Json.readObject(obj) ?? {}
 		return {

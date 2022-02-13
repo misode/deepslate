@@ -1,5 +1,4 @@
 import { BlockState, Json } from '../core'
-import { NoiseParameters } from '../math'
 import { NoiseSettings } from './NoiseSettings'
 import { SurfaceRule } from './SurfaceSystem'
 
@@ -7,8 +6,6 @@ export type NoiseGeneratorSettings = {
 	structures: StructureSettings,
 	noise: NoiseSettings,
 	surfaceRule: SurfaceRule,
-	/** @deprecated */
-	octaves: NoiseOctaves,
 	defaultBlock: BlockState,
 	defaultFluid: BlockState,
 	bedrockRoofPosition: number,
@@ -29,7 +26,6 @@ export namespace NoiseGeneratorSettings {
 			structures: StructureSettings.fromJson(root.structures),
 			surfaceRule: SurfaceRule.fromJson(root.surface_rule),
 			noise: NoiseSettings.fromJson(root.noise),
-			octaves: NoiseOctaves.fromJson(root.octaves),
 			defaultBlock: BlockState.fromJson(root.default_block),
 			defaultFluid: BlockState.fromJson(root.default_fluid),
 			bedrockRoofPosition: Json.readInt(root.bedrock_roof_position) ?? 0,
@@ -74,28 +70,6 @@ export namespace StructureSettings {
 				separation: Json.readInt(s.separation) ?? 0,
 				salt: Json.readInt(s.salt) ?? 0,
 			}))(Json.readObject(s) ?? {})),
-		}
-	}
-}
-
-export type NoiseOctaves = {
-	temperature: NoiseParameters,
-	humidity: NoiseParameters,
-	continentalness: NoiseParameters,
-	erosion: NoiseParameters,
-	weirdness: NoiseParameters,
-	shift: NoiseParameters,
-}
-export namespace NoiseOctaves {
-	export function fromJson(obj: unknown): NoiseOctaves {
-		const root = Json.readObject(obj) ?? {}
-		return {
-			temperature: NoiseParameters.fromJson(root.temperature),
-			humidity: NoiseParameters.fromJson(root.humidity),
-			continentalness: NoiseParameters.fromJson(root.continentalness),
-			erosion: NoiseParameters.fromJson(root.erosion),
-			weirdness: NoiseParameters.fromJson(root.weirdness),
-			shift: NoiseParameters.fromJson(root.shift),
 		}
 	}
 }

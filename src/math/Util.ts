@@ -54,3 +54,20 @@ export function binarySearch(n: number, n2: number, predicate: (value: number) =
 	}
 	return n
 }
+
+export function getSeed(x: number, y: number, z: number) {
+	let seed = BigInt(x * 3129871) ^ BigInt(z) * BigInt(116129781) ^ BigInt(y)
+	seed = seed * seed * BigInt(42317861) + seed * BigInt(11)
+	return seed >> BigInt(16)
+}
+
+export function longfromBytes(a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number): bigint {
+	return BigInt(a) << BigInt(56)
+		| BigInt(b) << BigInt(48)
+		| BigInt(c) << BigInt(40)
+		| BigInt(d) << BigInt(32)
+		| BigInt(e) << BigInt(24)
+		| BigInt(f) << BigInt(16)
+		| BigInt(g) << BigInt(8)
+		| BigInt(h)
+}
