@@ -19,14 +19,6 @@ describe('XoroshiroRandom', () => {
 		expect(md5('dummy', { asBytes: true })).deep.equal([39, 88, 118, 227, 76, 246, 9, 219, 17, 143, 61, 132, 183, 153, 167, 144])
 	})
 
-	it('forkWithHashOf', () => {
-		const random = XoroshiroRandom.create(BigInt(1)).fork().forkWithHashOf('dummy')
-		expect(random.nextLong()).equal(BigInt('3076308294949899828'))
-		expect(random.nextLong()).equal(BigInt('-1260105900060890724'))
-		expect(random.nextLong()).equal(BigInt('-6035452165539399711'))
-	})
-
-
 	it('nextLong', () => {
 		const random = XoroshiroRandom.create(BigInt(1))
 		const actual = [...Array(10)].map(() => random.nextLong())

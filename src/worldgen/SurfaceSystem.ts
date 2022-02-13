@@ -149,7 +149,7 @@ export class SurfaceContext {
 export type SurfaceRule = (context: SurfaceContext) => (x: number, y: number, z: number) => BlockState | undefined
 
 export namespace SurfaceRule {
-	const NOOP = () => () => undefined
+	export const NOOP = () => () => undefined
 
 	export function fromJson(obj: unknown): SurfaceRule {
 		const root = Json.readObject(obj) ?? {}
@@ -162,11 +162,11 @@ export namespace SurfaceRule {
 		return NOOP
 	}
 
-	function block(state: BlockState): SurfaceRule {
+	export function block(state: BlockState): SurfaceRule {
 		return () => () => state
 	}
 
-	function sequence(rules: SurfaceRule[]): SurfaceRule {
+	export function sequence(rules: SurfaceRule[]): SurfaceRule {
 		return context => {
 			const rulesWithContext = rules.map(rule => rule(context))
 			return (x, y, z) => {
@@ -179,7 +179,7 @@ export namespace SurfaceRule {
 		}
 	}
 
-	function condition(ifTrue: SurfaceCondition, thenRun: SurfaceRule): SurfaceRule {
+	export function condition(ifTrue: SurfaceCondition, thenRun: SurfaceRule): SurfaceRule {
 		return context => (x, y, z) => {
 			if (ifTrue(context)) {
 				return thenRun(context)(x, y, z)
@@ -192,7 +192,8 @@ export namespace SurfaceRule {
 export type SurfaceCondition = (context: SurfaceContext) => boolean
 
 export namespace SurfaceCondition {
-	const NOOP = () => false
+	export const FALSE = () => false
+	export const TRUE = () => true
 
 	export function fromJson(obj: unknown): SurfaceCondition {
 		const root = Json.readObject(obj) ?? {}
@@ -225,23 +226,23 @@ export namespace SurfaceCondition {
 				Json.readBoolean(root.add_surface_depth) ?? false,
 			)
 		}
-		return NOOP
+		return FALSE
 	}
 
-	function abovePreliminarySurface(): SurfaceCondition {
+	export function abovePreliminarySurface(): SurfaceCondition {
 		return context => context.blockY >= context.minSurfaceLevel()
 	}
 
-	function biome(biomes: string[]): SurfaceCondition {
+	export function biome(biomes: string[]): SurfaceCondition {
 		const biomeSet = new Set(biomes)
 		return context => biomeSet.has(context.biome())
 	}
 
-	function not(invert: SurfaceCondition): SurfaceCondition {
+	export function not(invert: SurfaceCondition): SurfaceCondition {
 		return context => !invert(context)
 	}
 
-	function stoneDepth(offset: number, addSurfaceDepth: boolean, secondaryDepthRange: number, ceiling: boolean): SurfaceCondition {
+	export function stoneDepth(offset: number, addSurfaceDepth: boolean, secondaryDepthRange: number, ceiling: boolean): SurfaceCondition {
 		return context => {
 			const depth = ceiling ? context.stoneDepthBelow : context.stoneDepthAbove
 			const surfaceDepth = addSurfaceDepth ? context.surfaceDepth : 0
@@ -250,7 +251,7 @@ export namespace SurfaceCondition {
 		}
 	}
 
-	function verticalGradient(randomName: string, trueAtAndBelow: VerticalAnchor, falseAtAndAbove: VerticalAnchor): SurfaceCondition {
+	export function verticalGradient(randomName: string, trueAtAndBelow: VerticalAnchor, falseAtAndAbove: VerticalAnchor): SurfaceCondition {
 		return context => {
 			const trueAtAndBelowY = trueAtAndBelow(context.context)
 			const falseAtAndAboveY = falseAtAndAbove(context.context)
@@ -266,7 +267,7 @@ export namespace SurfaceCondition {
 		}
 	}
 
-	function water(offset: number, surfaceDepthMultiplier: number, addStoneDepth: boolean): SurfaceCondition {
+	export function water(offset: number, surfaceDepthMultiplier: number, addStoneDepth: boolean): SurfaceCondition {
 		return context => {
 			if (context.waterHeight === Number.MIN_SAFE_INTEGER) {
 				return true
@@ -276,7 +277,7 @@ export namespace SurfaceCondition {
 		}
 	}
 
-	function yAbove(anchor: VerticalAnchor, surfaceDepthMultiplier: number, addStoneDepth: boolean): SurfaceCondition {
+	export function yAbove(anchor: VerticalAnchor, surfaceDepthMultiplier: number, addStoneDepth: boolean): SurfaceCondition {
 		return context => {
 			const stoneDepth = addStoneDepth ? context.stoneDepthAbove : 0
 			return context.blockY + stoneDepth >= anchor(context.context) + context.surfaceDepth * surfaceDepthMultiplier

@@ -1,7 +1,7 @@
 import { expect } from 'chai'
 import { BlockState, Chunk, ChunkPos } from '../../src/core'
 import type { NoiseGeneratorSettings, NoiseSettings } from '../../src/worldgen'
-import { FixedBiome, NoiseChunkGenerator, TerrainShaper } from '../../src/worldgen'
+import { FixedBiome, NoiseChunkGenerator, SurfaceRule, TerrainShaper } from '../../src/worldgen'
 
 
 describe('NoiseChunkGenerator', () => {
@@ -20,6 +20,7 @@ describe('NoiseChunkGenerator', () => {
 			oreVeinsEnabled: false,
 			noodleCavesEnabled: false,
 			legacyRandomSource: true,
+			surfaceRule: SurfaceRule.NOOP,
 			structures: { structures: {} },
 			noise: {
 				minY: 0,
@@ -34,14 +35,6 @@ describe('NoiseChunkGenerator', () => {
 				isAmplified: false,
 				hasLargeBiomes: false,
 				...noiseSettings,
-			},
-			octaves: {
-				temperature: { firstOctave: 0, amplitudes: [0] },
-				humidity: { firstOctave: 0, amplitudes: [0] },
-				continentalness: { firstOctave: 0, amplitudes: [0] },
-				erosion: { firstOctave: 0, amplitudes: [0] },
-				weirdness: { firstOctave: 0, amplitudes: [0] },
-				shift: { firstOctave: 0, amplitudes: [0] },
 			},
 			...generatorSettings,
 		}

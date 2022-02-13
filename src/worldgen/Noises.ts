@@ -5,6 +5,8 @@ interface NamedNoiseParameters extends NoiseParameters {
 	name: string
 }
 export namespace Noises {
+	const registry = new Map<string, NamedNoiseParameters>()
+
 	export const TEMPERATURE = create('temperature', -10, [1.5, 0, 1, 0, 0, 0])
 	export const VEGETATION = create('vegetation', -8, [1, 1, 0, 0, 0, 0])
 	export const CONTINENTALNESS = create('continentalness', -9, [1, 1, 2, 2, 2, 1, 1, 1, 1])
@@ -28,8 +30,6 @@ export namespace Noises {
 
 	export const SURFACE = create('surface', -6, [1, 1, 1])
 	export const SURFACE_SECONDARY = create('surface_secondary', -6, [1, 1, 0, 1])
-
-	const registry = new Map<string, NamedNoiseParameters>()
 
 	function create(name: string, firstOctave: number, amplitudes: number[]): NamedNoiseParameters {
 		const result = {

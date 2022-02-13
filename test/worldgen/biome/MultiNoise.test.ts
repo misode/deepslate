@@ -1,5 +1,4 @@
 import { expect } from 'chai'
-import type { NoiseOctaves } from '../../../src/worldgen'
 import { Climate, MultiNoise, NoiseSampler, NoiseSettings } from '../../../src/worldgen'
 
 describe('MultiNoise', () => {
@@ -11,16 +10,8 @@ describe('MultiNoise', () => {
 			[Climate.parameters(0.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.375), () => 'minecraft:warped_forest'],
 			[Climate.parameters(-0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.175), () => 'minecraft:basalt_deltas'],
 		])
-		const octaves: NoiseOctaves = {
-			temperature: { firstOctave: -7, amplitudes: [1, 1] },
-			humidity: { firstOctave: -7, amplitudes: [1, 1] },
-			continentalness: { firstOctave: -7, amplitudes: [1, 1] },
-			erosion: { firstOctave: -7, amplitudes: [1, 1] },
-			weirdness: { firstOctave: -7, amplitudes: [1, 1] },
-			shift: { firstOctave: 0, amplitudes: [0] },
-		}
 		const nether = new MultiNoise(netherBiomes)
-		const sampler = new NoiseSampler(NoiseSettings.fromJson(null), BigInt(5392), octaves, true)
+		const sampler = new NoiseSampler(NoiseSettings.fromJson(null), BigInt(5392), true)
 		const climate: Climate.Sampler = (x, y, z) => sampler.sample(x, y, z)
 
 		expect(nether.getBiome(0, 0, 0, climate)).equal('minecraft:soul_sand_valley')
