@@ -18,6 +18,21 @@ export namespace Noises {
 	export const RIDGE = create('ridge', -7, [1, 2, 1, 0, 0, 0])
 	export const SHIFT = create('offset', -3, [1, 1, 1, 0])
 
+	export const PILLAR = create('pillar', -7, [1, 1])
+	export const PILLAR_RARENESS = create('pillar_rareness', -8, [1])
+	export const PILLAR_THICKNESS = create('pillar_thickness', -8, [1])
+
+	export const SPAGHETTI_2D = create('spaghetti_2d', -8, [1])
+	export const SPAGHETTI_2D_ELEVATION = create('spaghetti_2d_elevation', -8, [1])
+	export const SPAGHETTI_2D_MODULATOR = create('spaghetti_2d_modulator', -8, [1])
+	export const SPAGHETTI_2D_THICKNESS = create('spaghetti_2d_thickness', -8, [1])
+	export const SPAGHETTI_3D_1 = create('spaghetti_3d_1', -8, [1])
+	export const SPAGHETTI_3D_2 = create('spaghetti_3d_2', -8, [1])
+	export const SPAGHETTI_3D_RARITY = create('spaghetti_3d_rarity', -8, [1])
+	export const SPAGHETTI_3D_THICKNESS = create('spaghetti_3d_thickness', -8, [1])
+	export const SPAGHETTI_ROUGHNESS = create('spaghetti_roughness', -8, [1])
+	export const SPAGHETTI_ROUGHNESS_MODULATOR = create('spaghetti_roughness_modulator', -8, [1])
+
 	export const CAVE_ENTRANCE = create('cave_entrance', -7, [0.4, 0.5, 1])
 	export const CAVE_LAYER = create('cave_layer', -8, [1])
 	export const CAVE_CHEESE = create('cave_cheese', -8, [0.5, 1, 2, 1, 2, 1, 0, 2, 0])
@@ -26,6 +41,7 @@ export namespace Noises {
 	export const NOODLE_THICKNESS = create('noodle_thickness', -8, [1])
 	export const NOODLE_RIDGE_A = create('noodle_ridge_a', -7, [1])
 	export const NOODLE_RIDGE_B = create('noodle_ridge_b', -7, [1])
+
 	export const JAGGED = create('jagged', -16, [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1])
 
 	export const SURFACE = create('surface', -6, [1, 1, 1])

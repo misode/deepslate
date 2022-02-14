@@ -43,7 +43,7 @@ export class NoiseChunk {
 			}
 		}
 		this.preliminarySurfaceLevel = new Map()
-		this.baseNoise = sampler.makeBaseNoiseFiller(this, noiseFiller)
+		this.baseNoise = sampler.makeBaseNoiseFiller(this, noiseFiller, settings.noodleCavesEnabled)
 	}
 
 	public getNoiseData(x: number, z: number) {
@@ -66,7 +66,7 @@ export class NoiseChunk {
 	public createNoiseInterpolator(filler: NoiseFiller) {
 		const interpolator = new NoiseInterpolator(this, filler)
 		this.interpolators.push(interpolator)
-		return interpolator
+		return interpolator.sample.bind(interpolator)
 	}
 
 	public initializeForFirstCellX() {

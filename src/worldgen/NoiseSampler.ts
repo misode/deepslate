@@ -1,5 +1,5 @@
 import { BlockState } from '../core'
-import { BlendedNoise, clamp, LegacyRandom, NoiseParameters, NormalNoise, XoroshiroRandom } from '../math'
+import { BlendedNoise, clamp, clampedLerp, clampedMap, LegacyRandom, map, NoiseParameters, NormalNoise, square, XoroshiroRandom } from '../math'
 import { Climate, TerrainShaper } from './biome'
 import type { BlockStateFiller, InterpolatableNoise, NoiseChunk, NoiseFiller } from './NoiseChunk'
 import { TerrainInfo } from './NoiseChunk'
@@ -16,11 +16,33 @@ export class NoiseSampler {
 	private readonly offsetNoise: NormalNoise
 	private readonly jaggedNoise: NormalNoise
 
+	private readonly pillarNoise: NormalNoise
+	private readonly pillarRarenessModulator: NormalNoise
+	private readonly pillarThicknessModulator: NormalNoise
+	private readonly spaghetti2DNoise: NormalNoise
+	private readonly spaghetti2DElevationModulator: NormalNoise
+	private readonly spaghetti2DRarityModulator: NormalNoise
+	private readonly spaghetti2DThicknessModulator: NormalNoise
+	private readonly spaghetti3DNoise1: NormalNoise
+	private readonly spaghetti3DNoise2: NormalNoise
+	private readonly spaghetti3DRarityModulator: NormalNoise
+	private readonly spaghetti3DThicknessModulator: NormalNoise
+	private readonly spaghettiRoughnessNoise: NormalNoise
+	private readonly spaghettiRoughnessModulator: NormalNoise
+	private readonly bigEntranceNoise: NormalNoise
+	private readonly layerNoise: NormalNoise
+	private readonly cheeseNoise: NormalNoise
+	private readonly noodleToggleNoise: InterpolatableNoise
+	private readonly noodleThicknessNoise: InterpolatableNoise
+	private readonly noodleRidgeANoise: InterpolatableNoise
+	private readonly noodleRidgeBNoise: InterpolatableNoise
+
 	public readonly shaper: TerrainShaper
 	private readonly baseNoise: InterpolatableNoise
 
 	constructor(
 		private readonly settings: NoiseSettings,
+		private readonly isNoiseCavesEnabled: boolean,
 		seed: bigint,
 		legacyRandomSource: boolean = false,
 	) {
@@ -40,14 +62,46 @@ export class NoiseSampler {
 		this.continentalnessNoise = Noises.instantiate(random, large ? Noises.CONTINENTALNESS_LARGE : Noises.CONTINENTALNESS)
 		this.erosionNoise = Noises.instantiate(random, large ? Noises.EROSION_LARGE : Noises.EROSION)
 		this.weirdnessNoise = Noises.instantiate(random, Noises.RIDGE)
+
+		this.pillarNoise = Noises.instantiate(random, Noises.PILLAR)
+		this.pillarRarenessModulator = Noises.instantiate(random, Noises.PILLAR_RARENESS)
+		this.pillarThicknessModulator = Noises.instantiate(random, Noises.PILLAR_THICKNESS)
+		this.spaghetti2DNoise = Noises.instantiate(random, Noises.SPAGHETTI_2D)
+		this.spaghetti2DElevationModulator = Noises.instantiate(random, Noises.SPAGHETTI_2D_ELEVATION)
+		this.spaghetti2DRarityModulator = Noises.instantiate(random, Noises.SPAGHETTI_2D_MODULATOR)
+		this.spaghetti2DThicknessModulator = Noises.instantiate(random, Noises.SPAGHETTI_2D_THICKNESS)
+		this.spaghetti3DNoise1 = Noises.instantiate(random, Noises.SPAGHETTI_3D_1)
+		this.spaghetti3DNoise2 = Noises.instantiate(random, Noises.SPAGHETTI_3D_2)
+		this.spaghetti3DRarityModulator = Noises.instantiate(random, Noises.SPAGHETTI_3D_RARITY)
+		this.spaghetti3DThicknessModulator = Noises.instantiate(random, Noises.SPAGHETTI_3D_THICKNESS)
+		this.spaghettiRoughnessNoise = Noises.instantiate(random, Noises.SPAGHETTI_ROUGHNESS)
+		this.spaghettiRoughnessModulator = Noises.instantiate(random, Noises.SPAGHETTI_ROUGHNESS_MODULATOR)
+		this.bigEntranceNoise = Noises.instantiate(random, Noises.CAVE_ENTRANCE)
+		this.layerNoise = Noises.instantiate(random, Noises.CAVE_LAYER)
+		this.cheeseNoise = Noises.instantiate(random, Noises.CAVE_CHEESE)
+
+		const noodleMinY = settings.minY + 4
+		const noodleMaxY = noodleMinY + settings.height
+		this.noodleToggleNoise = this.yLimitedInterpolatable(Noises.instantiate(random, Noises.NOODLE), noodleMinY, noodleMaxY, -1, 1)
+		this.noodleThicknessNoise = this.yLimitedInterpolatable(Noises.instantiate(random, Noises.NOODLE_THICKNESS), noodleMinY, noodleMaxY, 0, 1)
+		this.noodleRidgeANoise = this.yLimitedInterpolatable(Noises.instantiate(random, Noises.NOODLE_RIDGE_A), noodleMinY, noodleMaxY, 0, 8/3)
+		this.noodleRidgeBNoise = this.yLimitedInterpolatable(Noises.instantiate(random, Noises.NOODLE_RIDGE_B), noodleMinY, noodleMaxY, 0, 8/3)
+
 		this.jaggedNoise = Noises.instantiate(random, Noises.JAGGED)
 
 		this.shaper = settings.terrainShaper
-		this.baseNoise = chunk => {
-			const sampler = chunk.createNoiseInterpolator((x, y, z) =>
-				this.calculateBlendedBaseNoise(x, y, z, chunk.getNoiseData(x >> 2, z >> 2).terrainInfo))
-			return () => sampler.sample()
+		this.baseNoise = noiseChunk => noiseChunk.createNoiseInterpolator(
+			(x, y, z) => this.calculateBlendedBaseNoise(x, y, z, noiseChunk.getNoiseData(x >> 2, z >> 2).terrainInfo))
+	}
+
+	public yLimitedInterpolatable(noise: NormalNoise, minY: number, maxY: number, base: number, scale: number): InterpolatableNoise {
+		const filler: NoiseFiller = (x, y, z) => {
+			if (y > maxY || y < minY) {
+				return base
+			}
+			return noise.sample(x * scale, y * scale, z * scale)
 		}
+		return noiseChunk => noiseChunk.createNoiseInterpolator(filler)
 	}
 
 	public noiseData(x: number, z: number) {
@@ -106,12 +160,23 @@ export class NoiseSampler {
 		return this.weirdnessNoise.sample(x, 0, z)
 	}
 
-	public makeBaseNoiseFiller(noiseChunk: NoiseChunk, filler: NoiseFiller): BlockStateFiller {
+	public makeBaseNoiseFiller(noiseChunk: NoiseChunk, filler: NoiseFiller, isNoodleCavesEnabled: boolean): BlockStateFiller {
 		const baseSampler = this.baseNoise(noiseChunk)
+		const noodleToggle = isNoodleCavesEnabled ? this.noodleToggleNoise(noiseChunk) : () => -1
+		const noodleThickness = isNoodleCavesEnabled ? this.noodleThicknessNoise(noiseChunk) : () => 0
+		const noodleRidgeA = isNoodleCavesEnabled ? this.noodleRidgeANoise(noiseChunk) : () => 0
+		const noodleRidgeB = isNoodleCavesEnabled ? this.noodleRidgeBNoise(noiseChunk) : () => 0
+
 		return (x: number, y: number, z: number) => {
 			let noise = baseSampler()
 			noise = clamp(noise * 0.64, -1, 1)
 			noise = noise / 2 - noise * noise * noise / 24
+			if (noodleToggle() >= 0) {
+				const thickness = clampedMap(noodleThickness(), -1, 1, 0.05, 0.1)
+				const ridgeA = Math.abs(1.5 * noodleRidgeA()) - thickness
+				const ridgeB = Math.abs(1.5 * noodleRidgeB()) - thickness
+				noise = Math.min(noise, Math.max(ridgeA, ridgeB))
+			}
 			noise += filler(x, y, z)
 			if (noise > 0) return null
 			return BlockState.AIR
@@ -120,7 +185,7 @@ export class NoiseSampler {
 
 	public calculateBlendedBaseNoise(x: number, y: number, z: number, terrain: TerrainInfo) {
 		const density = this.blendedNoise.sample(x, y, z)
-		return this.calculateBaseNoise(x, y, z, terrain, density, true, true)
+		return this.calculateBaseNoise(x, y, z, terrain, density, !this.isNoiseCavesEnabled, true)
 	}
 
 	public calculateBaseNoise(x: number, y: number, z: number, terrain: TerrainInfo, density: number, disableNoiseCaves: boolean, enableJaggedNess: boolean) {
@@ -131,7 +196,31 @@ export class NoiseSampler {
 			density += heightDensity > 0 ? heightDensity * 4 : heightDensity
 		}
 
-		density = clamp(density, -64, 64)
+		let clampMin = -64
+		let clampMax = 64
+		if (!disableNoiseCaves && density >= -64) {
+			const density2 = density - 1.5625
+			const entrances = this.getBigEntrances(x, y, z)
+			const roughness = this.getSpaghettiRoughness(x, y, z)
+			const spaghetti3D = this.getSpaghetti3D(x, y, z)
+			const spaghetti = Math.min(entrances, spaghetti3D + roughness)
+			if (density2 < 0) {
+				clampMax = spaghetti
+			} else {
+				const caverns = this.getLayerizedCaverns(x, y, z)
+				if (caverns > 64) {
+					density = 64
+				} else {
+					const cheese = this.getCheese(x, y, z)
+					density = cheese + caverns + clampedLerp(0.5, 0, density2 * 1.28)
+				}
+				const spaghetti2D = this.getSpaghetti2D(x, y, z)
+				clampMin = this.getPillars(x, y, z)
+				clampMax = Math.min(spaghetti, spaghetti2D + roughness)
+			}
+		}
+
+		density = clamp(density, clampMin, clampMax)
 		density = this.applySlide(density, y / NoiseSettings.cellHeight(this.settings))
 		density = clamp(density, -64, 64)
 		return density
@@ -145,6 +234,89 @@ export class NoiseSampler {
 
 	public computeDimensionDensity(y: number, terrainInfo: TerrainInfo) {
 		return 1 - y / 128 + terrainInfo.offset
+	}
+
+	public getBigEntrances(x: number, y: number, z: number) {
+		const noise = this.bigEntranceNoise.sample(x * 0.75, y * 0.5, z * 0.75) + 0.37
+		return noise + clampedLerp(0.3, 0, (y + 10) / 40)
+	}
+
+	public getSpaghettiRoughness(x: number, y: number, z: number) {
+		const roughness = this.spaghettiRoughnessNoise.sample(x, y, z)
+		const modulator = map(this.spaghettiRoughnessModulator.sample(x, y, z), -1, 1, 0, 1)
+		return (0.4 - Math.abs(roughness)) * modulator
+	}
+
+	public getSpaghetti2D(x: number, y: number, z: number) {
+		const rarity = this.quantizeSpaghettiRarity2D(this.spaghetti2DRarityModulator.sample(x * 2, y, z * 2))
+		const thickness = map(this.spaghetti2DThicknessModulator.sample(x * 2, y, z * 2), -1, 1, 0.6, 1.3)
+		const noise = this.sampleWithRarity(this.spaghetti2DNoise, x, y, z, rarity)
+		const thickNoise = Math.abs(rarity * noise) - 0.083 * thickness
+		const minCellY = NoiseSettings.minCellY(this.settings)
+		const elevation = map(this.spaghetti2DElevationModulator.sample(x, 0, z), -1, 1, minCellY, 8)
+		const thickElevation = Math.abs(elevation - y / 8) - 1 * thickness
+		return clamp(Math.max(thickElevation, thickNoise), -1, 1)
+	}
+	
+	public getSpaghetti3D(x: number, y: number, z: number) {
+		const rarity = this.quantizeSpaghettiRarity3D(this.spaghetti3DRarityModulator.sample(x * 2, y, z * 2))
+		const thickness = map(this.spaghetti3DThicknessModulator.sample(x, y, z), -1, 1, 0.065, 0.088)
+		const noise1 = this.sampleWithRarity(this.spaghetti3DNoise1, x, y, z, rarity)
+		const thickNoise1 = Math.abs(rarity * noise1) - thickness
+		const noise2 = this.sampleWithRarity(this.spaghetti3DNoise2, x, y, z, rarity)
+		const thickNoise2 = Math.abs(rarity * noise2) - thickness
+		return clamp(Math.max(thickNoise1, thickNoise2), -1, 1)
+	}
+
+	public quantizeSpaghettiRarity2D(value: number) {
+		if (value < -0.75) {
+			return 0.5
+		} else if (value < -0.5) {
+			return 0.75
+		} else if (value < 0.5) {
+			return 1
+		} else if (value < 0.75) {
+			return 2
+		} else {
+			return 3
+		}
+	}
+
+	public quantizeSpaghettiRarity3D(value: number) {
+		if (value < -0.5) {
+			return 0.75
+		} else if (value < 0) {
+			return 1
+		} else if (value < 0.5) {
+			return 1.5
+		} else {
+			return 2
+		}
+	}
+
+	public sampleWithRarity(noise: NormalNoise, x: number, y: number, z: number, rarity: number) {
+		return noise.sample(x / rarity, y / rarity, z / rarity)
+	}
+
+	public getLayerizedCaverns(x: number, y: number, z: number) {
+		const noise = this.layerNoise.sample(x, y * 8, z)
+		return square(noise) * 4
+	}
+
+	public getCheese(x: number, y: number, z: number) {
+		const noise = this.cheeseNoise.sample(x, y / 1.5, z)
+		return clamp(noise + 0.27, -1, 1)
+	}
+
+	public getPillars(x: number, y: number, z: number) {
+		const rareness = map(this.pillarRarenessModulator.sample(x, y, z), -1, 1, 0, 2)
+		const thickness = map(this.pillarThicknessModulator.sample(x, y, z), -1, 1, 0, 1.1)
+		const noise = this.pillarNoise.sample(x * 25, y * 0.3, z * 25)
+		const pillars = Math.pow(thickness, 3) * (noise * 2 - rareness)
+		if (pillars <= 0.03) {
+			return Number.MIN_SAFE_INTEGER
+		}
+		return pillars
 	}
 
 	public applySlide(density: number, y: number) {

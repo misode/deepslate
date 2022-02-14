@@ -24,15 +24,7 @@ describe('NoiseSampler', () => {
 			hasLargeBiomes: false,
 			...settings,
 		}
-		const octaves = {
-			temperature: { firstOctave: 0, amplitudes: [0] },
-			humidity: { firstOctave: 0, amplitudes: [0] },
-			continentalness: { firstOctave: 0, amplitudes: [0] },
-			erosion: { firstOctave: 0, amplitudes: [0] },
-			weirdness: { firstOctave: 0, amplitudes: [0] },
-			shift: { firstOctave: 0, amplitudes: [0] },
-		}
-		const sampler = new NoiseSampler(noiseSettings, BigInt(seed), true)
+		const sampler = new NoiseSampler(noiseSettings, false, BigInt(seed), true)
 		return { sampler }
 	}
 	it('sampleJaggedNoise', () => {

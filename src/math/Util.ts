@@ -40,6 +40,10 @@ export function map(a: number, b: number, c: number, d: number, e: number) {
 	return lerp(inverseLerp(a, b, c), d, e)
 }
 
+export function clampedMap(a: number, b: number, c: number, d: number, e: number) {
+	return clampedLerp(d, e, inverseLerp(a, b, c))
+}
+
 export function binarySearch(n: number, n2: number, predicate: (value: number) => boolean) {
 	let n3 = n2 - n
 	while (n3 > 0) {
