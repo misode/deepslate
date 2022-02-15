@@ -1,8 +1,9 @@
 
 import type { Chunk } from '../core'
-import { BlockPos, BlockState, ChunkPos, computeIfAbsent, Json, lazy } from '../core'
+import { BlockPos, BlockState, ChunkPos } from '../core'
 import type { NormalNoise, PositionalRandom, Random } from '../math'
 import { lerp2, map, XoroshiroRandom } from '../math'
+import { computeIfAbsent, Json, lazy } from '../util'
 import type { NoiseChunk } from './NoiseChunk'
 import { Noises } from './Noises'
 import type { WorldgenContext } from './VerticalAnchor'

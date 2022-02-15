@@ -1,4 +1,4 @@
-import { Json } from '../../core'
+import { Json } from '../../util'
 import type { Random } from '../random'
 import { clampedLerp } from '../Util'
 import type { ImprovedNoise } from './ImprovedNoise'

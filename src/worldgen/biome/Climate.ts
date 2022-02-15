@@ -1,5 +1,5 @@
-import { Json } from '../../core'
 import { square } from '../../math'
+import { Json } from '../../util'
 
 export namespace Climate {
 	const PARAMETER_SPACE = 7

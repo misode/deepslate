@@ -1,5 +1,5 @@
-import { Json } from '../core'
 import { clampedLerp, NoiseSamplingSettings } from '../math'
+import { Json } from '../util'
 import { TerrainShaper } from './biome/TerrainShaper'
 
 export type NoiseSettings = {

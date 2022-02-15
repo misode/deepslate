@@ -1,4 +1,4 @@
-import { Json } from '../core'
+import { Json } from '../util'
 import { binarySearch, lerp } from './Util'
 
 export interface NumberProvider<C> {

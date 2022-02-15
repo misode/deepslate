@@ -1,5 +1,7 @@
 import type { BlockState } from '../core'
-import { ChunkPos, computeIfAbsent } from '../core'
+import { ChunkPos } from '../core'
+import { computeIfAbsent } from '../util'
+import type { Aquifer, FluidPicker } from './Aquifer'
 import type { NoiseGeneratorSettings } from './NoiseGeneratorSettings'
 import { NoiseInterpolator } from './NoiseInterpolator'
 import type { FlatNoiseData, NoiseSampler } from './NoiseSampler'
@@ -13,6 +15,7 @@ export class NoiseChunk {
 	private readonly interpolators: NoiseInterpolator[]
 	private readonly noiseData: FlatNoiseData[][]
 	private readonly preliminarySurfaceLevel: Map<bigint, number>
+	private readonly aquifer: Aquifer
 	private readonly baseNoise: BlockStateFiller
 
 	constructor(
@@ -24,6 +27,7 @@ export class NoiseChunk {
 		blockZ: number,
 		noiseFiller: NoiseFiller,
 		public readonly settings: NoiseGeneratorSettings,
+		fluidPicker: FluidPicker,
 	) {
 		const cellWidth = NoiseSettings.cellWidth(settings.noise)
 		this.firstCellX = Math.floor(blockX / cellWidth)
@@ -43,6 +47,7 @@ export class NoiseChunk {
 			}
 		}
 		this.preliminarySurfaceLevel = new Map()
+		this.aquifer = sampler.createAquifer(this, blockX, blockZ, cellCountNoiseMinY, cellCountY, fluidPicker, settings.aquifersEnabled)
 		this.baseNoise = sampler.makeBaseNoiseFiller(this, noiseFiller, settings.noodleCavesEnabled)
 	}
 
@@ -95,6 +100,10 @@ export class NoiseChunk {
 
 	public swapSlices() {
 		this.interpolators.forEach(i => i.swapSlices())
+	}
+
+	public getAquifer() {
+		return this.aquifer
 	}
 
 	public updateNoiseAndGenerateBaseState(x: number, y: number, z: number) {

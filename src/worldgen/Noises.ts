@@ -18,6 +18,11 @@ export namespace Noises {
 	export const RIDGE = create('ridge', -7, [1, 2, 1, 0, 0, 0])
 	export const SHIFT = create('offset', -3, [1, 1, 1, 0])
 
+	export const AQUIFER_BARRIER = create('aquifer_barrier', -3, [1])
+	export const AQUIFER_FLUID_LEVEL_FLOODEDNESS = create('aquifer_fluid_level_floodedness', -7, [1])
+	export const AQUIFER_FLUID_LEVEL_SPREAD = create('aquifer_fluid_level_spread', -5, [1])
+	export const AQUIFER_LAVA = create('aquifer_lava', -1, [1])
+
 	export const PILLAR = create('pillar', -7, [1, 1])
 	export const PILLAR_RARENESS = create('pillar_rareness', -8, [1])
 	export const PILLAR_THICKNESS = create('pillar_thickness', -8, [1])

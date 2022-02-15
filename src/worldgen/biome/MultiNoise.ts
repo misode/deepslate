@@ -1,4 +1,4 @@
-import { Json } from '../../core'
+import { Json } from '../../util'
 import type { BiomeSource } from './BiomeSource'
 import { Climate } from './Climate'
 

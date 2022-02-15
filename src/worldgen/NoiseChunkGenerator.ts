@@ -1,5 +1,8 @@
 import type { Chunk } from '../core'
-import { BlockState, ChunkPos, computeIfAbsent } from '../core'
+import { BlockState, ChunkPos } from '../core'
+import { computeIfAbsent } from '../util'
+import type { FluidPicker } from './Aquifer'
+import { FluidStatus } from './Aquifer'
 import type { BiomeSource } from './biome'
 import { MaterialRule } from './MaterialRule'
 import { NoiseChunk } from './NoiseChunk'
@@ -14,6 +17,7 @@ export class NoiseChunkGenerator {
 	private readonly noiseChunkCache: Map<bigint, NoiseChunk>
 	private readonly materialRule: MaterialRule
 	private readonly surfaceSystem: SurfaceSystem
+	private readonly globalFluidPicker: FluidPicker
 
 	constructor(
 		seed: bigint,
@@ -28,6 +32,14 @@ export class NoiseChunkGenerator {
 			(chunk, x, y, z) => chunk.updateNoiseAndGenerateBaseState(x, y, z),
 		])
 		this.surfaceSystem = new SurfaceSystem(settings.surfaceRule, settings.defaultBlock, seed)
+		const lavaFluid = new FluidStatus(-54, BlockState.LAVA)
+		const defaultFluid = new FluidStatus(settings.seaLevel, settings.defaultFluid)
+		this.globalFluidPicker = (x, y, z) => {
+			if (y < Math.min(-54, settings.seaLevel)) {
+				return lavaFluid
+			}
+			return defaultFluid
+		}
 	}
 
 	public fill(chunk: Chunk) {
@@ -111,7 +123,7 @@ export class NoiseChunkGenerator {
 			const minX = ChunkPos.minBlockX(chunk.pos)
 			const minZ = ChunkPos.minBlockZ(chunk.pos)
 	
-			return new NoiseChunk(cellCountXZ, cellCountY, minCellY, this.sampler, minX, minZ, () => 0, this.settings)
+			return new NoiseChunk(cellCountXZ, cellCountY, minCellY, this.sampler, minX, minZ, () => 0, this.settings, this.globalFluidPicker)
 		})
 	}
 }

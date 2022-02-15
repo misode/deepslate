@@ -1,4 +1,4 @@
-import { Json } from '../core'
+import { Json } from '../util'
 
 export type VerticalAnchor = (context: WorldgenContext) => number
 

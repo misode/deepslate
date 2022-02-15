@@ -1,5 +1,8 @@
-import { BlockState } from '../core'
+import { BlockPos, ChunkPos } from '../core'
+import type { PositionalRandom } from '../math'
 import { BlendedNoise, clamp, clampedLerp, clampedMap, LegacyRandom, map, NoiseParameters, NormalNoise, square, XoroshiroRandom } from '../math'
+import type { FluidPicker } from './Aquifer'
+import { Aquifer, NoiseAquifer } from './Aquifer'
 import { Climate, TerrainShaper } from './biome'
 import type { BlockStateFiller, InterpolatableNoise, NoiseChunk, NoiseFiller } from './NoiseChunk'
 import { TerrainInfo } from './NoiseChunk'
@@ -15,6 +18,12 @@ export class NoiseSampler {
 	private readonly weirdnessNoise: NormalNoise
 	private readonly offsetNoise: NormalNoise
 	private readonly jaggedNoise: NormalNoise
+
+	private readonly aquiferRandom: PositionalRandom
+	private readonly barrierNoise: NormalNoise
+	private readonly fluidLevelFloodednessNoise: NormalNoise
+	private readonly fluidLevelSpreadNoise: NormalNoise
+	private readonly lavaNoise: NormalNoise
 
 	private readonly pillarNoise: NormalNoise
 	private readonly pillarRarenessModulator: NormalNoise
@@ -62,6 +71,12 @@ export class NoiseSampler {
 		this.continentalnessNoise = Noises.instantiate(random, large ? Noises.CONTINENTALNESS_LARGE : Noises.CONTINENTALNESS)
 		this.erosionNoise = Noises.instantiate(random, large ? Noises.EROSION_LARGE : Noises.EROSION)
 		this.weirdnessNoise = Noises.instantiate(random, Noises.RIDGE)
+
+		this.aquiferRandom = random.fromHashOf('minecraft:aquifer').forkPositional()
+		this.barrierNoise = Noises.instantiate(random, Noises.RIDGE)
+		this.fluidLevelFloodednessNoise = Noises.instantiate(random, Noises.AQUIFER_FLUID_LEVEL_FLOODEDNESS)
+		this.fluidLevelSpreadNoise = Noises.instantiate(random, Noises.AQUIFER_FLUID_LEVEL_SPREAD)
+		this.lavaNoise = Noises.instantiate(random, Noises.AQUIFER_LAVA)
 
 		this.pillarNoise = Noises.instantiate(random, Noises.PILLAR)
 		this.pillarRarenessModulator = Noises.instantiate(random, Noises.PILLAR_RARENESS)
@@ -168,8 +183,8 @@ export class NoiseSampler {
 		const noodleRidgeB = isNoodleCavesEnabled ? this.noodleRidgeBNoise(noiseChunk) : () => 0
 
 		return (x: number, y: number, z: number) => {
-			let noise = baseSampler()
-			noise = clamp(noise * 0.64, -1, 1)
+			const base = baseSampler()
+			let noise = clamp(base * 0.64, -1, 1)
 			noise = noise / 2 - noise * noise * noise / 24
 			if (noodleToggle() >= 0) {
 				const thickness = clampedMap(noodleThickness(), -1, 1, 0.05, 0.1)
@@ -177,9 +192,7 @@ export class NoiseSampler {
 				const ridgeB = Math.abs(1.5 * noodleRidgeB()) - thickness
 				noise = Math.min(noise, Math.max(ridgeA, ridgeB))
 			}
-			noise += filler(x, y, z)
-			if (noise > 0) return null
-			return BlockState.AIR
+			return noiseChunk.getAquifer().compute(x, y, z, base, noise + filler(x, y, z))
 		}
 	}
 
@@ -338,6 +351,17 @@ export class NoiseSampler {
 			}
 		}
 		return Number.MAX_SAFE_INTEGER
+	}
+
+	public createAquifer(noiseChunk: NoiseChunk, blockX: number, blockZ: number, cellCountNoiseMinY: number, cellCountY: number, fluidPicker: FluidPicker, aquifersEnabled: boolean) {
+		// WIP: Noise aquifers don't work yet
+		if (!aquifersEnabled || true) {
+			return Aquifer.createDisabled(fluidPicker)
+		}
+		const chunkPos = ChunkPos.fromBlockPos(BlockPos.create(blockX, 0, blockZ))
+		const minY = cellCountNoiseMinY * NoiseSettings.cellHeight(this.settings)
+		const height = cellCountY * NoiseSettings.cellHeight(this.settings)
+		return new NoiseAquifer(noiseChunk, chunkPos, this.barrierNoise, this.fluidLevelFloodednessNoise, this.fluidLevelSpreadNoise, this.lavaNoise, this.aquiferRandom, minY, height, fluidPicker)
 	}
 }
 

@@ -1,5 +1,5 @@
-import { Json } from '../../core'
 import { lerp, NumberProvider, Spline } from '../../math'
+import { Json } from '../../util'
 
 const COORDINATES = ['continents', 'erosion', 'weirdness', 'ridges'] as const
 type Point = Record<typeof COORDINATES[number], number>

@@ -1,4 +1,5 @@
-import { BlockState, Json } from '../core'
+import { BlockState } from '../core'
+import { Json } from '../util'
 import { NoiseSettings } from './NoiseSettings'
 import { SurfaceRule } from './SurfaceSystem'
 
