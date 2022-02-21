@@ -8,6 +8,7 @@ export class NormalNoise {
 	public readonly valueFactor: number
 	public readonly first: PerlinNoise
 	public readonly second: PerlinNoise
+	public readonly maxValue: number
 
 	constructor(random: Random, { firstOctave, amplitudes }: NoiseParameters) {
 		this.first = new PerlinNoise(random, firstOctave, amplitudes)
@@ -24,6 +25,7 @@ export class NormalNoise {
 
 		const expectedDeviation = 0.1 * (1 + 1 / (max - min + 1))
 		this.valueFactor = (1/6) / expectedDeviation
+		this.maxValue = (this.first.maxValue + this.second.maxValue) * this.valueFactor
 	}
 
 	sample(x: number, y: number, z: number) {

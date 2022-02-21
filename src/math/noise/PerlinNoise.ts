@@ -7,6 +7,7 @@ export class PerlinNoise {
 	public readonly amplitudes: number[]
 	public readonly lowestFreqInputFactor: number
 	public readonly lowestFreqValueFactor: number
+	public readonly maxValue: number
 
 	constructor(random: Random, firstOctave: number, amplitudes: number[]) {
 		if (random instanceof XoroshiroRandom){
@@ -37,6 +38,7 @@ export class PerlinNoise {
 		this.amplitudes = amplitudes
 		this.lowestFreqInputFactor = Math.pow(2, firstOctave)
 		this.lowestFreqValueFactor = Math.pow(2, (amplitudes.length - 1)) / (Math.pow(2, amplitudes.length) - 1)
+		this.maxValue = this.edgeValue(2)
 	}
 
 	public sample(x: number, y: number, z: number, yScale = 0, yLimit = 0, fixY = false) {
@@ -62,6 +64,18 @@ export class PerlinNoise {
 
 	public getOctaveNoise(i: number): ImprovedNoise | undefined {
 		return this.noiseLevels[this.noiseLevels.length - 1 - i]
+	}
+
+	public edgeValue(x: number) {
+		let value = 0
+		let valueF = this.lowestFreqValueFactor
+		for (let i = 0; i < this.noiseLevels.length; i += 1) {
+			if (this.noiseLevels[i]) {
+				value += this.amplitudes[i] * x * valueF
+			}
+			valueF /= 2
+		}
+		return value
 	}
 
 	public static wrap(value: number) {

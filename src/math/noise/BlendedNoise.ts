@@ -12,6 +12,7 @@ export class BlendedNoise {
 	private readonly yScale: number
 	private readonly xzMainScale: number
 	private readonly yMainScale: number
+	public readonly maxValue: number
 
 	constructor(
 		random: Random,
@@ -26,6 +27,7 @@ export class BlendedNoise {
 		this.yScale = 684.412 * sampling.yScale
 		this.xzMainScale = this.xzScale / sampling.xzFactor
 		this.yMainScale = this.yScale / sampling.yFactor
+		this.maxValue = this.minLimitNoise.edgeValue(this.yScale + 2)
 	}
 
 	public sample(x: number, y: number, z: number) {

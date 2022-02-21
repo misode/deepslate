@@ -35,4 +35,10 @@ export namespace Json {
 		const result = parser(obj)
 		return result ? mapper(result) : undefined
 	}
+
+	export function readEnum<T extends string>(obj: unknown, values: readonly T[]): T {
+		if (typeof obj !== 'string') return values[0]
+		if (values.includes(obj as T)) return obj as T
+		return values[0]
+	}
 }

@@ -48,6 +48,13 @@ export namespace NoiseSettings {
 	export function minCellY(settings: NoiseSettings) {
 		return Math.floor(settings.minY / cellHeight(settings))
 	}
+
+	export function applySlides(settings: NoiseSettings, density: number, y: number) {
+		const yCell = y - NoiseSettings.minCellY(settings)
+		density = NoiseSlideSettings.apply(settings.topSlide, density, NoiseSettings.cellCountY(settings) - yCell)
+		density = NoiseSlideSettings.apply(settings.bottomSlide, density, yCell)
+		return density
+	}
 }
 
 export type NoiseSlideSettings = {
