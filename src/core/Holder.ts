@@ -1,7 +1,10 @@
 import { Identifier } from './Identifier'
 import type { Registry } from './Registry'
 
-export type Holder<T> = () => T
+export interface Holder<T> {
+	value(): T
+	key(): Identifier | undefined
+}
 
 export namespace Holder {
 	export function parser<T>(registry: Registry<T>, directParser: (obj: unknown) => T) {
@@ -15,10 +18,16 @@ export namespace Holder {
 	}
 
 	export function direct<T>(value: T): Holder<T> {
-		return () => value
+		return {
+			value: () => value,
+			key: () => undefined,
+		}
 	}
 
 	export function reference<T>(registry: Registry<T>, id: Identifier): Holder<T> {
-		return () => registry.getOrThrow(id)
+		return {
+			value: () => registry.getOrThrow(id),
+			key: () => id,
+		}
 	}
 }

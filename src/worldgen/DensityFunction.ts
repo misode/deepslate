@@ -1,14 +1,13 @@
-import { TerrainShaper } from '.'
-import type { BlockPos } from '../core'
-import { Holder } from '../core'
+import { Holder, Identifier } from '../core'
 import type { NormalNoise } from '../math'
 import { BlendedNoise, clamp, clampedMap, CubicSpline, NoiseParameters, XoroshiroRandom } from '../math'
 import { Json } from '../util'
+import { TerrainShaper } from './biome'
 import { NoiseSettings } from './NoiseSettings'
 import { WorldgenRegistries } from './WorldgenRegistries'
 
 export abstract class DensityFunction {
-	public abstract compute(context: BlockPos): number
+	public abstract compute(context: DensityFunction.Context): number
 
 	public minValue(): number {
 		return -this.maxValue()
@@ -27,11 +26,24 @@ export abstract class DensityFunction {
 
 export namespace DensityFunction {
 	export type Visitor = (density: DensityFunction) => DensityFunction
-	export type Context = BlockPos
+
+	export interface Context {
+		x(): number
+		y(): number
+		z(): number
+	}
 
 	export interface ContextProvider {
 		forIndex(i: number): Context
-		fillAllDirectly(arr: number[], density: DensityFunction): DensityFunction
+		fillAllDirectly(arr: number[], density: DensityFunction): void
+	}
+
+	export function context(x: number, y: number, z: number) {
+		return {
+			x() { return x },
+			y() { return y },
+			z() { return z },
+		}
 	}
 
 	abstract class Transformer extends DensityFunction {
@@ -58,6 +70,9 @@ export namespace DensityFunction {
 	const NoiseParser = Holder.parser(WorldgenRegistries.NOISE, NoiseParameters.fromJson)
 
 	export function fromJson(obj: unknown): DensityFunction {
+		if (typeof obj === 'string') {
+			return new HolderHolder(Holder.reference(WorldgenRegistries.DENSITY_FUNCTION, Identifier.parse(obj)))
+		}
 		const root = Json.readObject(obj) ?? {}
 		const type = Json.readString(root.type)?.replace(/^minecraft:/, '')
 		switch (type) {
@@ -101,6 +116,11 @@ export namespace DensityFunction {
 			case 'shift_b': return new ShiftB(NoiseParser(root.argument))
 			case 'shift': return new Shift(NoiseParser(root.argument))
 			case 'blend_density': return new BlendDensity(fromJson(root.input))
+			case 'clamp': return new Clamp(
+				fromJson(root.input),
+				Json.readNumber(root.min) ?? 0,
+				Json.readNumber(root.max) ?? 1,
+			)
 			case 'abs':
 			case 'square':
 			case 'cube':
@@ -141,7 +161,7 @@ export namespace DensityFunction {
 		return Constant.ZERO
 	}
 
-	class Constant extends DensityFunction {
+	export class Constant extends DensityFunction {
 		public static ZERO = new Constant(0)
 		public static ONE = new Constant(1)
 		constructor(private readonly value: number) {
@@ -161,14 +181,37 @@ export namespace DensityFunction {
 		}
 	}
 
-	class OldBlendedNoise extends DensityFunction {
-		private readonly blendedNoise: BlendedNoise
-		constructor() {
+	export class HolderHolder extends DensityFunction {
+		constructor(
+			public readonly fn: Holder<DensityFunction>,
+		) {
 			super()
-			this.blendedNoise = new BlendedNoise(XoroshiroRandom.create(BigInt(0)), { xzScale: 1, yScale: 1, xzFactor: 80, yFactor: 160 }, 4, 8)
 		}
-		public compute([x, y, z]: BlockPos) {
-			return this.blendedNoise.sample(x, y, z)
+		public compute(context: Context): number {
+			return this.fn.value().compute(context)
+		}
+		public fillArray(arr: number[], context: ContextProvider): void {
+			return this.fn.value().fillArray(arr, context)
+		}
+		public mapAll(visitor: Visitor): DensityFunction {
+			return visitor(new HolderHolder(Holder.direct(this.fn.value().mapAll(visitor))))
+		}
+		public minValue(): number {
+			return this.fn.value().minValue()
+		}
+		public maxValue(): number {
+			return this.fn.value().maxValue()
+		}
+	}
+
+	export class OldBlendedNoise extends DensityFunction {
+		private readonly blendedNoise: BlendedNoise
+		constructor(blendedNoise?: BlendedNoise) {
+			super()
+			this.blendedNoise = blendedNoise ?? new BlendedNoise(XoroshiroRandom.create(BigInt(0)), { xzScale: 1, yScale: 1, xzFactor: 80, yFactor: 160 }, 4, 8)
+		}
+		public compute({ x, y, z }: Context) {
+			return this.blendedNoise.sample(x(), y(), z())
 		}
 		public maxValue() {
 			return this.blendedNoise.maxValue
@@ -177,7 +220,7 @@ export namespace DensityFunction {
 
 	const MarkerType = ['interpolated', 'flat_cache', 'cache_2d', 'cache_once', 'cache_all_in_cell'] as const
 
-	class Marker implements DensityFunction {
+	export class Marker implements DensityFunction {
 		constructor(
 			public readonly type: typeof MarkerType[number],
 			public readonly wrapped: DensityFunction,
@@ -199,17 +242,17 @@ export namespace DensityFunction {
 		}
 	}
 
-	class Noise extends DensityFunction {
+	export class Noise extends DensityFunction {
 		constructor(
-			protected readonly xzScale: number,
-			protected readonly yScale: number,
+			public readonly xzScale: number,
+			public readonly yScale: number,
 			public readonly noiseData: Holder<NoiseParameters>,
-			protected readonly noise?: NormalNoise,
+			public readonly noise?: NormalNoise,
 		) {
 			super()
 		}
-		public compute([x, y, z]: BlockPos) {
-			return this.noise?.sample(x * this.xzScale, y * this.yScale, z * this.xzScale) ?? 0
+		public compute({ x, y, z }: Context) {
+			return this.noise?.sample(x() * this.xzScale, y() * this.yScale, z() * this.xzScale) ?? 0
 		}
 		public maxValue() {
 			return this.noise?.maxValue ?? 2
@@ -230,25 +273,25 @@ export namespace DensityFunction {
 
 	const RarityValueMapper = ['type_1', 'type_2'] as const
 
-	class WeirdScaledSampler extends Transformer {
+	export class WeirdScaledSampler extends Transformer {
 		private static readonly ValueMapper: Record<typeof RarityValueMapper[number], [(value: number) => number, number]> = {
 			type_1: [WeirdScaledSampler.rarityValueMapper1, 2],
 			type_2: [WeirdScaledSampler.rarityValueMapper2, 3],
 		}
 		constructor(
 			input: DensityFunction,
-			private readonly rarityValueMapper: typeof RarityValueMapper[number],
+			public readonly rarityValueMapper: typeof RarityValueMapper[number],
 			public readonly noiseData: Holder<NoiseParameters>,
-			private readonly noise?: NormalNoise,
+			public readonly noise?: NormalNoise,
 		) {
 			super(input)
 		}
-		public transform([x, y, z]: Context, density: number) {
+		public transform({ x, y, z }: Context, density: number) {
 			if (!this.noise) {
 				return 0
 			}
 			const rarity = WeirdScaledSampler.ValueMapper[this.rarityValueMapper][0](density)
-			return rarity * Math.abs(this.noise.sample(x / rarity, y / rarity, z / rarity))
+			return rarity * Math.abs(this.noise.sample(x() / rarity, y() / rarity, z() / rarity))
 		}
 		public mapAll(visitor: Visitor) {
 			return visitor(new WeirdScaledSampler(this.input.mapAll(visitor), this.rarityValueMapper, this.noiseData, this.noise))
@@ -285,11 +328,11 @@ export namespace DensityFunction {
 		}
 	}
 
-	class ShiftedNoise extends Noise {
+	export class ShiftedNoise extends Noise {
 		constructor(
-			private readonly shiftX: DensityFunction,
-			private readonly shiftY: DensityFunction,
-			private readonly shiftZ: DensityFunction,
+			public readonly shiftX: DensityFunction,
+			public readonly shiftY: DensityFunction,
+			public readonly shiftZ: DensityFunction,
 			xzScale: number,
 			yScale: number,
 			noiseData: Holder<NoiseParameters>,
@@ -297,28 +340,31 @@ export namespace DensityFunction {
 		) {
 			super(xzScale, yScale, noiseData, noise)
 		}
-		public compute(context: BlockPos) {
-			const xx = context[0] * this.xzScale + this.shiftX.compute(context)
-			const yy = context[1] * this.yScale + this.shiftY.compute(context)
-			const zz = context[2] * this.xzScale + this.shiftZ.compute(context)
+		public compute(context: Context) {
+			const xx = context.x() * this.xzScale + this.shiftX.compute(context)
+			const yy = context.y() * this.yScale + this.shiftY.compute(context)
+			const zz = context.z() * this.xzScale + this.shiftZ.compute(context)
 			return this.noise?.sample(xx, yy, zz) ?? 0
 		}
 		public mapAll(visitor: Visitor) {
 			return visitor(new ShiftedNoise(this.shiftX.mapAll(visitor), this.shiftY.mapAll(visitor), this.shiftZ.mapAll(visitor), this.xzScale, this.yScale, this.noiseData, this.noise))
 		}
+		public withNewNoise(noise: NormalNoise) {
+
+		}
 	}
 
-	class RangeChoice extends DensityFunction {
+	export class RangeChoice extends DensityFunction {
 		constructor(
-			private readonly input: DensityFunction,
-			private readonly minInclusive: number,
-			private readonly maxExclusive: number,
-			private readonly whenInRange: DensityFunction,
-			private readonly whenOutOfRange: DensityFunction,
+			public readonly input: DensityFunction,
+			public readonly minInclusive: number,
+			public readonly maxExclusive: number,
+			public readonly whenInRange: DensityFunction,
+			public readonly whenOutOfRange: DensityFunction,
 		) {
 			super()
 		}
-		public compute(context: BlockPos) {
+		public compute(context: Context) {
 			const x = this.input.compute(context)
 			return (this.minInclusive <= x && x < this.maxExclusive)
 				? this.whenInRange.compute(context)
@@ -344,15 +390,15 @@ export namespace DensityFunction {
 		}
 	}
 
-	abstract class ShiftNoise extends DensityFunction {
+	export abstract class ShiftNoise extends DensityFunction {
 		constructor(
 			public readonly noiseData: Holder<NoiseParameters>,
-			protected readonly offsetNoise?: NormalNoise,
+			public readonly offsetNoise?: NormalNoise,
 		) {
 			super()
 		}
-		public compute([x, y, z]: BlockPos) {
-			return this.offsetNoise?.sample(x * 0.25, y * 0.25, z * 0.25) ?? 0
+		public compute({ x, y, z }: Context) {
+			return this.offsetNoise?.sample(x() * 0.25, y() * 0.25, z() * 0.25) ?? 0
 		}
 		public maxValue() {
 			return (this.offsetNoise?.maxValue ?? 2) * 4 
@@ -360,37 +406,37 @@ export namespace DensityFunction {
 		public abstract withNewNoise(noise: NormalNoise): ShiftNoise
 	}
 
-	class ShiftA extends ShiftNoise {
+	export class ShiftA extends ShiftNoise {
 		constructor(
 			noiseData: Holder<NoiseParameters>,
 			offsetNoise?: NormalNoise,
 		) {
 			super(noiseData, offsetNoise)
 		}
-		public compute([x, y, z]: BlockPos) {
-			return super.compute([x, 0, z])
+		public compute({ x, z }: Context) {
+			return super.compute(context(x(), 0, z()))
 		}
 		public withNewNoise(newNoise: NormalNoise) {
 			return new ShiftA(this.noiseData, newNoise)
 		}
 	}
 
-	class ShiftB extends ShiftNoise {
+	export class ShiftB extends ShiftNoise {
 		constructor(
 			noiseData: Holder<NoiseParameters>,
 			offsetNoise?: NormalNoise,
 		) {
 			super(noiseData, offsetNoise)
 		}
-		public compute([x, y, z]: BlockPos) {
-			return super.compute([z, x, 0])
+		public compute({ x, y, z }: Context) {
+			return super.compute(context(z(), x(), 0))
 		}
 		public withNewNoise(newNoise: NormalNoise) {
 			return new ShiftB(this.noiseData, newNoise)
 		}
 	}
 
-	class Shift extends ShiftNoise {
+	export class Shift extends ShiftNoise {
 		constructor(
 			noiseData: Holder<NoiseParameters>,
 			offsetNoise?: NormalNoise,
@@ -402,13 +448,13 @@ export namespace DensityFunction {
 		}
 	}
 
-	class BlendDensity extends Transformer {
+	export class BlendDensity extends Transformer {
 		constructor(
 			input: DensityFunction,
 		) {
 			super(input)
 		}
-		public transform(context: BlockPos, density: number) {
+		public transform(context: Context, density: number) {
 			return density // blender not supported
 		}
 		public mapAll(visitor: Visitor): DensityFunction {
@@ -422,15 +468,15 @@ export namespace DensityFunction {
 		}
 	}
 
-	class Clamp extends Transformer {
+	export class Clamp extends Transformer {
 		constructor(
 			input: DensityFunction,
-			private readonly min: number,
-			private readonly max: number,
+			public readonly min: number,
+			public readonly max: number,
 		) {
 			super(input)
 		}
-		public transform(context: BlockPos, density: number) {
+		public transform(context: Context, density: number) {
 			return clamp(density, this.min, this.max)
 		}
 		public minValue() {
@@ -443,7 +489,7 @@ export namespace DensityFunction {
 
 	const MappedType = ['abs', 'square', 'cube', 'half_negative', 'quarter_negative', 'squeeze'] as const
 
-	class Mapped extends Transformer {
+	export class Mapped extends Transformer {
 		private static readonly MappedTypes: Record<typeof MappedType[number], (density: number) => number> = {
 			abs: d => Math.abs(d),
 			square: d => d * d,
@@ -472,7 +518,7 @@ export namespace DensityFunction {
 				this.min = Math.max(0, minInput)
 			}
 		}
-		public transform(context: BlockPos, density: number) {
+		public transform(context: Context, density: number) {
 			return this.transformer(density)
 		}
 		public mapAll(visitor: Visitor): DensityFunction {
@@ -486,18 +532,18 @@ export namespace DensityFunction {
 		}
 	}
 
-	class Slide extends Transformer {
+	export class Slide extends Transformer {
 		constructor(
 			input: DensityFunction,
-			private readonly settings?: NoiseSettings,
+			public readonly settings?: NoiseSettings,
 		) {
 			super(input)
 		}
-		public transform(context: BlockPos, density: number) {
+		public transform(context: Context, density: number) {
 			if (!this.settings) {
 				return density
 			}
-			return NoiseSettings.applySlides(this.settings, density, context[1])
+			return NoiseSettings.applySlides(this.settings, density, context.y())
 		}
 		public mapAll(visitor: Visitor) {
 			return visitor(new Slide(this.input.mapAll(visitor), this.settings))
@@ -518,13 +564,13 @@ export namespace DensityFunction {
 
 	const Ap2Type = ['add', 'mul', 'min', 'max'] as const
 
-	class Ap2 extends DensityFunction {
+	export class Ap2 extends DensityFunction {
 		private readonly min: number
 		private readonly max: number
 		constructor(
-			private readonly type: typeof Ap2Type[number],
-			private readonly argument1: DensityFunction,
-			private readonly argument2: DensityFunction,
+			public readonly type: typeof Ap2Type[number],
+			public readonly argument1: DensityFunction,
+			public readonly argument2: DensityFunction,
 		) {
 			super()
 			const min1 = argument1.minValue()
@@ -557,7 +603,7 @@ export namespace DensityFunction {
 					break
 			}
 		}
-		public compute(context: BlockPos) {
+		public compute(context: Context) {
 			const a = this.argument1.compute(context)
 			switch (this.type) {
 				case 'add': return a + this.argument2.compute(context)
@@ -609,15 +655,15 @@ export namespace DensityFunction {
 		}
 	}
 
-	class Spline extends DensityFunction {
+	export class Spline extends DensityFunction {
 		constructor(
-			private readonly spline: CubicSpline<Context>,
-			private readonly min: number,
-			private readonly max: number, 
+			public readonly spline: CubicSpline<Context>,
+			public readonly min: number,
+			public readonly max: number, 
 		) {
 			super()
 		}
-		public compute(context: BlockPos) {
+		public compute(context: Context) {
 			return clamp(this.spline.compute(context), this.min, this.max)
 		}
 		public mapAll(visitor: Visitor): DensityFunction {
@@ -638,19 +684,19 @@ export namespace DensityFunction {
 
 	const SplineType = ['offset', 'factor', 'jaggedness'] as const
 
-	class TerrainShaperSpline extends DensityFunction {
+	export class TerrainShaperSpline extends DensityFunction {
 		constructor(
-			private readonly continentalness: DensityFunction,
-			private readonly erosion: DensityFunction,
-			private readonly weirdness: DensityFunction,
-			private readonly spline: typeof SplineType[number],
-			private readonly min: number,
-			private readonly max: number, 
-			private readonly shaper?: TerrainShaper,
+			public readonly continentalness: DensityFunction,
+			public readonly erosion: DensityFunction,
+			public readonly weirdness: DensityFunction,
+			public readonly spline: typeof SplineType[number],
+			public readonly min: number,
+			public readonly max: number, 
+			public readonly shaper?: TerrainShaper,
 		) {
 			super()
 		}
-		public compute(context: BlockPos) {
+		public compute(context: Context) {
 			if (!this.shaper) {
 				return 0
 			}
@@ -668,17 +714,17 @@ export namespace DensityFunction {
 		}
 	}
 
-	class YClampedGradient extends DensityFunction {
+	export class YClampedGradient extends DensityFunction {
 		constructor(
-			private readonly fromY: number,
-			private readonly toY: number,
-			private readonly fromValue: number,
-			private readonly toValue: number,
+			public readonly fromY: number,
+			public readonly toY: number,
+			public readonly fromValue: number,
+			public readonly toValue: number,
 		) {
 			super()
 		}
-		public compute([x, y, z]: BlockPos) {
-			return clampedMap(y, this.fromY, this.toY, this.fromValue, this.toValue)
+		public compute({ y }: Context) {
+			return clampedMap(y(), this.fromY, this.toY, this.fromValue, this.toValue)
 		}
 		public minValue() {
 			return Math.min(this.fromValue, this.toValue)

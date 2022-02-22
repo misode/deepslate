@@ -1,12 +1,10 @@
+import type { Holder } from '../core'
+import { Identifier } from '../core'
 import type { PositionalRandom } from '../math'
 import { NoiseParameters, NormalNoise } from '../math'
+import { WorldgenRegistries } from './WorldgenRegistries'
 
-interface NamedNoiseParameters extends NoiseParameters {
-	name: string
-}
 export namespace Noises {
-	const registry = new Map<string, NamedNoiseParameters>()
-
 	export const TEMPERATURE = create('temperature', -10, [1.5, 0, 1, 0, 0, 0])
 	export const VEGETATION = create('vegetation', -8, [1, 1, 0, 0, 0, 0])
 	export const CONTINENTALNESS = create('continentalness', -9, [1, 1, 2, 2, 2, 1, 1, 1, 1])
@@ -52,16 +50,15 @@ export namespace Noises {
 	export const SURFACE = create('surface', -6, [1, 1, 1])
 	export const SURFACE_SECONDARY = create('surface_secondary', -6, [1, 1, 0, 1])
 
-	function create(name: string, firstOctave: number, amplitudes: number[]): NamedNoiseParameters {
-		const result = {
-			name: `minecraft:${name}`,
-			...NoiseParameters.create(firstOctave, amplitudes),
-		}
-		registry.set(name, result)
-		return result
+	function create(name: string, firstOctave: number, amplitudes: number[]): Holder<NoiseParameters> {
+		return WorldgenRegistries.NOISE.register(Identifier.create(name), NoiseParameters.create(firstOctave, amplitudes))
 	}
 
-	export function instantiate(random: PositionalRandom, data: NamedNoiseParameters): NormalNoise {
-		return new NormalNoise(random.fromHashOf(data.name), data)
+	export function instantiate(random: PositionalRandom, noise: Holder<NoiseParameters>): NormalNoise {
+		const key = noise.key()
+		if (!key) {
+			throw new Error('Cannot instantiate noise from direct holder')
+		}
+		return new NormalNoise(random.fromHashOf(key.toString()), noise.value())
 	}
 }

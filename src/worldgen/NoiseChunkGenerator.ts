@@ -1,21 +1,20 @@
-import type { Chunk } from '../core'
+import type { Chunk, Registry } from '../core'
 import { BlockState, ChunkPos } from '../core'
+import type { NoiseParameters } from '../math'
 import { computeIfAbsent } from '../util'
 import type { FluidPicker } from './Aquifer'
 import { FluidStatus } from './Aquifer'
 import type { BiomeSource } from './biome'
-import { MaterialRule } from './MaterialRule'
 import { NoiseChunk } from './NoiseChunk'
 import type { NoiseGeneratorSettings } from './NoiseGeneratorSettings'
-import { NoiseSampler } from './NoiseSampler'
+import { NoiseRouter } from './NoiseRouter'
 import { NoiseSettings } from './NoiseSettings'
 import { SurfaceSystem } from './SurfaceSystem'
 import { WorldgenContext } from './VerticalAnchor'
 
 export class NoiseChunkGenerator {
-	private readonly sampler: NoiseSampler
+	private readonly router: NoiseRouter
 	private readonly noiseChunkCache: Map<bigint, NoiseChunk>
-	private readonly materialRule: MaterialRule
 	private readonly surfaceSystem: SurfaceSystem
 	private readonly globalFluidPicker: FluidPicker
 
@@ -23,14 +22,11 @@ export class NoiseChunkGenerator {
 		seed: bigint,
 		private readonly biomeSource: BiomeSource,
 		private readonly settings: NoiseGeneratorSettings,
+		private readonly noises: Registry<NoiseParameters>,
 	) {
-
-		this.sampler = new NoiseSampler(settings.noise, settings.noiseCavesEnabled, seed, settings.legacyRandomSource)
+		this.router = NoiseRouter.create(settings.noiseRouter, settings.noise, seed, settings.legacyRandomSource)
 		this.noiseChunkCache = new Map()
 
-		this.materialRule = MaterialRule.fromList([
-			(chunk, x, y, z) => chunk.updateNoiseAndGenerateBaseState(x, y, z),
-		])
 		this.surfaceSystem = new SurfaceSystem(settings.surfaceRule, settings.defaultBlock, seed)
 		const lavaFluid = new FluidStatus(-54, BlockState.LAVA)
 		const defaultFluid = new FluidStatus(settings.seaLevel, settings.defaultFluid)
@@ -67,32 +63,25 @@ export class NoiseChunkGenerator {
 					noiseChunk.selectCellYZ(cellY, cellZ)
 
 					for (let offY = cellHeight - 1; offY >= 0; offY -= 1) {
-						const worldY = (minCellY + cellY) * cellHeight + offY
-						const sectionY = worldY & 0xF
-						const sectionIndex = chunk.getSectionIndex(worldY)
+						const blockY = (minCellY + cellY) * cellHeight + offY
+						const sectionY = blockY & 0xF
+						const sectionIndex = chunk.getSectionIndex(blockY)
 						if (chunk.getSectionIndex(section.minBlockY) !== sectionIndex) {
 							section = chunk.getOrCreateSection(sectionIndex)
 						}
 						const y = offY / cellHeight
-						noiseChunk.updateForY(y)
+						noiseChunk.updateForY(blockY, y)
 						for (let offX = 0; offX < cellWidth; offX += 1) {
-							const worldX = minX + cellX * cellWidth + offX
-							const sectionX = worldX & 0xF
+							const blockX = minX + cellX * cellWidth + offX
+							const sectionX = blockX & 0xF
 							const x = offX / cellWidth
-							noiseChunk.updateForX(x)
+							noiseChunk.updateForX(blockX, x)
 							for (let offZ = 0; offZ < cellWidth; offZ += 1) {
-								const worldZ = minZ + cellZ * cellWidth + offZ
-								const sectionZ = worldZ & 0xF
+								const blockZ = minZ + cellZ * cellWidth + offZ
+								const sectionZ = blockZ & 0xF
 								const z = offZ / cellWidth
-								noiseChunk.updateForZ(z)
-								let state = this.materialRule(noiseChunk, worldX, worldY, worldZ) ?? this.settings.defaultBlock
-								if (state.equals(BlockState.AIR)) {
-									if (worldY < this.settings.seaLevel) {
-										state = this.settings.defaultFluid
-									} else {
-										continue
-									}
-								}
+								noiseChunk.updateForZ(blockZ, z)
+								const state = noiseChunk.getInterpolatedState() ?? this.settings.defaultBlock
 								section.setBlockState(sectionX, sectionY, sectionZ, state)
 							}
 						}
@@ -101,6 +90,7 @@ export class NoiseChunkGenerator {
 			}
 			noiseChunk.swapSlices()
 		}
+		noiseChunk.stopInterpolation()
 	}
 
 	public buildSurface(chunk: Chunk, /** @deprecated */ biome: string = 'minecraft:plains') {
@@ -123,7 +113,7 @@ export class NoiseChunkGenerator {
 			const minX = ChunkPos.minBlockX(chunk.pos)
 			const minZ = ChunkPos.minBlockZ(chunk.pos)
 	
-			return new NoiseChunk(cellCountXZ, cellCountY, minCellY, this.sampler, minX, minZ, () => 0, this.settings, this.globalFluidPicker)
+			return new NoiseChunk(cellCountXZ, cellCountY, minCellY, this.router, minX, minZ, this.settings, this.globalFluidPicker)
 		})
 	}
 }

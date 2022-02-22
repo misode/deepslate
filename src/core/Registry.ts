@@ -1,3 +1,4 @@
+import { Holder } from './Holder'
 import { Identifier } from './Identifier'
 
 export class Registry<T> {
@@ -9,8 +10,9 @@ export class Registry<T> {
 		public readonly key: Identifier,
 	) {}
 
-	public register(id: Identifier, value: T) {
+	public register(id: Identifier, value: T): Holder<T> {
 		this.storage.set(id, value)
+		return Holder.reference(this, id)
 	}
 
 	public keys() {
