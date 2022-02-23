@@ -1,6 +1,5 @@
-import type { Chunk, Registry } from '../core'
+import type { Chunk } from '../core'
 import { BlockState, ChunkPos } from '../core'
-import type { NoiseParameters } from '../math'
 import { computeIfAbsent } from '../util'
 import type { FluidPicker } from './Aquifer'
 import { FluidStatus } from './Aquifer'
@@ -22,7 +21,6 @@ export class NoiseChunkGenerator {
 		seed: bigint,
 		private readonly biomeSource: BiomeSource,
 		private readonly settings: NoiseGeneratorSettings,
-		private readonly noises: Registry<NoiseParameters>,
 	) {
 		this.router = NoiseRouter.create(settings.noiseRouter, settings.noise, seed, settings.legacyRandomSource)
 		this.noiseChunkCache = new Map()
@@ -38,7 +36,7 @@ export class NoiseChunkGenerator {
 		}
 	}
 
-	public fill(chunk: Chunk) {
+	public fill(chunk: Chunk, /** @deprecated */ onlyFirstZ: boolean = false) {
 		const minY = Math.max(chunk.minY, this.settings.noise.minY)
 		const maxY = Math.min(chunk.maxY, this.settings.noise.minY + this.settings.noise.height)
 
@@ -57,7 +55,7 @@ export class NoiseChunkGenerator {
 		noiseChunk.initializeForFirstCellX()
 		for (let cellX = 0; cellX < cellCountXZ; cellX += 1) {
 			noiseChunk.advanceCellX(cellX)
-			for (let cellZ = 0; cellZ < cellCountXZ; cellZ += 1) {
+			for (let cellZ = 0; cellZ < (onlyFirstZ ? 1 : cellCountXZ); cellZ += 1) {
 				let section = chunk.getOrCreateSection(chunk.sectionsCount - 1)
 				for (let cellY = cellCountY - 1; cellY >= 0; cellY -= 1) {
 					noiseChunk.selectCellYZ(cellY, cellZ)
@@ -76,7 +74,7 @@ export class NoiseChunkGenerator {
 							const sectionX = blockX & 0xF
 							const x = offX / cellWidth
 							noiseChunk.updateForX(blockX, x)
-							for (let offZ = 0; offZ < cellWidth; offZ += 1) {
+							for (let offZ = 0; offZ < (onlyFirstZ ? 1 : cellWidth); offZ += 1) {
 								const blockZ = minZ + cellZ * cellWidth + offZ
 								const sectionZ = blockZ & 0xF
 								const z = offZ / cellWidth

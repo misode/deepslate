@@ -4,6 +4,7 @@ import { lerp, lerp3 } from '../math'
 import { computeIfAbsent } from '../util'
 import type { FluidPicker } from './Aquifer'
 import { Aquifer, NoiseAquifer } from './Aquifer'
+import { Climate } from './biome'
 import { DensityFunction } from './DensityFunction'
 import type { NoiseGeneratorSettings } from './NoiseGeneratorSettings'
 import { NoiseRouter } from './NoiseRouter'
@@ -43,32 +44,32 @@ export class NoiseChunk implements DensityFunction.Context, DensityFunction.Cont
 		public readonly cellCountY: number,
 		public readonly cellNoiseMinY: number,
 		private readonly router: NoiseRouter,
-		blockX: number,
-		blockZ: number,
+		public readonly minX: number,
+		public readonly minZ: number,
 		public readonly settings: NoiseGeneratorSettings,
 		fluidPicker: FluidPicker,
 	) {
 		this.cellWidth = NoiseSettings.cellWidth(settings.noise)
 		this.cellHeight = NoiseSettings.cellHeight(settings.noise)
-		this.firstCellX = Math.floor(blockX / this.cellWidth)
-		this.firstCellZ = Math.floor(blockZ / this.cellWidth)
-		this.firstNoiseX = blockX >> 2
-		this.firstNoiseZ = blockZ >> 2
+		this.firstCellX = Math.floor(minX / this.cellWidth)
+		this.firstCellZ = Math.floor(minZ / this.cellWidth)
+		this.firstNoiseX = minX >> 2
+		this.firstNoiseZ = minZ >> 2
 		this.noiseSizeXZ = (cellCountXZ * this.cellWidth) >> 2
 
 		if (!settings.aquifersEnabled || true) { // WIP: Noise aquifers don't work yet
 			this.aquifer = Aquifer.createDisabled(fluidPicker)
-		} {
-			const chunkPos = ChunkPos.fromBlockPos(BlockPos.create(blockX, 0, blockZ))
+		} else {
+			const chunkPos = ChunkPos.fromBlockPos(BlockPos.create(minX, 0, minZ))
 			const minY = cellNoiseMinY * NoiseSettings.cellHeight(settings.noise)
 			const height = cellCountY * NoiseSettings.cellHeight(settings.noise)
 			this.aquifer = new NoiseAquifer(this, chunkPos, router.barrier, router.fluidLevelFloodedness, router.fluidLevelSpread, router.lava, router.aquiferPositionalRandomFactory, minY, height, fluidPicker)
 		}
-		const finalDensity = this.router.finalDensity.mapAll(this.wrap)
+		const finalDensity = this.router.finalDensity.mapAll(this.wrap.bind(this))
 		this.materialRule = MaterialRule.fromList([
 			(context) => this.aquifer.compute(context, finalDensity.compute(context)),
 		])
-		this.initialDensityWithoutJaggedness = this.router.initialDensityWithoutJaggedness.mapAll(this.wrap)
+		this.initialDensityWithoutJaggedness = this.router.initialDensityWithoutJaggedness.mapAll(this.wrap.bind(this))
 		this.sliceFillingContextProvider = {
 			forIndex: (i: number) => {
 				this.cellStartBlockY = (i + this.cellNoiseMinY) * this.cellHeight
@@ -87,6 +88,10 @@ export class NoiseChunk implements DensityFunction.Context, DensityFunction.Cont
 				}
 			},
 		}
+	}
+
+	public cachedClimateSampler() {
+		return new Climate.Sampler(this.router.temperature.mapAll(this.wrap.bind(this)), this.router.vegetation.mapAll(this.wrap.bind(this)), this.router.continents.mapAll(this.wrap.bind(this)), this.router.erosion.mapAll(this.wrap.bind(this)), this.router.depth.mapAll(this.wrap.bind(this)), this.router.ridges.mapAll(this.wrap.bind(this)))
 	}
 
 	public getInterpolatedState(): BlockState | undefined {
@@ -400,6 +405,7 @@ export namespace NoiseChunk {
 			super(chunk, filler)
 			this.slice0 = Interpolator.allocateSlice(chunk.cellCountY, chunk.cellCountXZ)
 			this.slice1 = Interpolator.allocateSlice(chunk.cellCountY, chunk.cellCountXZ)
+			chunk.interpolators.push(this)
 		}
 
 		private static allocateSlice(cellCountY: number, cellCountZ: number) {

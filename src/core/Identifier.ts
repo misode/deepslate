@@ -14,6 +14,13 @@ export class Identifier {
 		}
 	}
 
+	public equals(other: Identifier) {
+		if (this === other) {
+			return true
+		}
+		return this.namespace === other.namespace && this.path === other.path
+	}
+
 	public toString() {
 		return `${this.namespace}:${this.path}`
 	}

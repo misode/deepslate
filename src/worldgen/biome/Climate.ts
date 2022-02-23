@@ -1,5 +1,6 @@
 import { square } from '../../math'
 import { Json } from '../../util'
+import { DensityFunction } from '../DensityFunction'
 
 export namespace Climate {
 	const PARAMETER_SPACE = 7
@@ -118,7 +119,21 @@ export namespace Climate {
 		}
 	}
 
-	export type Sampler = (x: number, y: number, z: number) => TargetPoint
+	export class Sampler {
+		constructor(
+			private readonly temperature: DensityFunction,
+			private readonly humidity: DensityFunction,
+			private readonly continentalness: DensityFunction,
+			private readonly erosion: DensityFunction,
+			private readonly depth: DensityFunction,
+			private readonly weirdness: DensityFunction,
+		) {}
+
+		sample(x: number, y: number, z: number) {
+			const context = DensityFunction.context(x << 2, y << 2, z << 2)
+			return Climate.target(this.temperature.compute(context), this.humidity.compute(context), this.continentalness.compute(context), this.erosion.compute(context), this.depth.compute(context), this.weirdness.compute(context))
+		}
+	}
 
 	type DistanceMetric<T> = (node: RNode<T>, values: number[]) => number
 

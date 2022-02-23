@@ -25,11 +25,11 @@ export interface Aquifer {
 export namespace Aquifer {
 	export function createDisabled(fluidPicker: FluidPicker): Aquifer {
 		return {
-			compute({ x, y, z }: DensityFunction.Context, density) {
+			compute(context: DensityFunction.Context, density) {
 				if (density > 0) {
 					return undefined
 				}
-				return fluidPicker(x(), y(), z()).at(y())
+				return fluidPicker(context.x(), context.y(), context.z()).at(context.y())
 			},
 		}
 	}

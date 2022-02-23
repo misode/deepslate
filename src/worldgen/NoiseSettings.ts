@@ -50,7 +50,7 @@ export namespace NoiseSettings {
 	}
 
 	export function applySlides(settings: NoiseSettings, density: number, y: number) {
-		const yCell = y - NoiseSettings.minCellY(settings)
+		const yCell = Math.floor(y / cellHeight(settings)) - NoiseSettings.minCellY(settings)
 		density = NoiseSlideSettings.apply(settings.topSlide, density, NoiseSettings.cellCountY(settings) - yCell)
 		density = NoiseSlideSettings.apply(settings.bottomSlide, density, yCell)
 		return density

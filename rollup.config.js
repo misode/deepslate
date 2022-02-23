@@ -31,9 +31,9 @@ export default defineConfig([
 			!dev && terser(),
 		],
 	},
-	...dev ? [] : [{
+	{
 		input: 'src/index.ts',
 		output: [{ file: pkg.types, format: 'es' }],
 		plugins: [dts({ compilerOptions: { composite: false, incremental: false } })],
-	}],
+	},
 ])

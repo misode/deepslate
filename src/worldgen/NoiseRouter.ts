@@ -56,7 +56,16 @@ export namespace NoiseRouter {
 
 	export function create(simple: SimpleNoiseRouter, settings: NoiseSettings, seed: bigint, legacyRandomSource: boolean = false): NoiseRouter {
 		const random = (legacyRandomSource ? new LegacyRandom(seed) : XoroshiroRandom.create(seed)).forkPositional()
-		const visitor: DensityFunction.Visitor = fn => {
+		const visitor = createVisitor(random, settings)
+		return {
+			...mapAll(simple, visitor),
+			aquiferPositionalRandomFactory: random.fromHashOf(Identifier.create('aquifer').toString()).forkPositional(),
+			oreVeinsPositionalRandomFactory: random.fromHashOf(Identifier.create('ore').toString()).forkPositional(),
+		}
+	}
+
+	export const createVisitor = (random: PositionalRandom, settings: NoiseSettings): DensityFunction.Visitor => {
+		return (fn) => {
 			if (fn instanceof DensityFunction.Noise) {
 				return new DensityFunction.Noise(fn.xzScale, fn.yScale, fn.noiseData, Noises.instantiate(random, fn.noiseData))
 			}
@@ -73,6 +82,9 @@ export namespace NoiseRouter {
 			if (fn instanceof DensityFunction.OldBlendedNoise) {
 				return new DensityFunction.OldBlendedNoise(new BlendedNoise(random.fromHashOf(Identifier.create('terrain').toString()), settings.sampling, NoiseSettings.cellWidth(settings), NoiseSettings.cellHeight(settings)))
 			}
+			if (fn instanceof DensityFunction.Ap2) {
+				return fn.withMinMax()
+			}
 			if (fn instanceof DensityFunction.TerrainShaperSpline) {
 				return new DensityFunction.TerrainShaperSpline(fn.continentalness, fn.erosion, fn.weirdness, fn.spline, fn.min, fn.max, settings.terrainShaper)
 			}
@@ -81,30 +93,25 @@ export namespace NoiseRouter {
 			}
 			return fn
 		}
-		return {
-			...mapAll(simple, visitor),
-			aquiferPositionalRandomFactory: random.fromHashOf(Identifier.create('aquifer').toString()).forkPositional(),
-			oreVeinsPositionalRandomFactory: random.fromHashOf(Identifier.create('ore').toString()).forkPositional(),
-		}
 	}
 
 	function mapAll(router: SimpleNoiseRouter, visitor: DensityFunction.Visitor): SimpleNoiseRouter {
 		return {
-			barrier: visitor(router.barrier),
-			fluidLevelFloodedness: visitor(router.fluidLevelFloodedness),
-			fluidLevelSpread: visitor(router.fluidLevelSpread),
-			lava: visitor(router.lava),
-			temperature: visitor(router.temperature),
-			vegetation: visitor(router.vegetation),
-			continents: visitor(router.continents),
-			erosion: visitor(router.erosion),
-			depth: visitor(router.depth),
-			ridges: visitor(router.ridges),
-			initialDensityWithoutJaggedness: visitor(router.initialDensityWithoutJaggedness),
-			finalDensity: visitor(router.finalDensity),
-			veinToggle: visitor(router.veinToggle),
-			veinRidged: visitor(router.veinRidged),
-			veinGap: visitor(router.veinGap),
+			barrier: router.barrier.mapAll(visitor),
+			fluidLevelFloodedness: router.fluidLevelFloodedness.mapAll(visitor),
+			fluidLevelSpread: router.fluidLevelSpread.mapAll(visitor),
+			lava: router.lava.mapAll(visitor),
+			temperature: router.temperature.mapAll(visitor),
+			vegetation: router.vegetation.mapAll(visitor),
+			continents: router.continents.mapAll(visitor),
+			erosion: router.erosion.mapAll(visitor),
+			depth: router.depth.mapAll(visitor),
+			ridges: router.ridges.mapAll(visitor),
+			initialDensityWithoutJaggedness: router.initialDensityWithoutJaggedness.mapAll(visitor),
+			finalDensity: router.finalDensity.mapAll(visitor),
+			veinToggle: router.veinToggle.mapAll(visitor),
+			veinRidged: router.veinRidged.mapAll(visitor),
+			veinGap: router.veinGap.mapAll(visitor),
 		}
 	}
 

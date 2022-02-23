@@ -2,7 +2,7 @@ import { Holder, Identifier } from '../core'
 import type { NormalNoise } from '../math'
 import { BlendedNoise, clamp, clampedMap, CubicSpline, NoiseParameters, XoroshiroRandom } from '../math'
 import { Json } from '../util'
-import { TerrainShaper } from './biome'
+import { TerrainShaper } from './biome/TerrainShaper'
 import { NoiseSettings } from './NoiseSettings'
 import { WorldgenRegistries } from './WorldgenRegistries'
 
@@ -73,6 +73,9 @@ export namespace DensityFunction {
 		if (typeof obj === 'string') {
 			return new HolderHolder(Holder.reference(WorldgenRegistries.DENSITY_FUNCTION, Identifier.parse(obj)))
 		}
+		if (typeof obj === 'number') {
+			return new Constant(obj)
+		}
 		const root = Json.readObject(obj) ?? {}
 		const type = Json.readString(root.type)?.replace(/^minecraft:/, '')
 		switch (type) {
@@ -115,7 +118,7 @@ export namespace DensityFunction {
 			case 'shift_a': return new ShiftA(NoiseParser(root.argument))
 			case 'shift_b': return new ShiftB(NoiseParser(root.argument))
 			case 'shift': return new Shift(NoiseParser(root.argument))
-			case 'blend_density': return new BlendDensity(fromJson(root.input))
+			case 'blend_density': return new BlendDensity(fromJson(root.argument))
 			case 'clamp': return new Clamp(
 				fromJson(root.input),
 				Json.readNumber(root.min) ?? 0,
@@ -127,8 +130,8 @@ export namespace DensityFunction {
 			case 'half_negative':
 			case 'quarter_negative':
 			case 'squeeze':
-				return new Mapped(type, fromJson(root.input))
-			case 'slide': return new Slide(fromJson(root.input))
+				return new Mapped(type, fromJson(root.argument))
+			case 'slide': return new Slide(fromJson(root.argument))
 			case 'add':
 			case 'mul':
 			case 'min':
@@ -154,8 +157,8 @@ export namespace DensityFunction {
 			case 'y_clamped_gradient': return new YClampedGradient(
 				Json.readInt(root.from_y) ?? -4064,
 				Json.readInt(root.to_y) ?? 4062,
-				Json.readNumber(root.from_y) ?? -4064,
-				Json.readNumber(root.to_y) ?? 4062,
+				Json.readNumber(root.from_value) ?? -4064,
+				Json.readNumber(root.to_value) ?? 4062,
 			)
 		}
 		return Constant.ZERO
@@ -210,8 +213,8 @@ export namespace DensityFunction {
 			super()
 			this.blendedNoise = blendedNoise ?? new BlendedNoise(XoroshiroRandom.create(BigInt(0)), { xzScale: 1, yScale: 1, xzFactor: 80, yFactor: 160 }, 4, 8)
 		}
-		public compute({ x, y, z }: Context) {
-			return this.blendedNoise.sample(x(), y(), z())
+		public compute(context: Context) {
+			return this.blendedNoise.sample(context.x(), context.y(), context.z())
 		}
 		public maxValue() {
 			return this.blendedNoise.maxValue
@@ -251,8 +254,8 @@ export namespace DensityFunction {
 		) {
 			super()
 		}
-		public compute({ x, y, z }: Context) {
-			return this.noise?.sample(x() * this.xzScale, y() * this.yScale, z() * this.xzScale) ?? 0
+		public compute(context: Context) {
+			return this.noise?.sample(context.x() * this.xzScale, context.y() * this.yScale, context.z() * this.xzScale) ?? 0
 		}
 		public maxValue() {
 			return this.noise?.maxValue ?? 2
@@ -286,12 +289,12 @@ export namespace DensityFunction {
 		) {
 			super(input)
 		}
-		public transform({ x, y, z }: Context, density: number) {
+		public transform(context: Context, density: number) {
 			if (!this.noise) {
 				return 0
 			}
 			const rarity = WeirdScaledSampler.ValueMapper[this.rarityValueMapper][0](density)
-			return rarity * Math.abs(this.noise.sample(x() / rarity, y() / rarity, z() / rarity))
+			return rarity * Math.abs(this.noise.sample(context.x() / rarity, context.y() / rarity, context.z() / rarity))
 		}
 		public mapAll(visitor: Visitor) {
 			return visitor(new WeirdScaledSampler(this.input.mapAll(visitor), this.rarityValueMapper, this.noiseData, this.noise))
@@ -349,9 +352,6 @@ export namespace DensityFunction {
 		public mapAll(visitor: Visitor) {
 			return visitor(new ShiftedNoise(this.shiftX.mapAll(visitor), this.shiftY.mapAll(visitor), this.shiftZ.mapAll(visitor), this.xzScale, this.yScale, this.noiseData, this.noise))
 		}
-		public withNewNoise(noise: NormalNoise) {
-
-		}
 	}
 
 	export class RangeChoice extends DensityFunction {
@@ -397,8 +397,8 @@ export namespace DensityFunction {
 		) {
 			super()
 		}
-		public compute({ x, y, z }: Context) {
-			return this.offsetNoise?.sample(x() * 0.25, y() * 0.25, z() * 0.25) ?? 0
+		public compute(context: Context) {
+			return this.offsetNoise?.sample(context.x() * 0.25, context.y() * 0.25, context.z() * 0.25) ?? 0
 		}
 		public maxValue() {
 			return (this.offsetNoise?.maxValue ?? 2) * 4 
@@ -413,8 +413,8 @@ export namespace DensityFunction {
 		) {
 			super(noiseData, offsetNoise)
 		}
-		public compute({ x, z }: Context) {
-			return super.compute(context(x(), 0, z()))
+		public compute(context: Context) {
+			return super.compute(DensityFunction.context(context.x(), 0, context.z()))
 		}
 		public withNewNoise(newNoise: NormalNoise) {
 			return new ShiftA(this.noiseData, newNoise)
@@ -428,8 +428,8 @@ export namespace DensityFunction {
 		) {
 			super(noiseData, offsetNoise)
 		}
-		public compute({ x, y, z }: Context) {
-			return super.compute(context(z(), x(), 0))
+		public compute(context: Context) {
+			return super.compute(DensityFunction.context(context.z(), context.x(), 0))
 		}
 		public withNewNoise(newNoise: NormalNoise) {
 			return new ShiftB(this.noiseData, newNoise)
@@ -565,43 +565,14 @@ export namespace DensityFunction {
 	const Ap2Type = ['add', 'mul', 'min', 'max'] as const
 
 	export class Ap2 extends DensityFunction {
-		private readonly min: number
-		private readonly max: number
 		constructor(
 			public readonly type: typeof Ap2Type[number],
 			public readonly argument1: DensityFunction,
 			public readonly argument2: DensityFunction,
+			private readonly min?: number,
+			private readonly max?: number,
 		) {
 			super()
-			const min1 = argument1.minValue()
-			const min2 = argument2.minValue()
-			const max1 = argument1.maxValue()
-			const max2 = argument2.maxValue()
-			if ((type === 'min' || type === 'max') && (min1 >= max2 || min2 >= max1)) {
-				console.warn(`Creating a ${type} function betweem two non-overlapping inputs`)
-			}
-			switch (this.type) {
-				case 'add':
-					this.min = min1 + min2
-					this.max = max1 + max2
-					break
-				case 'mul':
-					this.min = min1 > 0 && min2 > 0 ? min1 * min2
-						: max1 < 0 && max2 < 0 ? max1 * max2
-							: Math.min(min1 * max2, min2 * max1)
-					this.max = min1 > 0 && min2 > 0 ? max1 * max2
-						: max1 < 0 && max2 < 0 ? min1 * min2
-							: Math.max(min1 * min2, max1 * max2)
-					break
-				case 'min':
-					this.min = Math.min(min1, min2)
-					this.max = Math.min(max1, max2)
-					break
-				case 'max':
-					this.min = Math.max(min1, min2)
-					this.max = Math.max(max1, max2)
-					break
-			}
 		}
 		public compute(context: Context) {
 			const a = this.argument1.compute(context)
@@ -648,10 +619,43 @@ export namespace DensityFunction {
 			return visitor(new Ap2(this.type, this.argument1.mapAll(visitor), this.argument2.mapAll(visitor)))
 		}
 		public minValue() {
-			return this.min
+			return this.min ?? -Infinity
 		}
 		public maxValue() {
-			return this.max
+			return this.max ?? Infinity
+		}
+		public withMinMax() {
+			const min1 = this.argument1.minValue()
+			const min2 = this.argument2.minValue()
+			const max1 = this.argument1.maxValue()
+			const max2 = this.argument2.maxValue()
+			if ((this.type === 'min' || this.type === 'max') && (min1 >= max2 || min2 >= max1)) {
+				console.warn(`Creating a ${this.type} function betweem two non-overlapping inputs`)
+			}
+			let min, max
+			switch (this.type) {
+				case 'add':
+					min = min1 + min2
+					max = max1 + max2
+					break
+				case 'mul':
+					min = min1 > 0 && min2 > 0 ? min1 * min2
+						: max1 < 0 && max2 < 0 ? max1 * max2
+							: Math.min(min1 * max2, min2 * max1)
+					max = min1 > 0 && min2 > 0 ? max1 * max2
+						: max1 < 0 && max2 < 0 ? min1 * min2
+							: Math.max(min1 * min2, max1 * max2)
+					break
+				case 'min':
+					min = Math.min(min1, min2)
+					max = Math.min(max1, max2)
+					break
+				case 'max':
+					min = Math.max(min1, min2)
+					max = Math.max(max1, max2)
+					break
+			}
+			return new Ap2(this.type, this.argument1, this.argument2, min, max)
 		}
 	}
 
@@ -723,8 +727,8 @@ export namespace DensityFunction {
 		) {
 			super()
 		}
-		public compute({ y }: Context) {
-			return clampedMap(y(), this.fromY, this.toY, this.fromValue, this.toValue)
+		public compute(context: Context) {
+			return clampedMap(context.y(), this.fromY, this.toY, this.fromValue, this.toValue)
 		}
 		public minValue() {
 			return Math.min(this.fromValue, this.toValue)
