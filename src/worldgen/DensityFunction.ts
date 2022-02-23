@@ -141,7 +141,7 @@ export namespace DensityFunction {
 				fromJson(root.argument2),
 			)
 			case 'spline': return new Spline(
-				CubicSpline.fromJson<Context>(root.spline, (obj) => DensityFunction.fromJson(obj)),
+				CubicSpline.fromJson(root.spline, (obj) => DensityFunction.fromJson(obj)),
 				Json.readNumber(root.min_value) ?? 0,
 				Json.readNumber(root.max_value) ?? 1,
 			)
@@ -277,10 +277,11 @@ export namespace DensityFunction {
 	const RarityValueMapper = ['type_1', 'type_2'] as const
 
 	export class WeirdScaledSampler extends Transformer {
-		private static readonly ValueMapper: Record<typeof RarityValueMapper[number], [(value: number) => number, number]> = {
-			type_1: [WeirdScaledSampler.rarityValueMapper1, 2],
-			type_2: [WeirdScaledSampler.rarityValueMapper2, 3],
+		private static readonly ValueMapper: Record<typeof RarityValueMapper[number], (value: number) => number> = {
+			type_1: WeirdScaledSampler.rarityValueMapper1,
+			type_2: WeirdScaledSampler.rarityValueMapper2,
 		}
+		private readonly mapper: (value: number) => number
 		constructor(
 			input: DensityFunction,
 			public readonly rarityValueMapper: typeof RarityValueMapper[number],
@@ -288,12 +289,13 @@ export namespace DensityFunction {
 			public readonly noise?: NormalNoise,
 		) {
 			super(input)
+			this.mapper = WeirdScaledSampler.ValueMapper[this.rarityValueMapper]
 		}
 		public transform(context: Context, density: number) {
 			if (!this.noise) {
 				return 0
 			}
-			const rarity = WeirdScaledSampler.ValueMapper[this.rarityValueMapper][0](density)
+			const rarity = this.mapper(density)
 			return rarity * Math.abs(this.noise.sample(context.x() / rarity, context.y() / rarity, context.z() / rarity))
 		}
 		public mapAll(visitor: Visitor) {
@@ -303,7 +305,7 @@ export namespace DensityFunction {
 			return 0
 		}
 		public maxValue(): number {
-			return (this.noise ? this.noise.maxValue : 2) * WeirdScaledSampler.ValueMapper[this.rarityValueMapper][1]
+			return this.rarityValueMapper === 'type_1' ? 2 : 3
 		}
 		public static rarityValueMapper1(value: number) {
 			if (value < -0.5) {
@@ -502,21 +504,14 @@ export namespace DensityFunction {
 			},
 		}
 		private readonly transformer: (density: number) => number
-		private readonly min: number
-		private readonly max: number
 		constructor(
 			private readonly type: typeof MappedType[number],
 			input: DensityFunction,
+			private readonly min?: number,
+			private readonly max?: number,
 		) {
 			super(input)
 			this.transformer = Mapped.MappedTypes[this.type]
-			const minInput = input.minValue()
-			this.min = this.transformer(minInput)
-			this.max = this.transformer(input.maxValue())
-			if (type === 'abs' || type === 'square') {
-				this.max = Math.max(this.min, this.max)
-				this.min = Math.max(0, minInput)
-			}
 		}
 		public transform(context: Context, density: number) {
 			return this.transformer(density)
@@ -525,10 +520,20 @@ export namespace DensityFunction {
 			return visitor(new Mapped(this.type, this.input.mapAll(visitor)))
 		}
 		public minValue() {
-			return this.min
+			return this.min ?? -Infinity
 		}
 		public maxValue() {
-			return this.max
+			return this.max ?? Infinity
+		}
+		public withMinMax() {
+			const minInput = this.input.minValue()
+			let min = this.transformer(minInput)
+			let max = this.transformer(this.input.maxValue())
+			if (this.type === 'abs' || this.type === 'square') {
+				max = Math.max(min, max)
+				min = Math.max(0, minInput)
+			}
+			return new Mapped(this.type, this.input, min, max)
 		}
 	}
 
@@ -630,7 +635,7 @@ export namespace DensityFunction {
 			const max1 = this.argument1.maxValue()
 			const max2 = this.argument2.maxValue()
 			if ((this.type === 'min' || this.type === 'max') && (min1 >= max2 || min2 >= max1)) {
-				console.warn(`Creating a ${this.type} function betweem two non-overlapping inputs`)
+				console.warn(`Creating a ${this.type} function between two non-overlapping inputs`)
 			}
 			let min, max
 			switch (this.type) {

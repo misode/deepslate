@@ -18,8 +18,6 @@ describe('DensityFunction', () => {
 			sampling: { xzScale: 1, yScale: 1, xzFactor: 80, yFactor: 80 },
 			topSlide: { target: -5, offset: 1, size: 2 },
 			bottomSlide: { target: 10, offset: 0, size: 2 },
-			hasLargeBiomes: false,
-			isAmplified: false,
 			islandNoiseOverride: false,
 			terrainShaper: TerrainShaper.fromJson({ offset: 0, factor: 0, jaggedness: 0 }),
 		}

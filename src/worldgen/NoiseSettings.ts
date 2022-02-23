@@ -12,8 +12,6 @@ export type NoiseSettings = {
 	bottomSlide: NoiseSlideSettings,
 	terrainShaper: TerrainShaper,
 	islandNoiseOverride: boolean,
-	isAmplified: boolean,
-	hasLargeBiomes: boolean,
 }
 export namespace NoiseSettings {
 	export function fromJson(obj: any): NoiseSettings {
@@ -28,8 +26,6 @@ export namespace NoiseSettings {
 			bottomSlide: NoiseSlideSettings.fromJson(root.bottom_slide),
 			terrainShaper: TerrainShaper.fromJson(root.terrain_shaper),
 			islandNoiseOverride: Json.readBoolean(root.island_noise_override) ?? false,
-			isAmplified: Json.readBoolean(root.amplified) ?? false,
-			hasLargeBiomes: Json.readBoolean(root.large_biomes) ?? false,
 		}
 	}
 

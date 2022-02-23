@@ -64,7 +64,7 @@ export namespace NoiseRouter {
 		}
 	}
 
-	export const createVisitor = (random: PositionalRandom, settings: NoiseSettings): DensityFunction.Visitor => {
+	export function createVisitor(random: PositionalRandom, settings: NoiseSettings): DensityFunction.Visitor {
 		return (fn) => {
 			if (fn instanceof DensityFunction.Noise) {
 				return new DensityFunction.Noise(fn.xzScale, fn.yScale, fn.noiseData, Noises.instantiate(random, fn.noiseData))
@@ -95,7 +95,7 @@ export namespace NoiseRouter {
 		}
 	}
 
-	function mapAll(router: SimpleNoiseRouter, visitor: DensityFunction.Visitor): SimpleNoiseRouter {
+	export function mapAll(router: SimpleNoiseRouter, visitor: DensityFunction.Visitor): SimpleNoiseRouter {
 		return {
 			barrier: router.barrier.mapAll(visitor),
 			fluidLevelFloodedness: router.fluidLevelFloodedness.mapAll(visitor),
