@@ -53,12 +53,9 @@ export class NoiseChunkGenerator {
 		const noiseChunk = this.getNoiseChunk(chunk)
 
 		for (let cellX = 0; cellX < cellCountXZ; cellX += 1) {
-			noiseChunk.advanceCellX(cellX)
 			for (let cellZ = 0; cellZ < (onlyFirstZ ? 1 : cellCountXZ); cellZ += 1) {
 				let section = chunk.getOrCreateSection(chunk.sectionsCount - 1)
 				for (let cellY = cellCountY - 1; cellY >= 0; cellY -= 1) {
-					noiseChunk.selectCellYZ(cellY, cellZ)
-
 					for (let offY = cellHeight - 1; offY >= 0; offY -= 1) {
 						const blockY = (minCellY + cellY) * cellHeight + offY
 						const sectionY = blockY & 0xF
@@ -66,19 +63,13 @@ export class NoiseChunkGenerator {
 						if (chunk.getSectionIndex(section.minBlockY) !== sectionIndex) {
 							section = chunk.getOrCreateSection(sectionIndex)
 						}
-						const y = offY / cellHeight
-						noiseChunk.updateForY(blockY, y)
 						for (let offX = 0; offX < cellWidth; offX += 1) {
 							const blockX = minX + cellX * cellWidth + offX
 							const sectionX = blockX & 0xF
-							const x = offX / cellWidth
-							noiseChunk.updateForX(blockX, x)
 							for (let offZ = 0; offZ < (onlyFirstZ ? 1 : cellWidth); offZ += 1) {
 								const blockZ = minZ + cellZ * cellWidth + offZ
 								const sectionZ = blockZ & 0xF
-								const z = offZ / cellWidth
-								noiseChunk.updateForZ(blockZ, z)
-								const state = noiseChunk.getInterpolatedState() ?? this.settings.defaultBlock
+								const state = noiseChunk.getFinalState(blockX, blockY, blockZ) ?? this.settings.defaultBlock
 								section.setBlockState(sectionX, sectionY, sectionZ, state)
 							}
 						}

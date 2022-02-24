@@ -24,26 +24,20 @@ export namespace DensityFunction {
 	export type Visitor = (density: DensityFunction) => DensityFunction
 
 	export interface Context {
-		x(): number
-		y(): number
-		z(): number
+		x: number
+		y: number
+		z: number
 		cellWidth: number
 		cellHeight: number
 	}
 
-	export namespace Context {
-		export function create(x: number, y: number, z: number, cellWidth: number, cellHeight: number) {
-			return {
-				x() { return x },
-				y() { return y },
-				z() { return z },
-				cellWidth,
-				cellHeight,
-			}
-		}
-
-		export function at(context: Context, x: number, y: number, z: number) {
-			return create(x, y, z, context.cellWidth, context.cellWidth)
+	export function context(x: number, y: number, z: number, cellWidth: number, cellHeight: number): Context {
+		return {
+			x,
+			y,
+			z,
+			cellWidth,
+			cellHeight,
 		}
 	}
 
@@ -201,7 +195,7 @@ export namespace DensityFunction {
 			this.blendedNoise = blendedNoise ?? new BlendedNoise(XoroshiroRandom.create(BigInt(0)), { xzScale: 1, yScale: 1, xzFactor: 80, yFactor: 160 }, 4, 8)
 		}
 		public compute(context: Context) {
-			return this.blendedNoise.sample(context.x(), context.y(), context.z())
+			return this.blendedNoise.sample(context.x, context.y, context.z)
 		}
 		public maxValue() {
 			return this.blendedNoise.maxValue
@@ -230,10 +224,10 @@ export namespace DensityFunction {
 			super(wrapped)
 		}
 		public compute(context: Context): number {
-			const quartX = context.x() >> 2
-			const quartZ = context.z() >> 2
+			const quartX = context.x >> 2
+			const quartZ = context.z >> 2
 			if (this.lastQuartX !== quartX || this.lastQuartZ !== quartZ) {
-				this.lastValue = this.wrapped.compute(Context.at(context, quartX << 2, 0, quartZ << 2))
+				this.lastValue = this.wrapped.compute(DensityFunction.context(quartX << 2, 0, quartZ << 2, context.cellWidth, context.cellHeight))
 				this.lastQuartX = quartX
 				this.lastQuartZ = quartZ
 			}
@@ -264,8 +258,8 @@ export namespace DensityFunction {
 			super(wrapped)
 		}
 		public compute(context: Context) {
-			const blockX = context.x()
-			const blockZ = context.z()
+			const blockX = context.x
+			const blockZ = context.z
 			if (this.lastBlockX !== blockX || this.lastBlockZ !== blockZ) {
 				this.lastValue = this.wrapped.compute(context)
 				this.lastBlockX = blockX
@@ -287,9 +281,9 @@ export namespace DensityFunction {
 			super(wrapped)
 		}
 		public compute(context: DensityFunction.Context) {
-			const blockX = context.x()
-			const blockY = context.y()
-			const blockZ = context.z()
+			const blockX = context.x
+			const blockY = context.y
+			const blockZ = context.z
 			if (this.lastBlockX !== blockX || this.lastBlockY !== blockY || this.lastBlockZ !== blockZ) {
 				this.lastValue = this.wrapped.compute(context)
 				this.lastBlockX = blockX
@@ -307,27 +301,22 @@ export namespace DensityFunction {
 		constructor(wrapped: DensityFunction) {
 			super(wrapped)
 		}
-		public compute(context: DensityFunction.Context) {
+		public compute({ x: blockX, y: blockY, z: blockZ, cellWidth: w, cellHeight: h }: DensityFunction.Context) {
 			// TODO: optimize by caching
-			const blockX = context.x()
-			const blockY = context.y()
-			const blockZ = context.z()
-			const w = context.cellWidth
-			const h = context.cellHeight
 			const x = (blockX % w) / w
 			const y = (blockY % h) / h
 			const z = (blockZ % w) / w
 			const firstX = Math.floor(blockX / w) * w
 			const firstY = Math.floor(blockY / h) * h
 			const firstZ = Math.floor(blockZ / w) * w
-			const noise000 = this.wrapped.compute(Context.at(context, firstX, firstY, firstZ))
-			const noise001 = this.wrapped.compute(Context.at(context, firstX, firstY, firstZ + w))
-			const noise010 = this.wrapped.compute(Context.at(context, firstX, firstY + h, firstZ))
-			const noise011 = this.wrapped.compute(Context.at(context, firstX, firstY + h, firstZ + w))
-			const noise100 = this.wrapped.compute(Context.at(context, firstX + w, firstY, firstZ))
-			const noise101 = this.wrapped.compute(Context.at(context, firstX + w, firstY, firstZ + w))
-			const noise110 = this.wrapped.compute(Context.at(context, firstX + w, firstY + h, firstZ))
-			const noise111 = this.wrapped.compute(Context.at(context, firstX + w, firstY + h, firstZ + w))
+			const noise000 = this.wrapped.compute(DensityFunction.context(firstX, firstY, firstZ, w, h))
+			const noise001 = this.wrapped.compute(DensityFunction.context(firstX, firstY, firstZ + w, w, h))
+			const noise010 = this.wrapped.compute(DensityFunction.context(firstX, firstY + h, firstZ, w, h))
+			const noise011 = this.wrapped.compute(DensityFunction.context(firstX, firstY + h, firstZ + w, w, h))
+			const noise100 = this.wrapped.compute(DensityFunction.context(firstX + w, firstY, firstZ, w, h))
+			const noise101 = this.wrapped.compute(DensityFunction.context(firstX + w, firstY, firstZ + w, w, h))
+			const noise110 = this.wrapped.compute(DensityFunction.context(firstX + w, firstY + h, firstZ, w, h))
+			const noise111 = this.wrapped.compute(DensityFunction.context(firstX + w, firstY + h, firstZ + w, w, h))
 			return lerp3(x, y, z, noise000, noise100, noise010, noise110, noise001, noise101, noise011, noise111)
 		}
 		public mapAll(visitor: Visitor) {
@@ -345,7 +334,7 @@ export namespace DensityFunction {
 			super()
 		}
 		public compute(context: Context) {
-			return this.noise?.sample(context.x() * this.xzScale, context.y() * this.yScale, context.z() * this.xzScale) ?? 0
+			return this.noise?.sample(context.x * this.xzScale, context.y * this.yScale, context.z * this.xzScale) ?? 0
 		}
 		public maxValue() {
 			return this.noise?.maxValue ?? 2
@@ -386,7 +375,7 @@ export namespace DensityFunction {
 				return 0
 			}
 			const rarity = this.mapper(density)
-			return rarity * Math.abs(this.noise.sample(context.x() / rarity, context.y() / rarity, context.z() / rarity))
+			return rarity * Math.abs(this.noise.sample(context.x / rarity, context.y / rarity, context.z / rarity))
 		}
 		public mapAll(visitor: Visitor) {
 			return visitor(new WeirdScaledSampler(this.input.mapAll(visitor), this.rarityValueMapper, this.noiseData, this.noise))
@@ -436,9 +425,9 @@ export namespace DensityFunction {
 			super(xzScale, yScale, noiseData, noise)
 		}
 		public compute(context: Context) {
-			const xx = context.x() * this.xzScale + this.shiftX.compute(context)
-			const yy = context.y() * this.yScale + this.shiftY.compute(context)
-			const zz = context.z() * this.xzScale + this.shiftZ.compute(context)
+			const xx = context.x * this.xzScale + this.shiftX.compute(context)
+			const yy = context.y * this.yScale + this.shiftY.compute(context)
+			const zz = context.z * this.xzScale + this.shiftZ.compute(context)
 			return this.noise?.sample(xx, yy, zz) ?? 0
 		}
 		public mapAll(visitor: Visitor) {
@@ -481,7 +470,7 @@ export namespace DensityFunction {
 			super()
 		}
 		public compute(context: Context) {
-			return this.offsetNoise?.sample(context.x() * 0.25, context.y() * 0.25, context.z() * 0.25) ?? 0
+			return this.offsetNoise?.sample(context.x * 0.25, context.y * 0.25, context.z * 0.25) ?? 0
 		}
 		public maxValue() {
 			return (this.offsetNoise?.maxValue ?? 2) * 4 
@@ -497,7 +486,7 @@ export namespace DensityFunction {
 			super(noiseData, offsetNoise)
 		}
 		public compute(context: Context) {
-			return super.compute(DensityFunction.Context.at(context, context.x(), 0, context.z()))
+			return super.compute(DensityFunction.context(context.x, 0, context.z, context.cellWidth, context.cellHeight))
 		}
 		public withNewNoise(newNoise: NormalNoise) {
 			return new ShiftA(this.noiseData, newNoise)
@@ -512,7 +501,7 @@ export namespace DensityFunction {
 			super(noiseData, offsetNoise)
 		}
 		public compute(context: Context) {
-			return super.compute(DensityFunction.Context.at(context, context.z(), context.x(), 0))
+			return super.compute(DensityFunction.context(context.z, context.x, 0, context.cellWidth, context.cellHeight))
 		}
 		public withNewNoise(newNoise: NormalNoise) {
 			return new ShiftB(this.noiseData, newNoise)
@@ -629,7 +618,7 @@ export namespace DensityFunction {
 			if (!this.settings) {
 				return density
 			}
-			return NoiseSettings.applySlides(this.settings, density, context.y())
+			return NoiseSettings.applySlides(this.settings, density, context.y)
 		}
 		public mapAll(visitor: Visitor) {
 			return visitor(new Slide(this.input.mapAll(visitor), this.settings))
@@ -782,7 +771,7 @@ export namespace DensityFunction {
 			super()
 		}
 		public compute(context: Context) {
-			return clampedMap(context.y(), this.fromY, this.toY, this.fromValue, this.toValue)
+			return clampedMap(context.y, this.fromY, this.toY, this.fromValue, this.toValue)
 		}
 		public minValue() {
 			return Math.min(this.fromValue, this.toValue)

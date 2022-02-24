@@ -58,28 +58,14 @@ describe('NoiseChunk', () => {
 		expect(sampler2.sample(200, 3, 4)).deep.equal(Climate.target(0.25749468937699066, 0, 0, 0, 0, 0))
 	})
 
-	const selectFirstCell = (chunk: NoiseChunk) => {
-		chunk.advanceCellX(0)
-		chunk.selectCellYZ(chunk.cellCountY - 1, 0)
-		chunk.updateForY((chunk.cellNoiseMinY + chunk.cellCountY - 1) * chunk.cellHeight, 0)
-		chunk.updateForX(chunk.minX, 0)
-		chunk.updateForZ(chunk.minZ, 0)
-	}
-
 	it('getInterpolatedState (zeroes)', () => {
 		const { chunk } = setup()
-		selectFirstCell(chunk)
-		expect(chunk.getInterpolatedState()).equal(BlockState.AIR)
+		expect(chunk.getFinalState(0, 0, 0)).equal(BlockState.AIR)
 	})
 
 	it('getInterpolatedState (flat terrain)', () => {
 		const { chunk } = setup({ finalDensity: new DF.YClampedGradient(-64, 320, -1, 1) })
-		selectFirstCell(chunk)
-		expect(chunk.getInterpolatedState()).equal(undefined)
-		chunk.selectCellYZ(4, 0)
-		chunk.updateForY((chunk.cellNoiseMinY + 4) * chunk.cellHeight, 0)
-		chunk.updateForX(chunk.minX, 0)
-		chunk.updateForZ(chunk.minZ, 0)
-		expect(chunk.getInterpolatedState()).equal(BlockState.AIR)
+		expect(chunk.getFinalState(0, 0, 0)).equal(undefined)
+		expect(chunk.getFinalState(0, 200, 0)).equal(BlockState.AIR)
 	})
 })

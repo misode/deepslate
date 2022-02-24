@@ -9,7 +9,7 @@ import type { NoiseGeneratorSettings } from './NoiseGeneratorSettings'
 import { NoiseRouter } from './NoiseRouter'
 import { NoiseSettings } from './NoiseSettings'
 
-export class NoiseChunk implements DensityFunction.Context {
+export class NoiseChunk {
 	public readonly cellWidth: number
 	public readonly cellHeight: number
 	public readonly firstCellX: number
@@ -21,13 +21,6 @@ export class NoiseChunk implements DensityFunction.Context {
 	private readonly aquifer: Aquifer
 	private readonly materialRule: MaterialRule
 	private readonly initialDensityWithoutJaggedness: DensityFunction
-
-	private cellStartBlockX: number = 0
-	private cellStartBlockY: number = 0
-	private cellStartBlockZ: number = 0
-	public inCellX: number = 0
-	public inCellY: number = 0
-	public inCellZ: number = 0
 
 	constructor(
 		public readonly cellCountXZ: number,
@@ -66,20 +59,14 @@ export class NoiseChunk implements DensityFunction.Context {
 		return new Climate.Sampler(this.router.temperature, this.router.vegetation, this.router.continents, this.router.erosion, this.router.depth, this.router.ridges)
 	}
 
-	public getInterpolatedState(): BlockState | undefined {
-		return this.materialRule(this)
-	}
-
-	public x() {
-		return this.cellStartBlockX + this.inCellX
-	}
-
-	public y() {
-		return this.cellStartBlockY + this.inCellY
-	}
-
-	public z() {
-		return this.cellStartBlockZ + this.inCellZ
+	public getFinalState(x: number, y: number, z: number): BlockState | undefined {
+		return this.materialRule({
+			x,
+			y,
+			z,
+			cellWidth: this.cellWidth,
+			cellHeight: this.cellHeight,
+		})
 	}
 
 	public getPreliminarySurfaceLevel(x: number, z: number) {
@@ -87,27 +74,6 @@ export class NoiseChunk implements DensityFunction.Context {
 			const level = NoiseRouter.computePreliminarySurfaceLevelScanning(this.settings.noise, this.initialDensityWithoutJaggedness, x << 2, z << 2)
 			return level
 		})
-	}
-
-	public advanceCellX(x: number) {
-		this.cellStartBlockX = (this.firstCellX + x) * this.cellWidth
-	}
-
-	public selectCellYZ(y: number, z: number) {
-		this.cellStartBlockY = (y + this.cellNoiseMinY) * this.cellHeight
-		this.cellStartBlockZ = (z + this.firstCellZ) * this.cellWidth
-	}
-
-	public updateForY(blockY: number, y: number) {
-		this.inCellY = blockY - this.cellStartBlockY
-	}
-
-	public updateForX(blockX: number, x: number) {
-		this.inCellX = blockX - this.cellStartBlockX
-	}
-
-	public updateForZ(blockZ: number, z: number) {
-		this.inCellZ = blockZ - this.cellStartBlockZ
 	}
 
 	public getAquifer() {
