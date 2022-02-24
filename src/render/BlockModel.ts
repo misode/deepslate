@@ -1,6 +1,6 @@
 import type { ReadonlyVec3 } from 'gl-matrix'
 import { glMatrix, mat4, vec3 } from 'gl-matrix'
-import type { Direction } from '../core'
+import type { Direction, Identifier } from '../core'
 import { BlockColors } from './BlockColors'
 import type { Cull } from './Cull'
 import type { TextureAtlasProvider, UV } from './TextureAtlas'
@@ -66,7 +66,7 @@ export class BlockModel {
 		this.flattened = false
 	}
 
-	public getBuffers(name: string, props: {[key: string]: string}, uvProvider: TextureAtlasProvider, offset: number, cull: Cull) {
+	public getBuffers(name: Identifier, props: {[key: string]: string}, uvProvider: TextureAtlasProvider, offset: number, cull: Cull) {
 		const position: Float32Array[] = []
 		const texCoord: number[] = []
 		const tintColor: number[] = []
@@ -89,7 +89,7 @@ export class BlockModel {
 		}
 	}
 
-	private getElementBuffers(name: string, props: {[key: string]: string}, e: BlockModelElement, i: number, uvProvider: TextureAtlasProvider, cull: {[key in Direction]?: boolean}) {
+	private getElementBuffers(name: Identifier, props: {[key: string]: string}, e: BlockModelElement, i: number, uvProvider: TextureAtlasProvider, cull: {[key in Direction]?: boolean}) {
 		const x0 = e.from[0]
 		const y0 = e.from[1]
 		const z0 = e.from[2]
@@ -119,7 +119,7 @@ export class BlockModel {
 				u0 + uv[r[2]], v0 + uv[r[3]],
 				u0 + uv[r[4]], v0 + uv[r[5]],
 				u0 + uv[r[6]], v0 + uv[r[7]])
-			const tint = (face.tintindex ?? -1) >= 0 ? (BlockColors[name.slice(10)]?.(props) ?? [1, 1, 1]) : [1, 1, 1]
+			const tint = (face.tintindex ?? -1) >= 0 ? (BlockColors[name.path]?.(props) ?? [1, 1, 1]) : [1, 1, 1]
 			tintColors.push(...tint, ...tint, ...tint, ...tint)
 			positions.push(...pos)
 			indices.push(i, i+1, i+2,  i, i+2, i+3)

@@ -1,4 +1,5 @@
 import { glMatrix, mat4 } from 'gl-matrix'
+import type { Identifier } from '../core'
 import type { BlockModelProvider } from './BlockModel'
 import { Cull } from './Cull'
 import type { TextureAtlasProvider } from './TextureAtlas'
@@ -27,7 +28,7 @@ type ModelMultiPart = {
 }
 
 export interface BlockDefinitionProvider {
-	getBlockDefinition(id: string): BlockDefinition | null
+	getBlockDefinition(id: Identifier): BlockDefinition | null
 }
 
 export class BlockDefinition {
@@ -52,7 +53,7 @@ export class BlockDefinition {
 		return []
 	}
 
-	public getBuffers(name: string, props: { [key: string]: string }, textureUVProvider: TextureAtlasProvider, blockModelProvider: BlockModelProvider, offset: number, cull: Cull) {
+	public getBuffers(name: Identifier, props: { [key: string]: string }, textureUVProvider: TextureAtlasProvider, blockModelProvider: BlockModelProvider, offset: number, cull: Cull) {
 		const variants = this.getModelVariants(props)
 
 		const position: Float32Array[] = []

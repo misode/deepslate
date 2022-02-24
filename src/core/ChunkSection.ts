@@ -10,7 +10,7 @@ export class ChunkSection {
 	constructor(
 		public readonly minY: number
 	) {
-		this.storage = Array(ChunkSection.SIZE)
+		this.storage = Array(ChunkSection.SIZE).fill(0)
 		this.palette = [BlockState.AIR]
 	}
 

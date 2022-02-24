@@ -1,10 +1,10 @@
-import { Direction } from '../core'
+import { Direction, Identifier } from '../core'
 import { BlockDefinition } from './BlockDefinition'
 import { BlockModel } from './BlockModel'
 import type { Cull } from './Cull'
 import type { TextureAtlasProvider } from './TextureAtlas'
 
-function dummy(name: string, uvProvider: TextureAtlasProvider, offset: number, cull: Cull, model: BlockModel) {
+function dummy(name: Identifier, uvProvider: TextureAtlasProvider, offset: number, cull: Cull, model: BlockModel) {
 	const definition = new BlockDefinition('', {'': { model: '' } }, undefined)
 	const modelProvider = { getBlockModel: () => model }
 	model.flatten(modelProvider)
@@ -13,7 +13,7 @@ function dummy(name: string, uvProvider: TextureAtlasProvider, offset: number, c
 
 function liquidRenderer(type: string, index: number, level: number, uvProvider: TextureAtlasProvider, cull: Cull, tintindex?: number) {
 	const y = cull['up'] ? 16 : [14.2, 12.5, 10.5, 9, 7, 5.3, 3.7, 1.9, 16, 16, 16, 16, 16, 16, 16, 16][level]
-	return dummy(`minecraft:${type}`, uvProvider, index, cull, new BlockModel('', '', {
+	return dummy(Identifier.create(type), uvProvider, index, cull, new BlockModel('', '', {
 		still: `minecraft:block/${type}_still`,
 		flow: `minecraft:block/${type}_flow`,
 	}, [{
@@ -31,7 +31,7 @@ function liquidRenderer(type: string, index: number, level: number, uvProvider: 
 }
 
 function chestRenderer(index: number, facing: string, type: string, uvProvider: TextureAtlasProvider) {
-	return dummy('minecraft:chest', uvProvider, index, {}, new BlockModel('', '', {
+	return dummy(Identifier.create('chest'), uvProvider, index, {}, new BlockModel('', '', {
 		0: 'minecraft:block/chest',
 	}, [{
 		from: [1, 0, 1],

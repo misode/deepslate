@@ -1,18 +1,22 @@
 import { expect } from 'chai'
 import 'mocha'
-import { BlockState } from '../../src/core'
+import { BlockState, Identifier } from '../../src/core'
 import type { NamedNbtTag } from '../../src/nbt'
 
 describe('BlockState', () => {
+	it('constructor', () => {
+		const state = new BlockState('piston')
+		expect(state).deep.equal(new BlockState(new Identifier('minecraft', 'piston')))
+	})
+
 	it('getName', () => {
-		const state = new BlockState('minecraft:jigsaw', { orientation: 'east_up' })
+		const state = new BlockState('jigsaw', { orientation: 'east_up' })
 		const name = state.getName()
-		expect(name).a('string')
-		expect(name).equal('minecraft:jigsaw')
+		expect(name).deep.equal(Identifier.create('jigsaw'))
 	})
 
 	it('getProperties', () => {
-		const state = new BlockState('minecraft:piston', { extended: 'false', facing: 'up' })
+		const state = new BlockState('piston', { extended: 'false', facing: 'up' })
 		const props = state.getProperties()
 		expect(props).an('object').with.keys('extended', 'facing')
 		expect(props['extended']).equal('false')
@@ -20,27 +24,26 @@ describe('BlockState', () => {
 	})
 
 	it('getProperty', () => {
-		const state = new BlockState('minecraft:piston', { extended: 'false', facing: 'up' })
+		const state = new BlockState('piston', { extended: 'false', facing: 'up' })
 		expect(state.getProperty('extended')).equal('false')
 		expect(state.getProperty('facing')).equal('up')
 	})
 
 	it('equals', () => {
-		const stateA = new BlockState('minecraft:piston', { extended: 'false', facing: 'up' })
-		const stateB = new BlockState('minecraft:piston', { extended: 'false', facing: 'up' })
+		const stateA = new BlockState('piston', { extended: 'false', facing: 'up' })
+		const stateB = new BlockState('piston', { extended: 'false', facing: 'up' })
 		expect(stateA.equals(stateB)).true
-		const stateC = new BlockState('minecraft:sticky_piston', { extended: 'false', facing: 'up' })
+		const stateC = new BlockState('sticky_piston', { extended: 'false', facing: 'up' })
 		expect(!stateA.equals(stateC)).true
-		const stateD = new BlockState('minecraft:piston', { facing: 'up' })
+		const stateD = new BlockState('piston', { facing: 'up' })
 		expect(!stateA.equals(stateD)).true
-		const stateE = new BlockState('minecraft:piston', { extended: 'false', facing: 'down' })
+		const stateE = new BlockState('piston', { extended: 'false', facing: 'down' })
 		expect(!stateA.equals(stateE)).true
 	})
 
 	it('toString', () => {
-		const state = new BlockState('minecraft:piston', { extended: 'false', facing: 'up' })
-		const string = state.toString()
-		expect(string).equal('minecraft:piston[extended=false,facing=up]')
+		const state = new BlockState('piston', { extended: 'false', facing: 'up' })
+		expect(state.toString()).equal('minecraft:piston[extended=false,facing=up]')
 	})
 
 	it('fromNbt (no properties)', () => {
@@ -48,7 +51,7 @@ describe('BlockState', () => {
 			Name: { type: 'string', value: 'minecraft:stone' },
 		} }
 		const stateA = BlockState.fromNbt(nbt)
-		const stateB = new BlockState('minecraft:stone')
+		const stateB = new BlockState('stone')
 
 		expect(stateA).deep.equal(stateB)
 	})
@@ -62,7 +65,7 @@ describe('BlockState', () => {
 			} },
 		} }
 		const stateA = BlockState.fromNbt(nbt)
-		const stateB = new BlockState('minecraft:piston', { extended: 'false', facing: 'up' })
+		const stateB = new BlockState('piston', { extended: 'false', facing: 'up' })
 
 		expect(stateA).deep.equal(stateB)
 	})
@@ -72,7 +75,7 @@ describe('BlockState', () => {
 			Name: 'minecraft:stone',
 		}
 		const stateA = BlockState.fromJson(json)
-		const stateB = new BlockState('minecraft:stone')
+		const stateB = new BlockState('stone')
 
 		expect(stateA).deep.equal(stateB)
 	})
@@ -86,7 +89,7 @@ describe('BlockState', () => {
 			},
 		}
 		const stateA = BlockState.fromJson(json)
-		const stateB = new BlockState('minecraft:piston', { extended: 'false', facing: 'up' })
+		const stateB = new BlockState('piston', { extended: 'false', facing: 'up' })
 
 		expect(stateA).deep.equal(stateB)
 	})

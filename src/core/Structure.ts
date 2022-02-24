@@ -2,6 +2,7 @@ import type { NamedNbtTag } from '../nbt'
 import { getListTag, getOptional, getTag } from '../nbt'
 import type { BlockPos } from './BlockPos'
 import { BlockState } from './BlockState'
+import type { Identifier } from './Identifier'
 import type { BlockNbt, StructureProvider } from './StructureProvider'
 
 export type PlacedBlock = { pos: BlockPos, state: BlockState, nbt: BlockNbt | undefined }
@@ -26,7 +27,7 @@ export class Structure implements StructureProvider {
 		return this.size
 	}
 
-	public addBlock(pos: BlockPos, name: string, properties?: { [key: string]: string }, nbt?: BlockNbt) {
+	public addBlock(pos: BlockPos, name: Identifier | string, properties?: { [key: string]: string }, nbt?: BlockNbt) {
 		if (!this.isInside(pos)) {
 			throw new Error(`Cannot add block at ${pos} outside the structure bounds ${this.size}`)
 		}

@@ -1,6 +1,6 @@
 import { mat4, vec3 } from 'gl-matrix'
-import type { PlacedBlock, StructureProvider } from '../core'
-import { BlockPos, Direction } from '../core'
+import type { Identifier, PlacedBlock, StructureProvider } from '../core'
+import { BlockPos, BlockState, Direction } from '../core'
 import type { BlockDefinitionProvider } from './BlockDefinition'
 import type { BlockModelProvider } from './BlockModel'
 import { ShaderProgram } from './ShaderProgram'
@@ -113,12 +113,12 @@ type BlockFlags = {
 }
 
 export interface BlockFlagsProvider {
-	getBlockFlags(id: string): BlockFlags | null
+	getBlockFlags(id: Identifier): BlockFlags | null
 }
 
 export interface BlockPropertiesProvider {
-	getBlockProperties(id: string): Record<string, string[]> | null
-	getDefaultBlockProperties(id: string): Record<string, string> | null
+	getBlockProperties(id: Identifier): Record<string, string[]> | null
+	getDefaultBlockProperties(id: Identifier): Record<string, string> | null
 }
 
 export interface Resources extends BlockDefinitionProvider, BlockModelProvider, TextureAtlasProvider, BlockFlagsProvider, BlockPropertiesProvider {}
@@ -339,8 +339,8 @@ export class StructureRenderer {
 					buffers = blockDefinition.getBuffers(blockName, blockProps, this.resources, this.resources, chunk.indexOffset, cull)
 					pushBuffers(buffers, b.pos, chunk)
 				}
-				if (SpecialRenderers.has(blockName)) {
-					buffers = SpecialRenderer[blockName](chunk.indexOffset, blockProps, this.resources, cull)
+				if (SpecialRenderers.has(blockName.toString())) {
+					buffers = SpecialRenderer[blockName.toString()](chunk.indexOffset, blockProps, this.resources, cull)
 					pushBuffers(buffers, b.pos, chunk)
 				}
 			} catch(e) {
@@ -431,9 +431,9 @@ export class StructureRenderer {
 						continue
 					if (block === null) {
 						this.addCube(position, color, [1, 0.25, 0.25], [x + 0.4375, y + 0.4375, z + 0.4375], [x + 0.5625, y + 0.5625, z + 0.5625])
-					} else if (block.state.getName() === 'minecraft:air') {
+					} else if (block.state.is(BlockState.AIR)) {
 						this.addCube(position, color, [0.5, 0.5, 1], [x + 0.375, y + 0.375, z + 0.375], [x + 0.625, y + 0.625, z + 0.625])
-					} else if (block.state.getName() === 'minecraft:cave_air') {
+					} else if (block.state.is(new BlockState('cave_air'))) {
 						this.addCube(position, color, [0.5, 1, 0.5], [x + 0.375, y + 0.375, z + 0.375], [x + 0.625, y + 0.625, z + 0.625])
 					} 
 				}
