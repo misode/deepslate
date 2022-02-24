@@ -52,7 +52,6 @@ export class NoiseChunkGenerator {
 
 		const noiseChunk = this.getNoiseChunk(chunk)
 
-		noiseChunk.initializeForFirstCellX()
 		for (let cellX = 0; cellX < cellCountXZ; cellX += 1) {
 			noiseChunk.advanceCellX(cellX)
 			for (let cellZ = 0; cellZ < (onlyFirstZ ? 1 : cellCountXZ); cellZ += 1) {
@@ -86,9 +85,7 @@ export class NoiseChunkGenerator {
 					}
 				}
 			}
-			noiseChunk.swapSlices()
 		}
-		noiseChunk.stopInterpolation()
 	}
 
 	public buildSurface(chunk: Chunk, /** @deprecated */ biome: string = 'minecraft:plains') {

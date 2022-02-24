@@ -4,9 +4,9 @@ import type { NoiseSettings } from '../../src/worldgen'
 import { DensityFunction as DF, NoiseRouter, Noises, TerrainShaper } from '../../src/worldgen'
 
 describe('DensityFunction', () => {
-	const ContextA = DF.context(1, 2, 3)
-	const ContextB = DF.context(2, 3, 4)
-	const ContextC = DF.context(12, -30, 1)
+	const ContextA = DF.Context.create(1, 2, 3)
+	const ContextB = DF.Context.create(2, 3, 4)
+	const ContextC = DF.Context.create(12, -30, 1)
 
 	const wrap = (fn: DF) => {
 		const random = XoroshiroRandom.create(BigInt(123)).forkPositional()
@@ -18,7 +18,6 @@ describe('DensityFunction', () => {
 			sampling: { xzScale: 1, yScale: 1, xzFactor: 80, yFactor: 80 },
 			topSlide: { target: -5, offset: 1, size: 2 },
 			bottomSlide: { target: 10, offset: 0, size: 2 },
-			islandNoiseOverride: false,
 			terrainShaper: TerrainShaper.fromJson({ offset: 0, factor: 0, jaggedness: 0 }),
 		}
 		const visitor = NoiseRouter.createVisitor(random, settings)
@@ -48,9 +47,9 @@ describe('DensityFunction', () => {
 
 	it('Clamp', () => {
 		const fn = wrap(new DF.Clamp(new DF.YClampedGradient(0, 128, 0, 128), 2, 5))
-		expect(fn.compute(DF.context(0, 0, 0))).equal(2)
-		expect(fn.compute(DF.context(0, 3, 0))).equal(3)
-		expect(fn.compute(DF.context(0, 7, 0))).equal(5)
+		expect(fn.compute(DF.Context.create(0, 0, 0))).equal(2)
+		expect(fn.compute(DF.Context.create(0, 3, 0))).equal(3)
+		expect(fn.compute(DF.Context.create(0, 7, 0))).equal(5)
 	})
 
 	it('Abs', () => {
@@ -137,12 +136,12 @@ describe('DensityFunction', () => {
 
 	it('Slide', () => {
 		const fn = wrap(new DF.Slide(new DF.Constant(0.5)))
-		expect(fn.compute(DF.context(0, 40, 0))).equal(0.5)
-		expect(fn.compute(DF.context(0, -64, 0))).equal(10)
-		expect(fn.compute(DF.context(0, 319, 0))).equal(-5)
-		expect(fn.compute(DF.context(0, -55, 0))).equal(5.25)
-		expect(fn.compute(DF.context(0, 305, 0))).equal(-2.25)
-		expect(fn.compute(DF.context(0, 290, 0))).equal(0.5)
+		expect(fn.compute(DF.Context.create(0, 40, 0))).equal(0.5)
+		expect(fn.compute(DF.Context.create(0, -64, 0))).equal(10)
+		expect(fn.compute(DF.Context.create(0, 319, 0))).equal(-5)
+		expect(fn.compute(DF.Context.create(0, -55, 0))).equal(5.25)
+		expect(fn.compute(DF.Context.create(0, 305, 0))).equal(-2.25)
+		expect(fn.compute(DF.Context.create(0, 290, 0))).equal(0.5)
 	})
 
 	it('Spline', () => {
@@ -153,28 +152,28 @@ describe('DensityFunction', () => {
 			.addPoint(5, 0.2)
 			.addPoint(20, 0.7)
 		const fn2 = wrap(new DF.Spline(spline, 0, 1))
-		expect(fn2.compute(DF.context(0, 0, 0))).equal(1)
-		expect(fn2.compute(DF.context(0, 3.2, 0))).equal(0.4363904)
-		expect(fn2.compute(DF.context(0, 5, 0))).equal(0.2)
-		expect(fn2.compute(DF.context(0, 11, 0))).equal(0.376)
-		expect(fn2.compute(DF.context(0, 20, 0))).equal(0.7)
-		expect(fn2.compute(DF.context(0, 25, 0))).equal(0.7)
+		expect(fn2.compute(DF.Context.create(0, 0, 0))).equal(1)
+		expect(fn2.compute(DF.Context.create(0, 3.2, 0))).equal(0.4363904)
+		expect(fn2.compute(DF.Context.create(0, 5, 0))).equal(0.2)
+		expect(fn2.compute(DF.Context.create(0, 11, 0))).equal(0.376)
+		expect(fn2.compute(DF.Context.create(0, 20, 0))).equal(0.7)
+		expect(fn2.compute(DF.Context.create(0, 25, 0))).equal(0.7)
 	})
 
 	it('YClampedGradient', () => {
 		const fn1 = wrap(new DF.YClampedGradient(0, 128, 0, 128))
-		expect(fn1.compute(DF.context(0, -5, 0))).equal(0)
-		expect(fn1.compute(DF.context(0, 0, 0))).equal(0)
-		expect(fn1.compute(DF.context(0, 4, 0))).equal(4)
-		expect(fn1.compute(DF.context(0, 127, 0))).equal(127)
-		expect(fn1.compute(DF.context(0, 128, 0))).equal(128)
-		expect(fn1.compute(DF.context(0, 129, 0))).equal(128)
+		expect(fn1.compute(DF.Context.create(0, -5, 0))).equal(0)
+		expect(fn1.compute(DF.Context.create(0, 0, 0))).equal(0)
+		expect(fn1.compute(DF.Context.create(0, 4, 0))).equal(4)
+		expect(fn1.compute(DF.Context.create(0, 127, 0))).equal(127)
+		expect(fn1.compute(DF.Context.create(0, 128, 0))).equal(128)
+		expect(fn1.compute(DF.Context.create(0, 129, 0))).equal(128)
 		const fn2 = wrap(new DF.YClampedGradient(0, 128, -16, 0))
-		expect(fn2.compute(DF.context(0, -200, 0))).equal(-16)
-		expect(fn2.compute(DF.context(0, 0, 0))).equal(-16)
-		expect(fn2.compute(DF.context(0, 5, 0))).equal(-15.375)
-		expect(fn2.compute(DF.context(0, 64, 0))).equal(-8)
-		expect(fn2.compute(DF.context(0, 128, 0))).equal(0)
-		expect(fn2.compute(DF.context(0, 129, 0))).equal(0)
+		expect(fn2.compute(DF.Context.create(0, -200, 0))).equal(-16)
+		expect(fn2.compute(DF.Context.create(0, 0, 0))).equal(-16)
+		expect(fn2.compute(DF.Context.create(0, 5, 0))).equal(-15.375)
+		expect(fn2.compute(DF.Context.create(0, 64, 0))).equal(-8)
+		expect(fn2.compute(DF.Context.create(0, 128, 0))).equal(0)
+		expect(fn2.compute(DF.Context.create(0, 129, 0))).equal(0)
 	})
 })

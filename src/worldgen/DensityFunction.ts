@@ -1,6 +1,6 @@
 import { Holder, Identifier } from '../core'
 import type { NormalNoise } from '../math'
-import { BlendedNoise, clamp, clampedMap, CubicSpline, NoiseParameters, XoroshiroRandom } from '../math'
+import { BlendedNoise, clamp, clampedMap, CubicSpline, lerp3, NoiseParameters, XoroshiroRandom } from '../math'
 import { Json } from '../util'
 import { TerrainShaper } from './biome/TerrainShaper'
 import { NoiseSettings } from './NoiseSettings'
@@ -31,6 +31,8 @@ export namespace DensityFunction {
 		x(): number
 		y(): number
 		z(): number
+		cellWidth: number
+		cellHeight: number
 	}
 
 	export interface ContextProvider {
@@ -38,11 +40,19 @@ export namespace DensityFunction {
 		fillAllDirectly(arr: number[], density: DensityFunction): void
 	}
 
-	export function context(x: number, y: number, z: number) {
-		return {
-			x() { return x },
-			y() { return y },
-			z() { return z },
+	export namespace Context {
+		export function create(x: number, y: number, z: number, cellWidth: number, cellHeight: number) {
+			return {
+				x() { return x },
+				y() { return y },
+				z() { return z },
+				cellWidth,
+				cellHeight,
+			}
+		}
+
+		export function at(context: Context, x: number, y: number, z: number) {
+			return create(x, y, z, context.cellWidth, context.cellWidth)
 		}
 	}
 
@@ -83,12 +93,11 @@ export namespace DensityFunction {
 			case 'blend_offset': return Constant.ZERO
 			case 'beardifier': return Constant.ZERO
 			case 'old_blended_noise': return new OldBlendedNoise()
-			case 'interpolated':
-			case 'flat_cache':
-			case 'cache_2d':
-			case 'cache_once':
-			case 'cache_all_in_cell':
-				return new Marker(Json.readEnum(type, MarkerType), fromJson(root.argument))
+			case 'flat_cache': return new FlatCache(fromJson(root.argument))
+			case 'interpolated': return new Interpolated(fromJson(root.argument))
+			case 'cache_2d': return new Cache2D(fromJson(root.argument))
+			case 'cache_once': return new CacheOnce(fromJson(root.argument))
+			case 'cache_all_in_cell': return new CacheAllInCell(fromJson(root.argument))
 			case 'noise': return new Noise(
 				Json.readNumber(root.xz_scale) ?? 1,
 				Json.readNumber(root.y_scale) ?? 1,
@@ -186,24 +195,24 @@ export namespace DensityFunction {
 
 	export class HolderHolder extends DensityFunction {
 		constructor(
-			public readonly fn: Holder<DensityFunction>,
+			public readonly holder: Holder<DensityFunction>,
 		) {
 			super()
 		}
 		public compute(context: Context): number {
-			return this.fn.value().compute(context)
+			return this.holder.value().compute(context)
 		}
 		public fillArray(arr: number[], context: ContextProvider): void {
-			return this.fn.value().fillArray(arr, context)
+			return this.holder.value().fillArray(arr, context)
 		}
 		public mapAll(visitor: Visitor): DensityFunction {
-			return visitor(new HolderHolder(Holder.direct(this.fn.value().mapAll(visitor))))
+			return visitor(new HolderHolder(Holder.direct(this.holder.value().mapAll(visitor))))
 		}
 		public minValue(): number {
-			return this.fn.value().minValue()
+			return this.holder.value().minValue()
 		}
 		public maxValue(): number {
-			return this.fn.value().maxValue()
+			return this.holder.value().maxValue()
 		}
 	}
 
@@ -221,27 +230,133 @@ export namespace DensityFunction {
 		}
 	}
 
-	const MarkerType = ['interpolated', 'flat_cache', 'cache_2d', 'cache_once', 'cache_all_in_cell'] as const
-
-	export class Marker implements DensityFunction {
+	abstract class Wrapper extends DensityFunction {
 		constructor(
-			public readonly type: typeof MarkerType[number],
-			public readonly wrapped: DensityFunction,
-		) {}
-		public compute(context: Context) {
-			return this.wrapped.compute(context)
-		}
-		public fillArray(arr: number[], context: ContextProvider) {
-			this.wrapped.fillArray(arr, context)
-		}
-		public mapAll(visitor: Visitor) {
-			return visitor(new Marker(this.type, this.wrapped.mapAll(visitor)))
+			protected readonly wrapped: DensityFunction,
+		) {
+			super()
 		}
 		public minValue() {
 			return this.wrapped.minValue()
 		}
 		public maxValue() {
 			return this.wrapped.maxValue()
+		}
+	}
+
+	export class FlatCache extends Wrapper {
+		private lastQuartX?: number
+		private lastQuartZ?: number
+		private lastValue: number = 0
+		constructor(wrapped: DensityFunction) {
+			super(wrapped)
+		}
+		public compute(context: Context): number {
+			const quartX = context.x() >> 2
+			const quartZ = context.z() >> 2
+			if (this.lastQuartX !== quartX || this.lastQuartZ !== quartZ) {
+				this.lastValue = this.wrapped.compute(Context.at(context, quartX << 2, 0, quartZ << 2))
+				this.lastQuartX = quartX
+				this.lastQuartZ = quartZ
+			}
+			return this.lastValue
+		}
+		public mapAll(visitor: Visitor) {
+			return new FlatCache(this.wrapped.mapAll(visitor))
+		}
+	}
+
+	export class CacheAllInCell extends Wrapper {
+		constructor(wrapped: DensityFunction) {
+			super(wrapped)
+		}
+		public compute(context: Context) {
+			return this.wrapped.compute(context)
+		}
+		public mapAll(visitor: Visitor) {
+			return new CacheAllInCell(this.wrapped.mapAll(visitor))
+		}
+	}
+
+	export class Cache2D extends Wrapper {
+		private lastBlockX?: number
+		private lastBlockZ?: number
+		private lastValue: number = 0
+		constructor(wrapped: DensityFunction) {
+			super(wrapped)
+		}
+		public compute(context: Context) {
+			const blockX = context.x()
+			const blockZ = context.z()
+			if (this.lastBlockX !== blockX || this.lastBlockZ !== blockZ) {
+				this.lastValue = this.wrapped.compute(context)
+				this.lastBlockX = blockX
+				this.lastBlockZ = blockZ
+			}
+			return this.lastValue
+		}
+		public fillArray(arr: number[], context: ContextProvider) {
+			this.wrapped.fillArray(arr, context)
+		}
+		public mapAll(visitor: Visitor) {
+			return new Cache2D(this.wrapped.mapAll(visitor))
+		}
+	}
+
+	export class CacheOnce extends Wrapper {
+		private lastBlockX?: number
+		private lastBlockY?: number
+		private lastBlockZ?: number
+		private lastValue: number = 0
+		constructor(wrapped: DensityFunction) {
+			super(wrapped)
+		}
+		public compute(context: DensityFunction.Context) {
+			const blockX = context.x()
+			const blockY = context.y()
+			const blockZ = context.z()
+			if (this.lastBlockX !== blockX || this.lastBlockY !== blockY || this.lastBlockZ !== blockZ) {
+				this.lastValue = this.wrapped.compute(context)
+				this.lastBlockX = blockX
+				this.lastBlockY = blockY
+				this.lastBlockZ = blockZ
+			}
+			return this.lastValue
+		}
+		public mapAll(visitor: Visitor) {
+			return new CacheOnce(this.wrapped.mapAll(visitor))
+		}
+	}
+
+	export class Interpolated extends Wrapper {
+		constructor(wrapped: DensityFunction) {
+			super(wrapped)
+		}
+		public compute(context: DensityFunction.Context) {
+			// TODO: optimize by caching
+			const blockX = context.x()
+			const blockY = context.y()
+			const blockZ = context.z()
+			const w = context.cellWidth
+			const h = context.cellHeight
+			const x = (blockX % w) / w
+			const y = (blockY % h) / h
+			const z = (blockZ % w) / w
+			const firstX = Math.floor(blockX / w) * w
+			const firstY = Math.floor(blockY / h) * h
+			const firstZ = Math.floor(blockZ / w) * w
+			const noise000 = this.wrapped.compute(Context.at(context, firstX, firstY, firstZ))
+			const noise001 = this.wrapped.compute(Context.at(context, firstX, firstY, firstZ + w))
+			const noise010 = this.wrapped.compute(Context.at(context, firstX, firstY + h, firstZ))
+			const noise011 = this.wrapped.compute(Context.at(context, firstX, firstY + h, firstZ + w))
+			const noise100 = this.wrapped.compute(Context.at(context, firstX + w, firstY, firstZ))
+			const noise101 = this.wrapped.compute(Context.at(context, firstX + w, firstY, firstZ + w))
+			const noise110 = this.wrapped.compute(Context.at(context, firstX + w, firstY + h, firstZ))
+			const noise111 = this.wrapped.compute(Context.at(context, firstX + w, firstY + h, firstZ + w))
+			return lerp3(x, y, z, noise000, noise100, noise010, noise110, noise001, noise101, noise011, noise111)
+		}
+		public mapAll(visitor: Visitor) {
+			return new Interpolated(this.wrapped.mapAll(visitor))
 		}
 	}
 
@@ -416,7 +531,7 @@ export namespace DensityFunction {
 			super(noiseData, offsetNoise)
 		}
 		public compute(context: Context) {
-			return super.compute(DensityFunction.context(context.x(), 0, context.z()))
+			return super.compute(DensityFunction.Context.at(context, context.x(), 0, context.z()))
 		}
 		public withNewNoise(newNoise: NormalNoise) {
 			return new ShiftA(this.noiseData, newNoise)
@@ -431,7 +546,7 @@ export namespace DensityFunction {
 			super(noiseData, offsetNoise)
 		}
 		public compute(context: Context) {
-			return super.compute(DensityFunction.context(context.z(), context.x(), 0))
+			return super.compute(DensityFunction.Context.at(context, context.z(), context.x(), 0))
 		}
 		public withNewNoise(newNoise: NormalNoise) {
 			return new ShiftB(this.noiseData, newNoise)

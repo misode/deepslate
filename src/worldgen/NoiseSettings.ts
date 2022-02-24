@@ -11,7 +11,6 @@ export type NoiseSettings = {
 	topSlide: NoiseSlideSettings,
 	bottomSlide: NoiseSlideSettings,
 	terrainShaper: TerrainShaper,
-	islandNoiseOverride: boolean,
 }
 export namespace NoiseSettings {
 	export function fromJson(obj: any): NoiseSettings {
@@ -25,7 +24,6 @@ export namespace NoiseSettings {
 			topSlide: NoiseSlideSettings.fromJson(root.top_slide),
 			bottomSlide: NoiseSlideSettings.fromJson(root.bottom_slide),
 			terrainShaper: TerrainShaper.fromJson(root.terrain_shaper),
-			islandNoiseOverride: Json.readBoolean(root.island_noise_override) ?? false,
 		}
 	}
 

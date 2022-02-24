@@ -14,9 +14,6 @@ describe('NoiseChunk', () => {
 				sampling: { xzScale: 1, yScale: 1, xzFactor: 80, yFactor: 80 },
 				topSlide: { target: 0, offset: 0, size: 0 },
 				bottomSlide: { target: 0, offset: 0, size: 0 },
-				hasLargeBiomes: false,
-				isAmplified: false,
-				islandNoiseOverride: false,
 				terrainShaper: TerrainShaper.fromJson({ offset: 0, factor: 0, jaggedness: 0 }),
 			},
 			noiseRouter: {
@@ -62,7 +59,6 @@ describe('NoiseChunk', () => {
 	})
 
 	const selectFirstCell = (chunk: NoiseChunk) => {
-		chunk.initializeForFirstCellX()
 		chunk.advanceCellX(0)
 		chunk.selectCellYZ(chunk.cellCountY - 1, 0)
 		chunk.updateForY((chunk.cellNoiseMinY + chunk.cellCountY - 1) * chunk.cellHeight, 0)
