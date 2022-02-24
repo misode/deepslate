@@ -60,13 +60,7 @@ export class NoiseChunk {
 	}
 
 	public getFinalState(x: number, y: number, z: number): BlockState | undefined {
-		return this.materialRule({
-			x,
-			y,
-			z,
-			cellWidth: this.cellWidth,
-			cellHeight: this.cellHeight,
-		})
+		return this.materialRule({ x, y, z })
 	}
 
 	public getPreliminarySurfaceLevel(x: number, z: number) {
@@ -80,19 +74,6 @@ export class NoiseChunk {
 		return this.aquifer
 	}
 }
-
-export type TerrainInfo = {
-	offset: number,
-	factor: number,
-	jaggedness: number,
-}
-export namespace TerrainInfo {
-	export function create(offset: number, factor: number, jaggedness: number): TerrainInfo {
-		return { offset, factor, jaggedness }
-	}
-}
-
-export type InterpolatableNoise = (chunk: NoiseChunk) => () => number
 
 export type MaterialRule = (context: DensityFunction.Context) => BlockState | undefined
 

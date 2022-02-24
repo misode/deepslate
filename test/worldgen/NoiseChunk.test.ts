@@ -65,7 +65,7 @@ describe('NoiseChunk', () => {
 
 	it('getInterpolatedState (flat terrain)', () => {
 		const { chunk } = setup({ finalDensity: new DF.YClampedGradient(-64, 320, -1, 1) })
-		expect(chunk.getFinalState(0, 0, 0)).equal(undefined)
-		expect(chunk.getFinalState(0, 200, 0)).equal(BlockState.AIR)
+		expect(chunk.getFinalState(0, 0, 0)).equal(BlockState.AIR)
+		expect(chunk.getFinalState(0, 200, 0)).equal(undefined)
 	})
 })

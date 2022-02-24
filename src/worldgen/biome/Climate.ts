@@ -130,7 +130,7 @@ export namespace Climate {
 		) {}
 
 		sample(x: number, y: number, z: number) {
-			const context = DensityFunction.Context.create(x << 2, y << 2, z << 2, 4, 4)
+			const context = DensityFunction.context(x << 2, y << 2, z << 2)
 			return Climate.target(this.temperature.compute(context), this.humidity.compute(context), this.continentalness.compute(context), this.erosion.compute(context), this.depth.compute(context), this.weirdness.compute(context))
 		}
 	}

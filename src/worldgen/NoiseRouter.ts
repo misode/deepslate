@@ -69,6 +69,9 @@ export namespace NoiseRouter {
 			if (fn instanceof DensityFunction.HolderHolder) {
 				return fn.holder.value()
 			}
+			if (fn instanceof DensityFunction.Interpolated) {
+				return fn.withCellSize(NoiseSettings.cellWidth(settings), NoiseSettings.cellHeight(settings))
+			}
 			if (fn instanceof DensityFunction.Noise) {
 				return new DensityFunction.Noise(fn.xzScale, fn.yScale, fn.noiseData, Noises.instantiate(random, fn.noiseData))
 			}
@@ -121,11 +124,10 @@ export namespace NoiseRouter {
 	export function computePreliminarySurfaceLevelScanning(settings: NoiseSettings, initialDensity: DensityFunction, x: number, z: number) {
 		const maxCellY = NoiseSettings.minCellY(settings) + NoiseSettings.cellCountY(settings)
 		const minCellY = NoiseSettings.minCellY(settings)
-		const cellWidth = NoiseSettings.cellWidth(settings)
 		const cellHeight = NoiseSettings.cellHeight(settings)
 		for (let yCell = maxCellY; yCell >=  minCellY; yCell -= 1) {
 			const y = yCell * cellHeight
-			const clamped = clamp(initialDensity.compute(DensityFunction.Context.create(x, y, z, cellWidth, cellHeight)), -64, 64)
+			const clamped = clamp(initialDensity.compute(DensityFunction.context(x, y, z)), -64, 64)
 			const density = NoiseSettings.applySlides(settings, clamped, y)
 			if (density >= 0.390625) {
 				return y

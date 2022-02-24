@@ -27,17 +27,13 @@ export namespace DensityFunction {
 		x: number
 		y: number
 		z: number
-		cellWidth: number
-		cellHeight: number
 	}
 
-	export function context(x: number, y: number, z: number, cellWidth: number, cellHeight: number): Context {
+	export function context(x: number, y: number, z: number): Context {
 		return {
 			x,
 			y,
 			z,
-			cellWidth,
-			cellHeight,
 		}
 	}
 
@@ -227,7 +223,7 @@ export namespace DensityFunction {
 			const quartX = context.x >> 2
 			const quartZ = context.z >> 2
 			if (this.lastQuartX !== quartX || this.lastQuartZ !== quartZ) {
-				this.lastValue = this.wrapped.compute(DensityFunction.context(quartX << 2, 0, quartZ << 2, context.cellWidth, context.cellHeight))
+				this.lastValue = this.wrapped.compute(DensityFunction.context(quartX << 2, 0, quartZ << 2))
 				this.lastQuartX = quartX
 				this.lastQuartZ = quartZ
 			}
@@ -298,29 +294,38 @@ export namespace DensityFunction {
 	}
 
 	export class Interpolated extends Wrapper {
-		constructor(wrapped: DensityFunction) {
+		constructor(
+			wrapped: DensityFunction,
+			private readonly cellWidth: number = 4,
+			private readonly cellHeight: number = 4,
+		) {
 			super(wrapped)
 		}
-		public compute({ x: blockX, y: blockY, z: blockZ, cellWidth: w, cellHeight: h }: DensityFunction.Context) {
+		public compute({ x: blockX, y: blockY, z: blockZ }: DensityFunction.Context) {
 			// TODO: optimize by caching
+			const w = this.cellWidth
+			const h = this.cellHeight
 			const x = (blockX % w) / w
 			const y = (blockY % h) / h
 			const z = (blockZ % w) / w
 			const firstX = Math.floor(blockX / w) * w
 			const firstY = Math.floor(blockY / h) * h
 			const firstZ = Math.floor(blockZ / w) * w
-			const noise000 = this.wrapped.compute(DensityFunction.context(firstX, firstY, firstZ, w, h))
-			const noise001 = this.wrapped.compute(DensityFunction.context(firstX, firstY, firstZ + w, w, h))
-			const noise010 = this.wrapped.compute(DensityFunction.context(firstX, firstY + h, firstZ, w, h))
-			const noise011 = this.wrapped.compute(DensityFunction.context(firstX, firstY + h, firstZ + w, w, h))
-			const noise100 = this.wrapped.compute(DensityFunction.context(firstX + w, firstY, firstZ, w, h))
-			const noise101 = this.wrapped.compute(DensityFunction.context(firstX + w, firstY, firstZ + w, w, h))
-			const noise110 = this.wrapped.compute(DensityFunction.context(firstX + w, firstY + h, firstZ, w, h))
-			const noise111 = this.wrapped.compute(DensityFunction.context(firstX + w, firstY + h, firstZ + w, w, h))
+			const noise000 = this.wrapped.compute(DensityFunction.context(firstX, firstY, firstZ))
+			const noise001 = this.wrapped.compute(DensityFunction.context(firstX, firstY, firstZ + w))
+			const noise010 = this.wrapped.compute(DensityFunction.context(firstX, firstY + h, firstZ))
+			const noise011 = this.wrapped.compute(DensityFunction.context(firstX, firstY + h, firstZ + w))
+			const noise100 = this.wrapped.compute(DensityFunction.context(firstX + w, firstY, firstZ))
+			const noise101 = this.wrapped.compute(DensityFunction.context(firstX + w, firstY, firstZ + w))
+			const noise110 = this.wrapped.compute(DensityFunction.context(firstX + w, firstY + h, firstZ))
+			const noise111 = this.wrapped.compute(DensityFunction.context(firstX + w, firstY + h, firstZ + w))
 			return lerp3(x, y, z, noise000, noise100, noise010, noise110, noise001, noise101, noise011, noise111)
 		}
 		public mapAll(visitor: Visitor) {
 			return new Interpolated(this.wrapped.mapAll(visitor))
+		}
+		public withCellSize(cellWidth: number, cellHeight: number) {
+			return new Interpolated(this.wrapped, cellWidth, cellHeight)
 		}
 	}
 
@@ -486,7 +491,7 @@ export namespace DensityFunction {
 			super(noiseData, offsetNoise)
 		}
 		public compute(context: Context) {
-			return super.compute(DensityFunction.context(context.x, 0, context.z, context.cellWidth, context.cellHeight))
+			return super.compute(DensityFunction.context(context.x, 0, context.z))
 		}
 		public withNewNoise(newNoise: NormalNoise) {
 			return new ShiftA(this.noiseData, newNoise)
@@ -501,7 +506,7 @@ export namespace DensityFunction {
 			super(noiseData, offsetNoise)
 		}
 		public compute(context: Context) {
-			return super.compute(DensityFunction.context(context.z, context.x, 0, context.cellWidth, context.cellHeight))
+			return super.compute(DensityFunction.context(context.z, context.x, 0))
 		}
 		public withNewNoise(newNoise: NormalNoise) {
 			return new ShiftB(this.noiseData, newNoise)
