@@ -53,13 +53,14 @@ export namespace DensityFunction {
 
 	const NoiseParser = Holder.parser(WorldgenRegistries.NOISE, NoiseParameters.fromJson)
 
-	export function fromJson(obj: unknown): DensityFunction {
+	export function fromJson(obj: unknown, inputParser: (obj: unknown) => DensityFunction = fromJson): DensityFunction {
 		if (typeof obj === 'string') {
 			return new HolderHolder(Holder.reference(WorldgenRegistries.DENSITY_FUNCTION, Identifier.parse(obj)))
 		}
 		if (typeof obj === 'number') {
 			return new Constant(obj)
 		}
+
 		const root = Json.readObject(obj) ?? {}
 		const type = Json.readString(root.type)?.replace(/^minecraft:/, '')
 		switch (type) {
@@ -67,11 +68,11 @@ export namespace DensityFunction {
 			case 'blend_offset': return Constant.ZERO
 			case 'beardifier': return Constant.ZERO
 			case 'old_blended_noise': return new OldBlendedNoise()
-			case 'flat_cache': return new FlatCache(fromJson(root.argument))
-			case 'interpolated': return new Interpolated(fromJson(root.argument))
-			case 'cache_2d': return new Cache2D(fromJson(root.argument))
-			case 'cache_once': return new CacheOnce(fromJson(root.argument))
-			case 'cache_all_in_cell': return new CacheAllInCell(fromJson(root.argument))
+			case 'flat_cache': return new FlatCache(inputParser(root.argument))
+			case 'interpolated': return new Interpolated(inputParser(root.argument))
+			case 'cache_2d': return new Cache2D(inputParser(root.argument))
+			case 'cache_once': return new CacheOnce(inputParser(root.argument))
+			case 'cache_all_in_cell': return new CacheAllInCell(inputParser(root.argument))
 			case 'noise': return new Noise(
 				Json.readNumber(root.xz_scale) ?? 1,
 				Json.readNumber(root.y_scale) ?? 1,
@@ -79,31 +80,31 @@ export namespace DensityFunction {
 			)
 			case 'end_islands': return new EndIslands()
 			case 'weird_scaled_sampler': return new WeirdScaledSampler(
-				fromJson(root.input),
+				inputParser(root.input),
 				Json.readEnum(root.rarity_value_mapper, RarityValueMapper),
 				NoiseParser(root.noise),
 			)
 			case 'shifted_noise': return new ShiftedNoise(
-				fromJson(root.shift_x),
-				fromJson(root.shift_y),
-				fromJson(root.shift_z),
+				inputParser(root.shift_x),
+				inputParser(root.shift_y),
+				inputParser(root.shift_z),
 				Json.readNumber(root.xz_scale) ?? 1,
 				Json.readNumber(root.y_scale) ?? 1,
 				NoiseParser(root.noise),
 			)
 			case 'range_choice': return new RangeChoice(
-				fromJson(root.input),
+				inputParser(root.input),
 				Json.readNumber(root.min_inclusive) ?? 0,
 				Json.readNumber(root.max_exclusive) ?? 1,
-				fromJson(root.when_in_range),
-				fromJson(root.when_out_of_range),
+				inputParser(root.when_in_range),
+				inputParser(root.when_out_of_range),
 			)
 			case 'shift_a': return new ShiftA(NoiseParser(root.argument))
 			case 'shift_b': return new ShiftB(NoiseParser(root.argument))
 			case 'shift': return new Shift(NoiseParser(root.argument))
-			case 'blend_density': return new BlendDensity(fromJson(root.argument))
+			case 'blend_density': return new BlendDensity(inputParser(root.argument))
 			case 'clamp': return new Clamp(
-				fromJson(root.input),
+				inputParser(root.input),
 				Json.readNumber(root.min) ?? 0,
 				Json.readNumber(root.max) ?? 1,
 			)
@@ -113,25 +114,25 @@ export namespace DensityFunction {
 			case 'half_negative':
 			case 'quarter_negative':
 			case 'squeeze':
-				return new Mapped(type, fromJson(root.argument))
-			case 'slide': return new Slide(fromJson(root.argument))
+				return new Mapped(type, inputParser(root.argument))
+			case 'slide': return new Slide(inputParser(root.argument))
 			case 'add':
 			case 'mul':
 			case 'min':
 			case 'max': return new Ap2(
 				Json.readEnum(type, Ap2Type),
-				fromJson(root.argument1),
-				fromJson(root.argument2),
+				inputParser(root.argument1),
+				inputParser(root.argument2),
 			)
 			case 'spline': return new Spline(
-				CubicSpline.fromJson(root.spline, (obj) => DensityFunction.fromJson(obj)),
+				CubicSpline.fromJson(root.spline, inputParser),
 				Json.readNumber(root.min_value) ?? 0,
 				Json.readNumber(root.max_value) ?? 1,
 			)
 			case 'terrain_shaper_spline': return new TerrainShaperSpline(
-				fromJson(root.continentalness),
-				fromJson(root.erosion),
-				fromJson(root.weirdness),
+				inputParser(root.continentalness),
+				inputParser(root.erosion),
+				inputParser(root.weirdness),
 				Json.readEnum(root.spline, SplineType),
 				Json.readNumber(root.min_value) ?? 0,
 				Json.readNumber(root.max_value) ?? 1,
