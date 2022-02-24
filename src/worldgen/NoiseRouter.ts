@@ -54,7 +54,28 @@ export namespace NoiseRouter {
 		}
 	}
 
-	export function create(simple: SimpleNoiseRouter, settings: NoiseSettings, seed: bigint, legacyRandomSource: boolean = false): NoiseRouter {
+	export function create(router: Partial<SimpleNoiseRouter>): SimpleNoiseRouter {
+		return {
+			barrier: DensityFunction.Constant.ZERO,
+			fluidLevelFloodedness: DensityFunction.Constant.ZERO,
+			fluidLevelSpread: DensityFunction.Constant.ZERO,
+			lava: DensityFunction.Constant.ZERO,
+			temperature: DensityFunction.Constant.ZERO,
+			vegetation: DensityFunction.Constant.ZERO,
+			continents: DensityFunction.Constant.ZERO,
+			erosion: DensityFunction.Constant.ZERO,
+			depth: DensityFunction.Constant.ZERO,
+			ridges: DensityFunction.Constant.ZERO,
+			initialDensityWithoutJaggedness: DensityFunction.Constant.ZERO,
+			finalDensity: DensityFunction.Constant.ZERO,
+			veinToggle: DensityFunction.Constant.ZERO,
+			veinRidged: DensityFunction.Constant.ZERO,
+			veinGap: DensityFunction.Constant.ZERO,
+			...router,
+		}
+	}
+
+	export function withSettings(simple: SimpleNoiseRouter, settings: NoiseSettings, seed: bigint, legacyRandomSource: boolean = false): NoiseRouter {
 		const random = (legacyRandomSource ? new LegacyRandom(seed) : XoroshiroRandom.create(seed)).forkPositional()
 		const visitor = createVisitor(random, settings)
 		return {

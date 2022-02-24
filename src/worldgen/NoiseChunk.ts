@@ -3,9 +3,7 @@ import { BlockPos, ChunkPos } from '../core'
 import { computeIfAbsent } from '../util'
 import type { FluidPicker } from './Aquifer'
 import { Aquifer, NoiseAquifer } from './Aquifer'
-import { Climate } from './biome'
 import type { DensityFunction } from './DensityFunction'
-import type { NoiseGeneratorSettings } from './NoiseGeneratorSettings'
 import { NoiseRouter } from './NoiseRouter'
 import { NoiseSettings } from './NoiseSettings'
 
@@ -29,23 +27,24 @@ export class NoiseChunk {
 		private readonly router: NoiseRouter,
 		public readonly minX: number,
 		public readonly minZ: number,
-		public readonly settings: NoiseGeneratorSettings,
+		public readonly settings: NoiseSettings,
+		aquifersEnabled: boolean,
 		fluidPicker: FluidPicker,
 	) {
-		this.cellWidth = NoiseSettings.cellWidth(settings.noise)
-		this.cellHeight = NoiseSettings.cellHeight(settings.noise)
+		this.cellWidth = NoiseSettings.cellWidth(settings)
+		this.cellHeight = NoiseSettings.cellHeight(settings)
 		this.firstCellX = Math.floor(minX / this.cellWidth)
 		this.firstCellZ = Math.floor(minZ / this.cellWidth)
 		this.firstNoiseX = minX >> 2
 		this.firstNoiseZ = minZ >> 2
 		this.noiseSizeXZ = (cellCountXZ * this.cellWidth) >> 2
 
-		if (!settings.aquifersEnabled || true) { // WIP: Noise aquifers don't work yet
+		if (!aquifersEnabled || true) { // WIP: Noise aquifers don't work yet
 			this.aquifer = Aquifer.createDisabled(fluidPicker)
 		} else {
 			const chunkPos = ChunkPos.fromBlockPos(BlockPos.create(minX, 0, minZ))
-			const minY = cellNoiseMinY * NoiseSettings.cellHeight(settings.noise)
-			const height = cellCountY * NoiseSettings.cellHeight(settings.noise)
+			const minY = cellNoiseMinY * NoiseSettings.cellHeight(settings)
+			const height = cellCountY * NoiseSettings.cellHeight(settings)
 			this.aquifer = new NoiseAquifer(this, chunkPos, router.barrier, router.fluidLevelFloodedness, router.fluidLevelSpread, router.lava, router.aquiferPositionalRandomFactory, minY, height, fluidPicker)
 		}
 		const finalDensity = this.router.finalDensity
@@ -55,17 +54,13 @@ export class NoiseChunk {
 		this.initialDensityWithoutJaggedness = this.router.initialDensityWithoutJaggedness
 	}
 
-	public cachedClimateSampler() {
-		return new Climate.Sampler(this.router.temperature, this.router.vegetation, this.router.continents, this.router.erosion, this.router.depth, this.router.ridges)
-	}
-
 	public getFinalState(x: number, y: number, z: number): BlockState | undefined {
 		return this.materialRule({ x, y, z })
 	}
 
 	public getPreliminarySurfaceLevel(x: number, z: number) {
 		return computeIfAbsent(this.preliminarySurfaceLevel, ChunkPos.asLong(x, z), () => {
-			const level = NoiseRouter.computePreliminarySurfaceLevelScanning(this.settings.noise, this.initialDensityWithoutJaggedness, x << 2, z << 2)
+			const level = NoiseRouter.computePreliminarySurfaceLevelScanning(this.settings, this.initialDensityWithoutJaggedness, x << 2, z << 2)
 			return level
 		})
 	}

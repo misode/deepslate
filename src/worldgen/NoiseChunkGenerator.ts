@@ -22,7 +22,7 @@ export class NoiseChunkGenerator {
 		private readonly biomeSource: BiomeSource,
 		private readonly settings: NoiseGeneratorSettings,
 	) {
-		this.router = NoiseRouter.create(settings.noiseRouter, settings.noise, seed, settings.legacyRandomSource)
+		this.router = NoiseRouter.withSettings(settings.noiseRouter, settings.noise, seed, settings.legacyRandomSource)
 		this.noiseChunkCache = new Map()
 
 		this.surfaceSystem = new SurfaceSystem(settings.surfaceRule, settings.defaultBlock, seed)
@@ -99,7 +99,7 @@ export class NoiseChunkGenerator {
 			const minX = ChunkPos.minBlockX(chunk.pos)
 			const minZ = ChunkPos.minBlockZ(chunk.pos)
 	
-			return new NoiseChunk(cellCountXZ, cellCountY, minCellY, this.router, minX, minZ, this.settings, this.globalFluidPicker)
+			return new NoiseChunk(cellCountXZ, cellCountY, minCellY, this.router, minX, minZ, this.settings.noise, this.settings.aquifersEnabled, this.globalFluidPicker)
 		})
 	}
 }

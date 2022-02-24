@@ -1,6 +1,7 @@
 import { square } from '../../math'
 import { Json } from '../../util'
 import { DensityFunction } from '../DensityFunction'
+import type { NoiseRouter } from '../NoiseRouter'
 
 export namespace Climate {
 	const PARAMETER_SPACE = 7
@@ -128,6 +129,10 @@ export namespace Climate {
 			private readonly depth: DensityFunction,
 			private readonly weirdness: DensityFunction,
 		) {}
+
+		public static fromRouter(router: NoiseRouter) {
+			return new Climate.Sampler(router.temperature, router.vegetation, router.continents, router.erosion, router.depth, router.ridges)
+		}
 
 		sample(x: number, y: number, z: number) {
 			const context = DensityFunction.context(x << 2, y << 2, z << 2)
