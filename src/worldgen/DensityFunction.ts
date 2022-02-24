@@ -1,7 +1,7 @@
 import { Holder, Identifier } from '../core'
 import type { NormalNoise } from '../math'
 import { BlendedNoise, clamp, clampedMap, CubicSpline, lerp3, NoiseParameters, XoroshiroRandom } from '../math'
-import { Json } from '../util'
+import { computeIfAbsent, Json } from '../util'
 import { TerrainShaper } from './biome/TerrainShaper'
 import { NoiseSettings } from './NoiseSettings'
 import { WorldgenRegistries } from './WorldgenRegistries'
@@ -294,15 +294,16 @@ export namespace DensityFunction {
 	}
 
 	export class Interpolated extends Wrapper {
+		private readonly values: Map<string, number>
 		constructor(
 			wrapped: DensityFunction,
 			private readonly cellWidth: number = 4,
 			private readonly cellHeight: number = 4,
 		) {
 			super(wrapped)
+			this.values = new Map()
 		}
 		public compute({ x: blockX, y: blockY, z: blockZ }: DensityFunction.Context) {
-			// TODO: optimize by caching
 			const w = this.cellWidth
 			const h = this.cellHeight
 			const x = (blockX % w) / w
@@ -311,15 +312,20 @@ export namespace DensityFunction {
 			const firstX = Math.floor(blockX / w) * w
 			const firstY = Math.floor(blockY / h) * h
 			const firstZ = Math.floor(blockZ / w) * w
-			const noise000 = this.wrapped.compute(DensityFunction.context(firstX, firstY, firstZ))
-			const noise001 = this.wrapped.compute(DensityFunction.context(firstX, firstY, firstZ + w))
-			const noise010 = this.wrapped.compute(DensityFunction.context(firstX, firstY + h, firstZ))
-			const noise011 = this.wrapped.compute(DensityFunction.context(firstX, firstY + h, firstZ + w))
-			const noise100 = this.wrapped.compute(DensityFunction.context(firstX + w, firstY, firstZ))
-			const noise101 = this.wrapped.compute(DensityFunction.context(firstX + w, firstY, firstZ + w))
-			const noise110 = this.wrapped.compute(DensityFunction.context(firstX + w, firstY + h, firstZ))
-			const noise111 = this.wrapped.compute(DensityFunction.context(firstX + w, firstY + h, firstZ + w))
+			const noise000 = this.computeCorner(firstX, firstY, firstZ)
+			const noise001 = this.computeCorner(firstX, firstY, firstZ + w)
+			const noise010 = this.computeCorner(firstX, firstY + h, firstZ)
+			const noise011 = this.computeCorner(firstX, firstY + h, firstZ + w)
+			const noise100 = this.computeCorner(firstX + w, firstY, firstZ)
+			const noise101 = this.computeCorner(firstX + w, firstY, firstZ + w)
+			const noise110 = this.computeCorner(firstX + w, firstY + h, firstZ)
+			const noise111 = this.computeCorner(firstX + w, firstY + h, firstZ + w)
 			return lerp3(x, y, z, noise000, noise100, noise010, noise110, noise001, noise101, noise011, noise111)
+		}
+		private computeCorner(x: number, y: number, z: number) {
+			return computeIfAbsent(this.values, `${x} ${y} ${z}`, () => {
+				return this.wrapped.compute(DensityFunction.context(x, y, z))
+			})
 		}
 		public mapAll(visitor: Visitor) {
 			return new Interpolated(this.wrapped.mapAll(visitor))
