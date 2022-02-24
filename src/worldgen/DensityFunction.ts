@@ -15,10 +15,6 @@ export abstract class DensityFunction {
 
 	public abstract maxValue(): number
 
-	public fillArray(arr: number[], context: DensityFunction.ContextProvider): void {
-		context.fillAllDirectly(arr, this)
-	}
-
 	public mapAll(visitor: DensityFunction.Visitor): DensityFunction {
 		return visitor(this)
 	}
@@ -33,11 +29,6 @@ export namespace DensityFunction {
 		z(): number
 		cellWidth: number
 		cellHeight: number
-	}
-
-	export interface ContextProvider {
-		forIndex(i: number): Context
-		fillAllDirectly(arr: number[], density: DensityFunction): void
 	}
 
 	export namespace Context {
@@ -67,13 +58,6 @@ export namespace DensityFunction {
 
 		public compute(context: Context): number {
 			return this.transform(context, this.input.compute(context))
-		}
-
-		public fillArray(arr: number[], context: ContextProvider): void {
-			this.input.fillArray(arr, context)
-			for (let i = 0; i < arr.length; i += 1) {
-				arr[i] = this.transform(context.forIndex(i), arr[i])
-			}
 		}
 	}
 
@@ -188,9 +172,6 @@ export namespace DensityFunction {
 		public maxValue() {
 			return this.value
 		}
-		public fillArray(arr: number[]) {
-			return arr.fill(this.value)
-		}
 	}
 
 	export class HolderHolder extends DensityFunction {
@@ -201,9 +182,6 @@ export namespace DensityFunction {
 		}
 		public compute(context: Context): number {
 			return this.holder.value().compute(context)
-		}
-		public fillArray(arr: number[], context: ContextProvider): void {
-			return this.holder.value().fillArray(arr, context)
 		}
 		public mapAll(visitor: Visitor): DensityFunction {
 			return visitor(new HolderHolder(Holder.direct(this.holder.value().mapAll(visitor))))
@@ -294,9 +272,6 @@ export namespace DensityFunction {
 				this.lastBlockZ = blockZ
 			}
 			return this.lastValue
-		}
-		public fillArray(arr: number[], context: ContextProvider) {
-			this.wrapped.fillArray(arr, context)
 		}
 		public mapAll(visitor: Visitor) {
 			return new Cache2D(this.wrapped.mapAll(visitor))
@@ -486,15 +461,6 @@ export namespace DensityFunction {
 			return (this.minInclusive <= x && x < this.maxExclusive)
 				? this.whenInRange.compute(context)
 				: this.whenOutOfRange.compute(context)
-		}
-		public fillArray(arr: number[], context: ContextProvider) {
-			this.input.fillArray(arr, context)
-			for (let i = 0; i < arr.length; i += 1) {
-				const x = arr[i]
-				arr[i] = (this.minInclusive <= x && x < this.maxExclusive)
-					? this.whenInRange.compute(context.forIndex(i))
-					: this.whenOutOfRange.compute(context.forIndex(i))
-			}
 		}
 		public mapAll(visitor: Visitor) {
 			return visitor(new RangeChoice(this.input.mapAll(visitor), this.minInclusive, this.maxExclusive, this.whenInRange.mapAll(visitor), this.whenOutOfRange.mapAll(visitor)))
@@ -701,38 +667,6 @@ export namespace DensityFunction {
 				case 'mul': return a === 0 ? 0 : a * this.argument2.compute(context)
 				case 'min': return a < this.argument2.minValue() ? a : Math.min(a, this.argument2.compute(context))
 				case 'max': return a > this.argument2.maxValue() ? a : Math.max(a, this.argument2.compute(context))
-			}
-		}
-		public fillArray(arr: number[], context: ContextProvider) {
-			this.argument1.fillArray(arr, context)
-			switch (this.type) {
-				case 'add':
-					const arr2 = Array<number>(arr.length)
-					this.argument2.fillArray(arr2, context)
-					for (let i = 0; i < arr2.length; i += 1) {
-						arr[i] += arr2[i]
-					}
-					break
-				case 'mul':
-					for (let i = 0; i < arr.length; i += 1) {
-						const a = arr[i]
-						arr[i] = a === 0 ? 0 : a * this.argument2.compute(context.forIndex(i))
-					}
-					break
-				case 'min':
-					const min = this.argument2.minValue()
-					for (let i = 0; i < arr.length; i += 1) {
-						const a = arr[i]
-						arr[i] = a < min ? a : Math.min(a, this.argument2.compute(context.forIndex(i)))
-					}
-					break
-				case 'max':
-					const max = this.argument2.maxValue()
-					for (let i = 0; i < arr.length; i += 1) {
-						const a = arr[i]
-						arr[i] = a > max ? a : Math.max(a, this.argument2.compute(context.forIndex(i)))
-					}
-					break
 			}
 		}
 		public mapAll(visitor: Visitor) {

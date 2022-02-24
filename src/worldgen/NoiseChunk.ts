@@ -21,7 +21,6 @@ export class NoiseChunk implements DensityFunction.Context {
 	private readonly aquifer: Aquifer
 	private readonly materialRule: MaterialRule
 	private readonly initialDensityWithoutJaggedness: DensityFunction
-	private readonly sliceFillingContextProvider: DensityFunction.ContextProvider
 
 	private cellStartBlockX: number = 0
 	private cellStartBlockY: number = 0
@@ -61,20 +60,6 @@ export class NoiseChunk implements DensityFunction.Context {
 			(context) => this.aquifer.compute(context, finalDensity.compute(context)),
 		])
 		this.initialDensityWithoutJaggedness = this.router.initialDensityWithoutJaggedness
-		this.sliceFillingContextProvider = {
-			forIndex: (i: number) => {
-				this.cellStartBlockY = (i + this.cellNoiseMinY) * this.cellHeight
-				this.inCellY = 0
-				return this
-			},
-			fillAllDirectly: (arr: number[], fn: DensityFunction) => {
-				for (let i = 0; i < this.cellCountY + 1; i += 1) {
-					this.cellStartBlockY = (i + this.cellNoiseMinY) * this.cellHeight
-					this.inCellY = 0
-					arr[i + 1] = fn.compute(this)
-				}
-			},
-		}
 	}
 
 	public cachedClimateSampler() {
