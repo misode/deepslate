@@ -230,7 +230,7 @@ export namespace DensityFunction {
 			return this.lastValue
 		}
 		public mapAll(visitor: Visitor) {
-			return new FlatCache(this.wrapped.mapAll(visitor))
+			return visitor(new FlatCache(this.wrapped.mapAll(visitor)))
 		}
 	}
 
@@ -242,7 +242,7 @@ export namespace DensityFunction {
 			return this.wrapped.compute(context)
 		}
 		public mapAll(visitor: Visitor) {
-			return new CacheAllInCell(this.wrapped.mapAll(visitor))
+			return visitor(new CacheAllInCell(this.wrapped.mapAll(visitor)))
 		}
 	}
 
@@ -264,7 +264,7 @@ export namespace DensityFunction {
 			return this.lastValue
 		}
 		public mapAll(visitor: Visitor) {
-			return new Cache2D(this.wrapped.mapAll(visitor))
+			return visitor(new Cache2D(this.wrapped.mapAll(visitor)))
 		}
 	}
 
@@ -289,7 +289,7 @@ export namespace DensityFunction {
 			return this.lastValue
 		}
 		public mapAll(visitor: Visitor) {
-			return new CacheOnce(this.wrapped.mapAll(visitor))
+			return visitor(new CacheOnce(this.wrapped.mapAll(visitor)))
 		}
 	}
 
@@ -328,7 +328,7 @@ export namespace DensityFunction {
 			})
 		}
 		public mapAll(visitor: Visitor) {
-			return new Interpolated(this.wrapped.mapAll(visitor))
+			return visitor(new Interpolated(this.wrapped.mapAll(visitor)))
 		}
 		public withCellSize(cellWidth: number, cellHeight: number) {
 			return new Interpolated(this.wrapped, cellWidth, cellHeight)
@@ -561,6 +561,9 @@ export namespace DensityFunction {
 		}
 		public transform(context: Context, density: number) {
 			return clamp(density, this.min, this.max)
+		}
+		public mapAll(visitor: Visitor): DensityFunction {
+			return visitor(new Clamp(this.input.mapAll(visitor), this.min, this.max))
 		}
 		public minValue() {
 			return this.min
