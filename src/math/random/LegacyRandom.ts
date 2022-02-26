@@ -21,7 +21,7 @@ export class LegacyRandom implements Random {
 	}
 
 	public forkPositional() {
-		return new LegacyPositionalRandom(this.seed)
+		return new LegacyPositionalRandom(this.nextLong())
 	}
 
 	public setSeed(seed: bigint) {

@@ -1,11 +1,11 @@
 import { expect } from 'chai'
-import { BlockState, Chunk, ChunkPos } from '../../src/core'
+import { BlockState, Chunk, ChunkPos, Identifier } from '../../src/core'
 import type { NoiseGeneratorSettings, NoiseSettings, SimpleNoiseRouter } from '../../src/worldgen'
 import { DensityFunction as DF, FixedBiome, NoiseChunkGenerator, NoiseRouter, Noises, SurfaceRule, TerrainShaper } from '../../src/worldgen'
 
 describe('NoiseChunkGenerator', () => {
 	const setup = (seed: bigint, generatorSettings: Partial<NoiseGeneratorSettings> = {}, noiseSettings: Partial<NoiseSettings>, router: Partial<SimpleNoiseRouter>) => {
-		const biomeSource = new FixedBiome('minecraft:plains')
+		const biomeSource = new FixedBiome(Identifier.create('plains'))
 		const settings: NoiseGeneratorSettings = {
 			defaultBlock: BlockState.STONE,
 			defaultFluid: BlockState.WATER,
@@ -38,7 +38,7 @@ describe('NoiseChunkGenerator', () => {
 		const { generator } = setup(BigInt(123), {}, {}, { finalDensity })
 		const chunk = new Chunk(0, 64, ChunkPos.create(4, 1))
 		generator.fill(chunk)
-		expect(printSlice(chunk)).equal('XXXXXXXXXXXXXXXX|XXXXXXX.XXXXXXXX|........XXXXXXXX|.......XXXXXXXXX|.......XXXXXXXXX|...........XXXXX|............XXXX|..............XX|............XXXX|....X.......XXXX|X..XXX.......XXX|XXXXXX......XXXX|XXXXXX....XXXXXX|XXXXX.....XXXXXX|XXXXXX.......XXX|XXXXXXX.......XX|XXXXXXXX......XX|XXXXXXXXX...XXX.|XXXXX......XXXX.|XX.......X.XXXX.|XX........XXXXXX|XX........X.XXXX|X.........X.....|................|................|X...............|X...............|X.X...XXX.......|..XX.XXXXX......|....XXXXXXX.....|....XXXXXXX....X|...XXXXXXX...XXX|XXXXXXXX.....XXX|..XXX.XXXXXXXXXX|...XXXXXXXXXXXXX|...XXX..XXXXXXXX|...XX...X..XXXXX|...XXX.....XXXXX|............XXXX|.....X......XXXX|......XX.......X|......XX......XX|.....XXX....XXXX|....XXXX...XXXXX|..XXXXXXXXXXXXXX|..X.XXXXXXXXXXXX|.......XXXXXXXXX|XXXX....XX.XXXXX|.XX..........X..|XXX.............|.XXX.........X..|.XX.....XX.XXX..|X.X.....XXXXXXXX|XXX.....X..XXXXX|XXX.....X.XXXX.X|XXXXXXX....XXX..|XXXXXXX....X....|XXXXXX.....XX...|XXXX.......XX..X|XXXX......XXXXXX|.........XXXXXXX|.........XXXXXXX|.........XXXXXXX|.........XXXXXXX')
+		expect(printSlice(chunk)).equal('XXXX.......XXXXX|.XXXX......XXXXX|.XXX.......XXXX.|..XX........XXX.|............XXX.|............XX..|............XXXX|XX..........XXXX|XX....X.......XX|XXX.XX..........|XXXXX...........|XXXXX..........X|..XXXXXXX......X|...XXXXXXX......|...XXXXXXX......|.....XXXXX......|......XXXXXXX...|XX.....XXXXXX...|XXX....XXXXXX...|XX......XXXX....|.........XXX....|................|................|..XXXXXXX.......|..XXXXXXX.......|..XXXXXXX.......|...XXXXXX.......|.....XXXX.......|...XXXX.........|....XXX.........|....XXXX........|XXXXXXXX........|XXXXXXXX........|XXXXXXXX........|XXXXXXXX...X....|XXXXXXXX..XX....|XXXXXXXXX.......|XXXXXXXX........|...XXXXXX.......|....XXXXXXX.....|....XXXXXXXXX...|.....XXXXXXXXX..|.....XXXXXXXX...|X....XXXXXX.....|X.....XXXX......|XX.....XX.......|XX...........XXX|XX........XXXXXX|XXX......XXXXXXX|..XX...XXXXXXXXX|.XX.....XXXXXXXX|XXX.....XXXXXXX.|XXX.....XXXXX...|.XX.....XXXX....|XXXX....XXXX....|XXXXXXX..XXX....|.XXXXXX..X......|.XXXXX..........|..XXX.........XX|..XXX........XXX|..XXX.......XXXX|..XX.........XXX|..XXX.....X.....|...XXX....X.....')
 	})
 })
 
