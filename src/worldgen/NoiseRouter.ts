@@ -86,42 +86,56 @@ export namespace NoiseRouter {
 	}
 
 	export function createVisitor(random: PositionalRandom, settings: NoiseSettings): DensityFunction.Visitor {
-		return (fn) => {
-			if (fn instanceof DensityFunction.HolderHolder) {
-				return fn.holder.value()
+		return new class implements DensityFunction.Visitor {
+			private readonly mapped: Map<string, DensityFunction> = new Map()
+
+			apply(fn: DensityFunction): DensityFunction {
+				if (fn instanceof DensityFunction.HolderHolder) {
+					const key = fn.holder.key()
+					if (key !== undefined && this.mapped.has(key.toString())) {
+						return this.mapped.get(key.toString())!
+					} else {
+						const value = fn.holder.value().mapAll(this)
+						if (key !== undefined) {
+							this.mapped.set(key.toString(), value)
+						}
+						return value
+					}
+				}
+				if (fn instanceof DensityFunction.Interpolated) {
+					return fn.withCellSize(NoiseSettings.cellWidth(settings), NoiseSettings.cellHeight(settings))
+				}
+				if (fn instanceof DensityFunction.Noise) {
+					return new DensityFunction.Noise(fn.xzScale, fn.yScale, fn.noiseData, Noises.instantiate(random, fn.noiseData))
+				}
+				if (fn instanceof DensityFunction.ShiftNoise) {
+					return fn.withNewNoise(Noises.instantiate(random, fn.noiseData))
+				}
+				if (fn instanceof DensityFunction.ShiftedNoise) {
+					const noise = Noises.instantiate(random, fn.noiseData)
+					return new DensityFunction.ShiftedNoise(fn.shiftX, fn.shiftY, fn.shiftZ, fn.xzScale, fn.yScale, fn.noiseData, noise)
+				}
+				if (fn instanceof DensityFunction.WeirdScaledSampler) {
+					return new DensityFunction.WeirdScaledSampler(fn.input, fn.rarityValueMapper, fn.noiseData, Noises.instantiate(random, fn.noiseData))
+				}
+				if (fn instanceof DensityFunction.OldBlendedNoise) {
+					return new DensityFunction.OldBlendedNoise(new BlendedNoise(random.fromHashOf(Identifier.create('terrain').toString()), settings.sampling, NoiseSettings.cellWidth(settings), NoiseSettings.cellHeight(settings)))
+				}
+				if (fn instanceof DensityFunction.Mapped) {
+					return fn.withMinMax()
+				}
+				if (fn instanceof DensityFunction.Ap2) {
+					return fn.withMinMax()
+				}
+				if (fn instanceof DensityFunction.TerrainShaperSpline) {
+					return new DensityFunction.TerrainShaperSpline(fn.continentalness, fn.erosion, fn.weirdness, fn.spline, fn.min, fn.max, settings.terrainShaper)
+				}
+				if (fn instanceof DensityFunction.Slide) {
+					return new DensityFunction.Slide(fn.input, settings)
+				}
+				return fn
 			}
-			if (fn instanceof DensityFunction.Interpolated) {
-				return fn.withCellSize(NoiseSettings.cellWidth(settings), NoiseSettings.cellHeight(settings))
-			}
-			if (fn instanceof DensityFunction.Noise) {
-				return new DensityFunction.Noise(fn.xzScale, fn.yScale, fn.noiseData, Noises.instantiate(random, fn.noiseData))
-			}
-			if (fn instanceof DensityFunction.ShiftNoise) {
-				return fn.withNewNoise(Noises.instantiate(random, fn.noiseData))
-			}
-			if (fn instanceof DensityFunction.ShiftedNoise) {
-				const noise = Noises.instantiate(random, fn.noiseData)
-				return new DensityFunction.ShiftedNoise(fn.shiftX, fn.shiftY, fn.shiftZ, fn.xzScale, fn.yScale, fn.noiseData, noise)
-			}
-			if (fn instanceof DensityFunction.WeirdScaledSampler) {
-				return new DensityFunction.WeirdScaledSampler(fn.input, fn.rarityValueMapper, fn.noiseData, Noises.instantiate(random, fn.noiseData))
-			}
-			if (fn instanceof DensityFunction.OldBlendedNoise) {
-				return new DensityFunction.OldBlendedNoise(new BlendedNoise(random.fromHashOf(Identifier.create('terrain').toString()), settings.sampling, NoiseSettings.cellWidth(settings), NoiseSettings.cellHeight(settings)))
-			}
-			if (fn instanceof DensityFunction.Mapped){
-				return fn.withMinMax()
-			}
-			if (fn instanceof DensityFunction.Ap2) {
-				return fn.withMinMax()
-			}
-			if (fn instanceof DensityFunction.TerrainShaperSpline) {
-				return new DensityFunction.TerrainShaperSpline(fn.continentalness, fn.erosion, fn.weirdness, fn.spline, fn.min, fn.max, settings.terrainShaper)
-			}
-			if (fn instanceof DensityFunction.Slide) {
-				return new DensityFunction.Slide(fn.input, settings)
-			}
-			return fn
+
 		}
 	}
 
@@ -149,7 +163,7 @@ export namespace NoiseRouter {
 		const maxCellY = NoiseSettings.minCellY(settings) + NoiseSettings.cellCountY(settings)
 		const minCellY = NoiseSettings.minCellY(settings)
 		const cellHeight = NoiseSettings.cellHeight(settings)
-		for (let yCell = maxCellY; yCell >=  minCellY; yCell -= 1) {
+		for (let yCell = maxCellY; yCell >= minCellY; yCell -= 1) {
 			const y = yCell * cellHeight
 			const clamped = clamp(initialDensity.compute(DensityFunction.context(x, y, z)), -64, 64)
 			const density = NoiseSettings.applySlides(settings, clamped, y)
