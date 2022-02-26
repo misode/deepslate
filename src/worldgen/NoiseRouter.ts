@@ -77,85 +77,87 @@ export namespace NoiseRouter {
 
 	export function withSettings(simple: SimpleNoiseRouter, settings: NoiseSettings, seed: bigint, legacyRandomSource: boolean = false): NoiseRouter {
 		const random = (legacyRandomSource ? new LegacyRandom(seed) : XoroshiroRandom.create(seed)).forkPositional()
-		const visitor = createVisitor(random, settings)
+		const visitor = new Visitor(random, settings)
 		return {
-			...mapAll(simple, visitor),
+			...visitor.mapAll(simple),
 			aquiferPositionalRandomFactory: random.fromHashOf(Identifier.create('aquifer').toString()).forkPositional(),
 			oreVeinsPositionalRandomFactory: random.fromHashOf(Identifier.create('ore').toString()).forkPositional(),
 		}
 	}
 
-	export function createVisitor(random: PositionalRandom, settings: NoiseSettings): DensityFunction.Visitor {
-		return new class implements DensityFunction.Visitor {
-			private readonly mapped: Map<string, DensityFunction> = new Map()
+	export class Visitor implements DensityFunction.Visitor {
+		private readonly mapped: Map<string, DensityFunction> = new Map()
 
-			apply(fn: DensityFunction): DensityFunction {
-				if (fn instanceof DensityFunction.HolderHolder) {
-					const key = fn.holder.key()
-					if (key !== undefined && this.mapped.has(key.toString())) {
-						return this.mapped.get(key.toString())!
-					} else {
-						const value = fn.holder.value().mapAll(this)
-						if (key !== undefined) {
-							this.mapped.set(key.toString(), value)
-						}
-						return value
+		constructor(
+			private readonly random: PositionalRandom,
+			private readonly settings: NoiseSettings,
+		) {}
+
+		public apply(fn: DensityFunction): DensityFunction {
+			if (fn instanceof DensityFunction.HolderHolder) {
+				const key = fn.holder.key()
+				if (key !== undefined && this.mapped.has(key.toString())) {
+					return this.mapped.get(key.toString())!
+				} else {
+					const value = fn.holder.value().mapAll(this)
+					if (key !== undefined) {
+						this.mapped.set(key.toString(), value)
 					}
+					return value
 				}
-				if (fn instanceof DensityFunction.Interpolated) {
-					return fn.withCellSize(NoiseSettings.cellWidth(settings), NoiseSettings.cellHeight(settings))
-				}
-				if (fn instanceof DensityFunction.Noise) {
-					return new DensityFunction.Noise(fn.xzScale, fn.yScale, fn.noiseData, Noises.instantiate(random, fn.noiseData))
-				}
-				if (fn instanceof DensityFunction.ShiftNoise) {
-					return fn.withNewNoise(Noises.instantiate(random, fn.noiseData))
-				}
-				if (fn instanceof DensityFunction.ShiftedNoise) {
-					const noise = Noises.instantiate(random, fn.noiseData)
-					return new DensityFunction.ShiftedNoise(fn.shiftX, fn.shiftY, fn.shiftZ, fn.xzScale, fn.yScale, fn.noiseData, noise)
-				}
-				if (fn instanceof DensityFunction.WeirdScaledSampler) {
-					return new DensityFunction.WeirdScaledSampler(fn.input, fn.rarityValueMapper, fn.noiseData, Noises.instantiate(random, fn.noiseData))
-				}
-				if (fn instanceof DensityFunction.OldBlendedNoise) {
-					return new DensityFunction.OldBlendedNoise(new BlendedNoise(random.fromHashOf(Identifier.create('terrain').toString()), settings.sampling, NoiseSettings.cellWidth(settings), NoiseSettings.cellHeight(settings)))
-				}
-				if (fn instanceof DensityFunction.Mapped) {
-					return fn.withMinMax()
-				}
-				if (fn instanceof DensityFunction.Ap2) {
-					return fn.withMinMax()
-				}
-				if (fn instanceof DensityFunction.TerrainShaperSpline) {
-					return new DensityFunction.TerrainShaperSpline(fn.continentalness, fn.erosion, fn.weirdness, fn.spline, fn.min, fn.max, settings.terrainShaper)
-				}
-				if (fn instanceof DensityFunction.Slide) {
-					return new DensityFunction.Slide(fn.input, settings)
-				}
-				return fn
 			}
-
+			if (fn instanceof DensityFunction.Interpolated) {
+				return fn.withCellSize(NoiseSettings.cellWidth(this.settings), NoiseSettings.cellHeight(this.settings))
+			}
+			if (fn instanceof DensityFunction.Noise) {
+				return new DensityFunction.Noise(fn.xzScale, fn.yScale, fn.noiseData, Noises.instantiate(this.random, fn.noiseData))
+			}
+			if (fn instanceof DensityFunction.ShiftNoise) {
+				return fn.withNewNoise(Noises.instantiate(this.random, fn.noiseData))
+			}
+			if (fn instanceof DensityFunction.ShiftedNoise) {
+				const noise = Noises.instantiate(this.random, fn.noiseData)
+				return new DensityFunction.ShiftedNoise(fn.shiftX, fn.shiftY, fn.shiftZ, fn.xzScale, fn.yScale, fn.noiseData, noise)
+			}
+			if (fn instanceof DensityFunction.WeirdScaledSampler) {
+				return new DensityFunction.WeirdScaledSampler(fn.input, fn.rarityValueMapper, fn.noiseData, Noises.instantiate(this.random, fn.noiseData))
+			}
+			if (fn instanceof DensityFunction.OldBlendedNoise) {
+				return new DensityFunction.OldBlendedNoise(new BlendedNoise(this.random.fromHashOf(Identifier.create('terrain').toString()), this.settings.sampling, NoiseSettings.cellWidth(this.settings), NoiseSettings.cellHeight(this.settings)))
+			}
+			if (fn instanceof DensityFunction.Mapped) {
+				return fn.withMinMax()
+			}
+			if (fn instanceof DensityFunction.Ap2) {
+				return fn.withMinMax()
+			}
+			if (fn instanceof DensityFunction.TerrainShaperSpline) {
+				return new DensityFunction.TerrainShaperSpline(fn.continentalness, fn.erosion, fn.weirdness, fn.spline, fn.min, fn.max, this.settings.terrainShaper)
+			}
+			if (fn instanceof DensityFunction.Slide) {
+				return new DensityFunction.Slide(fn.input, this.settings)
+			}
+			return fn
 		}
-	}
 
-	export function mapAll(router: SimpleNoiseRouter, visitor: DensityFunction.Visitor): SimpleNoiseRouter {
-		return {
-			barrier: router.barrier.mapAll(visitor),
-			fluidLevelFloodedness: router.fluidLevelFloodedness.mapAll(visitor),
-			fluidLevelSpread: router.fluidLevelSpread.mapAll(visitor),
-			lava: router.lava.mapAll(visitor),
-			temperature: router.temperature.mapAll(visitor),
-			vegetation: router.vegetation.mapAll(visitor),
-			continents: router.continents.mapAll(visitor),
-			erosion: router.erosion.mapAll(visitor),
-			depth: router.depth.mapAll(visitor),
-			ridges: router.ridges.mapAll(visitor),
-			initialDensityWithoutJaggedness: router.initialDensityWithoutJaggedness.mapAll(visitor),
-			finalDensity: router.finalDensity.mapAll(visitor),
-			veinToggle: router.veinToggle.mapAll(visitor),
-			veinRidged: router.veinRidged.mapAll(visitor),
-			veinGap: router.veinGap.mapAll(visitor),
+		public mapAll(router: SimpleNoiseRouter): SimpleNoiseRouter {
+			return {
+				barrier: router.barrier.mapAll(this),
+				fluidLevelFloodedness: router.fluidLevelFloodedness.mapAll(this),
+				fluidLevelSpread: router.fluidLevelSpread.mapAll(this),
+				lava: router.lava.mapAll(this),
+				temperature: router.temperature.mapAll(this),
+				vegetation: router.vegetation.mapAll(this),
+				continents: router.continents.mapAll(this),
+				erosion: router.erosion.mapAll(this),
+				depth: router.depth.mapAll(this),
+				ridges: router.ridges.mapAll(this),
+				initialDensityWithoutJaggedness: router.initialDensityWithoutJaggedness.mapAll(this),
+				finalDensity: router.finalDensity.mapAll(this),
+				veinToggle: router.veinToggle.mapAll(this),
+				veinRidged: router.veinRidged.mapAll(this),
+				veinGap: router.veinGap.mapAll(this),
+			}
 		}
 	}
 
