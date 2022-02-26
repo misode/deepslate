@@ -176,9 +176,6 @@ export namespace DensityFunction {
 		public compute(context: Context): number {
 			return this.holder.value().compute(context)
 		}
-		public mapAll(visitor: Visitor): DensityFunction {
-			return visitor.apply(new HolderHolder(Holder.direct(this.holder.value().mapAll(visitor))))
-		}
 		public minValue(): number {
 			return this.holder.value().minValue()
 		}

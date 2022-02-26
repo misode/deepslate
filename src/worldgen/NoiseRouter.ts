@@ -86,22 +86,21 @@ export namespace NoiseRouter {
 	}
 
 	export function createVisitor(random: PositionalRandom, settings: NoiseSettings): DensityFunction.Visitor {
-		return new class implements DensityFunction.Visitor{
-			private readonly mapped: Map<DensityFunction, DensityFunction> = new Map()
+		return new class implements DensityFunction.Visitor {
+			private readonly mapped: Map<string, DensityFunction> = new Map()
 
-			apply (fn: DensityFunction): DensityFunction{
-				if (this.mapped.has(fn)){
-					return this.mapped.get(fn)!
-				} else {
-					const mapped = this.mapNew(fn)
-					this.mapped.set(fn, mapped)
-					return mapped
-				}
-			}
-
-			private mapNew(fn: DensityFunction): DensityFunction{
+			apply(fn: DensityFunction): DensityFunction {
 				if (fn instanceof DensityFunction.HolderHolder) {
-					return fn.holder.value()
+					const key = fn.holder.key()
+					if (key !== undefined && this.mapped.has(key.toString())) {
+						return this.mapped.get(key.toString())!
+					} else {
+						const value = fn.holder.value().mapAll(this)
+						if (key !== undefined) {
+							this.mapped.set(key.toString(), value)
+						}
+						return value
+					}
 				}
 				if (fn instanceof DensityFunction.Interpolated) {
 					return fn.withCellSize(NoiseSettings.cellWidth(settings), NoiseSettings.cellHeight(settings))
@@ -122,7 +121,7 @@ export namespace NoiseRouter {
 				if (fn instanceof DensityFunction.OldBlendedNoise) {
 					return new DensityFunction.OldBlendedNoise(new BlendedNoise(random.fromHashOf(Identifier.create('terrain').toString()), settings.sampling, NoiseSettings.cellWidth(settings), NoiseSettings.cellHeight(settings)))
 				}
-				if (fn instanceof DensityFunction.Mapped){
+				if (fn instanceof DensityFunction.Mapped) {
 					return fn.withMinMax()
 				}
 				if (fn instanceof DensityFunction.Ap2) {
@@ -134,10 +133,10 @@ export namespace NoiseRouter {
 				if (fn instanceof DensityFunction.Slide) {
 					return new DensityFunction.Slide(fn.input, settings)
 				}
-				return fn				
+				return fn
 			}
 
-		} 
+		}
 	}
 
 	export function mapAll(router: SimpleNoiseRouter, visitor: DensityFunction.Visitor): SimpleNoiseRouter {
@@ -164,7 +163,7 @@ export namespace NoiseRouter {
 		const maxCellY = NoiseSettings.minCellY(settings) + NoiseSettings.cellCountY(settings)
 		const minCellY = NoiseSettings.minCellY(settings)
 		const cellHeight = NoiseSettings.cellHeight(settings)
-		for (let yCell = maxCellY; yCell >=  minCellY; yCell -= 1) {
+		for (let yCell = maxCellY; yCell >= minCellY; yCell -= 1) {
 			const y = yCell * cellHeight
 			const clamped = clamp(initialDensity.compute(DensityFunction.context(x, y, z)), -64, 64)
 			const density = NoiseSettings.applySlides(settings, clamped, y)
