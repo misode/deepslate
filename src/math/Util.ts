@@ -18,6 +18,20 @@ export function lerp3(a: number, b: number, c: number, d: number, e: number, f: 
 	return lerp(c, lerp2(a, b, d, e, f, g), lerp2(a, b, h, i, j, k))
 }
 
+export function lazyLerp(a: number, b: () => number, c: () => number): number {
+	if (a === 0) return b()
+	if (a === 1) return c()
+	return b() + a * (c() - b())
+}
+
+export function lazyLerp2(a: number, b: number, c: () => number, d: () => number, e: () => number, f: () => number): number {
+	return lazyLerp(b, () => lazyLerp(a, c, d), ()=>lazyLerp(a, e, f))
+}
+
+export function lazyLerp3(a: number, b: number, c: number, d: () => number, e: () => number, f: () => number, g: () => number, h: () => number, i: () => number, j: () => number, k: () => number) {
+	return lazyLerp(c, () => lazyLerp2(a, b, d, e, f, g), () => lazyLerp2(a, b, h, i, j, k))
+}
+
 export function clampedLerp(a: number, b: number, c: number): number {
 	if (c < 0) {
 		return a

@@ -109,6 +109,9 @@ export namespace NoiseRouter {
 			if (fn instanceof DensityFunction.OldBlendedNoise) {
 				return new DensityFunction.OldBlendedNoise(new BlendedNoise(random.fromHashOf(Identifier.create('terrain').toString()), settings.sampling, NoiseSettings.cellWidth(settings), NoiseSettings.cellHeight(settings)))
 			}
+			if (fn instanceof DensityFunction.Mapped){
+				return fn.withMinMax()
+			}
 			if (fn instanceof DensityFunction.Ap2) {
 				return fn.withMinMax()
 			}

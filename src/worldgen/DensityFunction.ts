@@ -1,6 +1,6 @@
 import { Holder, Identifier } from '../core'
 import type { NormalNoise } from '../math'
-import { BlendedNoise, clamp, clampedMap, CubicSpline, lerp3, NoiseParameters, XoroshiroRandom } from '../math'
+import { BlendedNoise, clamp, clampedMap, CubicSpline, lazyLerp3, NoiseParameters, XoroshiroRandom } from '../math'
 import { computeIfAbsent, Json } from '../util'
 import { TerrainShaper } from './biome/TerrainShaper'
 import { NoiseSettings } from './NoiseSettings'
@@ -64,9 +64,9 @@ export namespace DensityFunction {
 		const root = Json.readObject(obj) ?? {}
 		const type = Json.readString(root.type)?.replace(/^minecraft:/, '')
 		switch (type) {
-			case 'blend_alpha': return Constant.ONE
-			case 'blend_offset': return Constant.ZERO
-			case 'beardifier': return Constant.ZERO
+			case 'blend_alpha': return new ConstantMinMax(1, 0, 1)
+			case 'blend_offset': return new ConstantMinMax(0, -Infinity, Infinity)
+			case 'beardifier': return new ConstantMinMax(0, -Infinity, Infinity)
 			case 'old_blended_noise': return new OldBlendedNoise()
 			case 'flat_cache': return new FlatCache(inputParser(root.argument))
 			case 'interpolated': return new Interpolated(inputParser(root.argument))
@@ -182,6 +182,24 @@ export namespace DensityFunction {
 		}
 		public maxValue(): number {
 			return this.holder.value().maxValue()
+		}
+	}
+
+	export class ConstantMinMax extends DensityFunction.Constant {
+		constructor(
+			value: number,
+			private readonly min: number,
+			private readonly max: number
+		){
+			super(value)
+		}
+
+		public minValue() {
+			return this.min
+		}
+
+		public maxValue() {
+			return this.max
 		}
 	}
 
@@ -307,21 +325,21 @@ export namespace DensityFunction {
 		public compute({ x: blockX, y: blockY, z: blockZ }: DensityFunction.Context) {
 			const w = this.cellWidth
 			const h = this.cellHeight
-			const x = (blockX % w) / w
-			const y = (blockY % h) / h
-			const z = (blockZ % w) / w
+			const x = ((blockX % w + w) % w) / w
+			const y = ((blockY % h + h) % h) / h
+			const z = ((blockZ % w + w) % w) / w
 			const firstX = Math.floor(blockX / w) * w
 			const firstY = Math.floor(blockY / h) * h
 			const firstZ = Math.floor(blockZ / w) * w
-			const noise000 = this.computeCorner(firstX, firstY, firstZ)
-			const noise001 = this.computeCorner(firstX, firstY, firstZ + w)
-			const noise010 = this.computeCorner(firstX, firstY + h, firstZ)
-			const noise011 = this.computeCorner(firstX, firstY + h, firstZ + w)
-			const noise100 = this.computeCorner(firstX + w, firstY, firstZ)
-			const noise101 = this.computeCorner(firstX + w, firstY, firstZ + w)
-			const noise110 = this.computeCorner(firstX + w, firstY + h, firstZ)
-			const noise111 = this.computeCorner(firstX + w, firstY + h, firstZ + w)
-			return lerp3(x, y, z, noise000, noise100, noise010, noise110, noise001, noise101, noise011, noise111)
+			const noise000 = () => this.computeCorner(firstX, firstY, firstZ)
+			const noise001 = () => this.computeCorner(firstX, firstY, firstZ + w)
+			const noise010 = () => this.computeCorner(firstX, firstY + h, firstZ)
+			const noise011 = () => this.computeCorner(firstX, firstY + h, firstZ + w)
+			const noise100 = () => this.computeCorner(firstX + w, firstY, firstZ)
+			const noise101 = () => this.computeCorner(firstX + w, firstY, firstZ + w)
+			const noise110 = () => this.computeCorner(firstX + w, firstY + h, firstZ)
+			const noise111 = () => this.computeCorner(firstX + w, firstY + h, firstZ + w)
+			return lazyLerp3(x, y, z, noise000, noise100, noise010, noise110, noise001, noise101, noise011, noise111)
 		}
 		private computeCorner(x: number, y: number, z: number) {
 			return computeIfAbsent(this.values, `${x} ${y} ${z}`, () => {
@@ -467,7 +485,7 @@ export namespace DensityFunction {
 			return visitor(new RangeChoice(this.input.mapAll(visitor), this.minInclusive, this.maxExclusive, this.whenInRange.mapAll(visitor), this.whenOutOfRange.mapAll(visitor)))
 		}
 		public minValue() {
-			return Math.min(this.whenInRange.minValue(), this.whenOutOfRange.maxValue())
+			return Math.min(this.whenInRange.minValue(), this.whenOutOfRange.minValue())
 		}
 		public maxValue() {
 			return Math.max(this.whenInRange.maxValue(), this.whenOutOfRange.maxValue())
@@ -528,7 +546,7 @@ export namespace DensityFunction {
 			super(noiseData, offsetNoise)
 		}
 		public withNewNoise(newNoise: NormalNoise) {
-			return new ShiftB(this.noiseData, newNoise)
+			return new Shift(this.noiseData, newNoise)
 		}
 	}
 
@@ -590,7 +608,7 @@ export namespace DensityFunction {
 		}
 		private readonly transformer: (density: number) => number
 		constructor(
-			private readonly type: typeof MappedType[number],
+			public readonly type: typeof MappedType[number],
 			input: DensityFunction,
 			private readonly min?: number,
 			private readonly max?: number,
@@ -697,12 +715,12 @@ export namespace DensityFunction {
 					max = max1 + max2
 					break
 				case 'mul':
-					min = min1 > 0 && min2 > 0 ? min1 * min2
-						: max1 < 0 && max2 < 0 ? max1 * max2
-							: Math.min(min1 * max2, min2 * max1)
-					max = min1 > 0 && min2 > 0 ? max1 * max2
-						: max1 < 0 && max2 < 0 ? min1 * min2
-							: Math.max(min1 * min2, max1 * max2)
+					min = min1 > 0 && min2 > 0 ? (min1 * min2) || 0
+						: max1 < 0 && max2 < 0 ? (max1 * max2) || 0
+							: Math.min((min1 * max2) || 0, (min2 * max1) || 0)
+					max = min1 > 0 && min2 > 0 ? (max1 * max2) || 0
+						: max1 < 0 && max2 < 0 ? (min1 * min2) || 0
+							: Math.max((min1 * min2) || 0, (max1 * max2) || 0)
 					break
 				case 'min':
 					min = Math.min(min1, min2)
