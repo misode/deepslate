@@ -93,7 +93,7 @@ export namespace NoiseRouter {
 			private readonly settings: NoiseSettings,
 		) {}
 
-		public apply(fn: DensityFunction): DensityFunction {
+		public map(fn: DensityFunction): DensityFunction {
 			if (fn instanceof DensityFunction.HolderHolder) {
 				const key = fn.holder.key()
 				if (key !== undefined && this.mapped.has(key.toString())) {
