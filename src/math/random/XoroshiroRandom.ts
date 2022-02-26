@@ -8,6 +8,23 @@ export class XoroshiroRandom implements Random {
 	private static readonly FLOAT_MULTIPLIER = 1 / Math.pow(2, 24)
 	private static readonly DOUBLE_MULTIPLIER = 1.1102230246251565E-16
 
+	private static readonly BIGINT_1 = BigInt(1)
+	private static readonly BIGINT_17 = BigInt(17)
+	private static readonly BIGINT_21 = BigInt(21)
+	private static readonly BIGINT_27 = BigInt(27)
+	private static readonly BIGINT_28 = BigInt(28)
+	private static readonly BIGINT_30 = BigInt(30)
+	private static readonly BIGINT_31 = BigInt(31)
+	private static readonly BIGINT_32 = BigInt(32)
+	private static readonly BIGINT_49 = BigInt(49)
+	private static readonly BIGINT_64 = BigInt(64)
+	private static readonly STAFFORD_1 = BigInt('-4658895280553007687')
+	private static readonly STAFFORD_2 = BigInt('-7723592293110705685')
+	private static readonly MAX_ULONG = BigInt('0xFFFFFFFFFFFFFFFF')
+	private static readonly POW2_60 = BigInt('0x10000000000000000')
+	private static readonly POW2_63 = BigInt('0x8000000000000000')
+	private static readonly MAX_UINT = BigInt(0xFFFFFFFF)
+
 	private seed: [bigint, bigint] = [BigInt(0), BigInt(0)]
 
 	constructor(seed: [bigint, bigint]) {
@@ -19,22 +36,22 @@ export class XoroshiroRandom implements Random {
 	}
 
 	private static mixStafford13(value: bigint): bigint {
-		value = ((value ^ value >> BigInt(30)) * BigInt('-4658895280553007687')) & BigInt('0xFFFFFFFFFFFFFFFF') 
-		value = ((value ^ value >> BigInt(27)) * BigInt('-7723592293110705685')) & BigInt('0xFFFFFFFFFFFFFFFF')
-		return (value ^ value >> BigInt(31)) & BigInt('0xFFFFFFFFFFFFFFFF')
+		value = ((value ^ value >> XoroshiroRandom.BIGINT_30) * XoroshiroRandom.STAFFORD_1) & XoroshiroRandom.MAX_ULONG 
+		value = ((value ^ value >> XoroshiroRandom.BIGINT_27) * XoroshiroRandom.STAFFORD_2) & XoroshiroRandom.MAX_ULONG
+		return (value ^ value >> XoroshiroRandom.BIGINT_31) & XoroshiroRandom.MAX_ULONG
 	}
 
 	private static upgradeSeedTo128bit(seed: bigint): [bigint, bigint] {
 		if (seed < 0) {
-			seed += BigInt('0x10000000000000000')	
+			seed += XoroshiroRandom.POW2_60
 		}
 		const seedLo = seed ^ XoroshiroRandom.SILVER_RATIO_64
-		const seedHi = (seedLo + XoroshiroRandom.GOLDEN_RATIO_64) & BigInt('0xFFFFFFFFFFFFFFFF')
+		const seedHi = (seedLo + XoroshiroRandom.GOLDEN_RATIO_64) & XoroshiroRandom.MAX_ULONG
 		return [XoroshiroRandom.mixStafford13(seedLo), XoroshiroRandom.mixStafford13(seedHi)]
 	}
 
 	public static rotateLeft(value: bigint, shift: bigint): bigint {
-		return (value << shift) & (BigInt('0xFFFFFFFFFFFFFFFF')) | (value >> (BigInt(64) - shift))
+		return (value << shift) & (XoroshiroRandom.MAX_ULONG) | (value >> (XoroshiroRandom.BIGINT_64 - shift))
 	}
 
 	setSeed(seed: bigint) {
@@ -52,12 +69,12 @@ export class XoroshiroRandom implements Random {
 	public next(): bigint {
 		const seedLo = this.seed[0]
 		let seedHi = this.seed[1]
-		const value = (XoroshiroRandom.rotateLeft((seedLo + seedHi) & BigInt('0xFFFFFFFFFFFFFFFF'), BigInt(17)) + seedLo) & BigInt('0xFFFFFFFFFFFFFFFF')
+		const value = (XoroshiroRandom.rotateLeft((seedLo + seedHi) & XoroshiroRandom.MAX_ULONG, XoroshiroRandom.BIGINT_17) + seedLo) & XoroshiroRandom.MAX_ULONG
 
 		seedHi ^= seedLo
 		this.seed = [
-			XoroshiroRandom.rotateLeft(seedLo, BigInt(49)) ^ seedHi ^ ((seedHi << BigInt(21)) & BigInt('0xFFFFFFFFFFFFFFFF') ),
-			XoroshiroRandom.rotateLeft(seedHi, BigInt(28)),
+			XoroshiroRandom.rotateLeft(seedLo, XoroshiroRandom.BIGINT_49) ^ seedHi ^ ((seedHi << XoroshiroRandom.BIGINT_21) & XoroshiroRandom.MAX_ULONG ),
+			XoroshiroRandom.rotateLeft(seedHi, XoroshiroRandom.BIGINT_28),
 		]
 
 		return value
@@ -66,8 +83,8 @@ export class XoroshiroRandom implements Random {
 	public nextLong(): bigint {
 		let value = this.next()
 
-		if (value > BigInt('0x8000000000000000'))
-			value -= BigInt('0x10000000000000000')
+		if (value > XoroshiroRandom.POW2_63)
+			value -= XoroshiroRandom.POW2_60
 
 		return value
 	}
@@ -77,8 +94,8 @@ export class XoroshiroRandom implements Random {
 		let seedHi = this.seed[1]
 		for (let i = 0; i < count; i += 1) {
 			seedHi ^= seedLo
-			seedLo = XoroshiroRandom.rotateLeft(seedLo, BigInt(49)) ^ seedHi ^ seedHi << BigInt(21)
-			seedHi = XoroshiroRandom.rotateLeft(seedHi, BigInt(28))
+			seedLo = XoroshiroRandom.rotateLeft(seedLo, XoroshiroRandom.BIGINT_49) ^ seedHi ^ seedHi << XoroshiroRandom.BIGINT_21
+			seedHi = XoroshiroRandom.rotateLeft(seedHi, XoroshiroRandom.BIGINT_28)
 		}
 
 		this.seed = [seedLo, seedHi]
@@ -89,7 +106,7 @@ export class XoroshiroRandom implements Random {
 	}
 
 	public nextInt(max?: number): number {
-		let value = this.next() & BigInt(0xFFFFFFFF)
+		let value = this.next() & XoroshiroRandom.MAX_UINT
 		if (!max) {
 			let result = Number(value)
 			if (result >= 0x80000000) {
@@ -100,17 +117,17 @@ export class XoroshiroRandom implements Random {
 		} else {
 			const maxBigint = BigInt(max)
 			let product = value * maxBigint
-			let productLo = product & BigInt(0xFFFFFFFF)
+			let productLo = product & XoroshiroRandom.MAX_UINT
 			if (productLo < maxBigint) {
-				const newMax = ((~maxBigint & BigInt(0xFFFFFFFF)) + BigInt(1)) % maxBigint
+				const newMax = ((~maxBigint & XoroshiroRandom.MAX_UINT) + XoroshiroRandom.BIGINT_1) % maxBigint
 				while (productLo < newMax) {
-					value = this.next() & BigInt(0xFFFFFFFF)
+					value = this.next() & XoroshiroRandom.MAX_UINT
 					product = value * maxBigint 
-					productLo = product & BigInt(0xFFFFFFFF)
+					productLo = product & XoroshiroRandom.MAX_UINT
 				}
 			}
 
-			const productHi = product >> BigInt(32)
+			const productHi = product >> XoroshiroRandom.BIGINT_32
 			return Number(productHi)
 		}
 	}
