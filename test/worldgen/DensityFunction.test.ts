@@ -20,7 +20,7 @@ describe('DensityFunction', () => {
 			bottomSlide: { target: 10, offset: 0, size: 2 },
 			terrainShaper: TerrainShaper.fromJson({ offset: 0, factor: 0, jaggedness: 0 }),
 		}
-		const visitor = NoiseRouter.createVisitor(random, settings)
+		const visitor = new NoiseRouter.Visitor(random, settings)
 		return fn.mapAll(visitor)
 	}
 
