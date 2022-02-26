@@ -1,7 +1,7 @@
 export interface Random {
 	consume(count: number): void
 	nextInt(max?: number): number
-	nextLong(): BigInt
+	nextLong(): bigint
 	nextFloat(): number
 	nextDouble(): number
 	fork(): Random
@@ -11,4 +11,5 @@ export interface Random {
 export interface PositionalRandom {
 	at(x: number, y: number, z: number): Random
 	fromHashOf(name: string): Random
+	seedKey(): [bigint, bigint]
 }

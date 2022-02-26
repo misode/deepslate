@@ -86,4 +86,8 @@ export class LegacyPositionalRandom implements PositionalRandom {
 		const seed = longfromBytes(hash[0], hash[1], hash[2], hash[3], hash[4], hash[5], hash[6], hash[7])
 		return new LegacyRandom(seed ^ this.seed)
 	}
+
+	seedKey(): [bigint, bigint] {
+		return [this.seed, BigInt(0)]
+	}
 }

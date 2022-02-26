@@ -54,11 +54,21 @@ export namespace Noises {
 		return WorldgenRegistries.NOISE.register(Identifier.create(name), NoiseParameters.create(firstOctave, amplitudes))
 	}
 
+	const noiseCache = new Map<string, [bigint | number, bigint | number, NormalNoise]>()
+
 	export function instantiate(random: PositionalRandom, noise: Holder<NoiseParameters>): NormalNoise {
-		const key = noise.key()
+		const key = noise.key()?.toString()
 		if (!key) {
 			throw new Error('Cannot instantiate noise from direct holder')
 		}
-		return new NormalNoise(random.fromHashOf(key.toString()), noise.value())
+
+		const randomKey = random.seedKey()
+		const cached = noiseCache.get(key)
+		if (cached && cached[0] === randomKey[0] && cached[1] === randomKey[1]) {
+			return cached[2]
+		}
+		const result = new NormalNoise(random.fromHashOf(key), noise.value())
+		noiseCache.set(key, [randomKey[0], randomKey[1], result])
+		return result
 	}
 }

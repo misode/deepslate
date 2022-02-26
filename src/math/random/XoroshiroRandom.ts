@@ -146,4 +146,8 @@ export class XoroshiroPositionalRandom implements PositionalRandom {
 		const hi = longfromBytes(hash[8], hash[9], hash[10], hash[11], hash[12], hash[13], hash[14], hash[15])
 		return new XoroshiroRandom([lo ^ this.seedLo, hi ^ this.seedHi])
 	}
+
+	public seedKey(): [bigint, bigint] {
+		return [this.seedLo, this.seedHi]
+	}
 }
