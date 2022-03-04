@@ -19,3 +19,23 @@ jobs:
 
     - name: Test
       run: npm run test
+
+    - name: Run benchmark
+      run: npm run benchmark | tee benchmark.txt
+
+    - name: Download previous benchmark data
+      uses: actions/cache@v1
+      with:
+        path: ./cache
+        key: ${{ runner.os }}-benchmark
+
+    - name: Store benchmark result
+      uses: benchmark-action/github-action-benchmark@v1
+      with:
+        tool: 'benchmarkjs'
+        output-file-path: benchmark.txt
+        external-data-json-path: ./cache/benchmark-data.json
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        comment-always: true
+        alert-threshold: '200%'
+        fail-on-alert: true
