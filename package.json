@@ -20,6 +20,7 @@
     "build": "rollup --config",
     "dev": "rollup --config --watch",
     "test": "env TS_NODE_PROJECT=\"tsconfig.testing.json\" mocha --require esbuild-register 'test/**/*.test.ts'",
+    "benchmark": "env TS_NODE_PROJECT=\"tsconfig.testing.json\" ts-node benchmarks/index.ts",
     "lint": "eslint . --ext .ts",
     "version": "bash scripts/version.sh",
     "prepublishOnly": "npm run build"
@@ -32,12 +33,14 @@
   "devDependencies": {
     "@rollup/plugin-commonjs": "^20.0.0",
     "@rollup/plugin-node-resolve": "^13.0.4",
+    "@types/benchmark": "^2.1.1",
     "@types/chai": "^4.2.14",
     "@types/md5": "^2.3.1",
     "@types/mocha": "^8.2.0",
     "@types/pako": "^1.0.1",
     "@typescript-eslint/eslint-plugin": "^4.25.0",
     "@typescript-eslint/parser": "^4.25.0",
+    "benchmark": "^2.1.4",
     "chai": "^4.2.0",
     "esbuild": "^0.12.20",
     "esbuild-register": "^3.3.2",

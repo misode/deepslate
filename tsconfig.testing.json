@@ -4,10 +4,11 @@
 		"module": "commonjs",
 		"target": "es2015",
 		"moduleResolution": "node",
+		"skipLibCheck": true,
 		"esModuleInterop": true
 	},
 	"include": [
-		"lib/**/*.js",
+		"benchmarks/**/*.ts",
 		"test/**/*.test.ts"
 	]
 }
