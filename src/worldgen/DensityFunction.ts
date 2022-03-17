@@ -1,12 +1,11 @@
 import { Holder, Identifier } from '../core'
-import type { NormalNoise } from '../math'
+import type { MinMaxNumberFunction, NormalNoise } from '../math'
 import { BlendedNoise, clamp, clampedMap, CubicSpline, lazyLerp3, NoiseParameters, XoroshiroRandom } from '../math'
 import { computeIfAbsent, Json } from '../util'
-import { TerrainShaper } from './biome/TerrainShaper'
 import { NoiseSettings } from './NoiseSettings'
 import { WorldgenRegistries } from './WorldgenRegistries'
 
-export abstract class DensityFunction {
+export abstract class DensityFunction implements MinMaxNumberFunction<DensityFunction.Context> {
 	public abstract compute(context: DensityFunction.Context): number
 
 	public minValue(): number {
@@ -127,17 +126,7 @@ export namespace DensityFunction {
 				inputParser(root.argument2),
 			)
 			case 'spline': return new Spline(
-				CubicSpline.fromJson(root.spline, inputParser),
-				Json.readNumber(root.min_value) ?? 0,
-				Json.readNumber(root.max_value) ?? 1,
-			)
-			case 'terrain_shaper_spline': return new TerrainShaperSpline(
-				inputParser(root.continentalness),
-				inputParser(root.erosion),
-				inputParser(root.weirdness),
-				Json.readEnum(root.spline, SplineType),
-				Json.readNumber(root.min_value) ?? 0,
-				Json.readNumber(root.max_value) ?? 1,
+				CubicSpline.fromJson(root.spline, inputParser)
 			)
 			case 'constant': return new Constant(Json.readNumber(root.argument) ?? 0)
 			case 'y_clamped_gradient': return new YClampedGradient(
@@ -737,59 +726,27 @@ export namespace DensityFunction {
 	export class Spline extends DensityFunction {
 		constructor(
 			public readonly spline: CubicSpline<Context>,
-			public readonly min: number,
-			public readonly max: number, 
 		) {
 			super()
 		}
 		public compute(context: Context) {
-			return clamp(this.spline.compute(context), this.min, this.max)
+			return this.spline.compute(context)
 		}
 		public mapAll(visitor: Visitor): DensityFunction {
-			return visitor.map(new Spline(this.spline.mapAll((fn) => {
+			const newCubicSpline = this.spline.mapAll((fn) => {
 				if (fn instanceof DensityFunction) {
 					return fn.mapAll(visitor)
 				}
 				return fn
-			}), this.min, this.max))
+			})
+			newCubicSpline.calculateMinMax()
+			return visitor.map(new Spline(newCubicSpline))
 		}
 		public minValue() {
-			return this.min
+			return this.spline.min()
 		}
 		public maxValue() {
-			return this.max
-		}
-	}
-
-	const SplineType = ['offset', 'factor', 'jaggedness'] as const
-
-	export class TerrainShaperSpline extends DensityFunction {
-		constructor(
-			public readonly continentalness: DensityFunction,
-			public readonly erosion: DensityFunction,
-			public readonly weirdness: DensityFunction,
-			public readonly spline: typeof SplineType[number],
-			public readonly min: number,
-			public readonly max: number, 
-			public readonly shaper?: TerrainShaper,
-		) {
-			super()
-		}
-		public compute(context: Context) {
-			if (!this.shaper) {
-				return 0
-			}
-			const point = TerrainShaper.point(this.continentalness.compute(context), this.erosion.compute(context), this.weirdness.compute(context))
-			return clamp(this.shaper[this.spline](point), this.min, this.max)
-		}
-		public mapAll(visitor: Visitor): DensityFunction {
-			return visitor.map(new TerrainShaperSpline(this.continentalness.mapAll(visitor), this.erosion.mapAll(visitor), this.weirdness.mapAll(visitor), this.spline, this.min, this.max, this.shaper))
-		}
-		public minValue() {
-			return this.min
-		}
-		public maxValue() {
-			return this.max
+			return this.spline.max()
 		}
 	}
 

@@ -131,9 +131,6 @@ export namespace NoiseRouter {
 			if (fn instanceof DensityFunction.Ap2) {
 				return fn.withMinMax()
 			}
-			if (fn instanceof DensityFunction.TerrainShaperSpline) {
-				return new DensityFunction.TerrainShaperSpline(fn.continentalness, fn.erosion, fn.weirdness, fn.spline, fn.min, fn.max, this.settings.terrainShaper)
-			}
 			if (fn instanceof DensityFunction.Slide) {
 				return new DensityFunction.Slide(fn.input, this.settings)
 			}
