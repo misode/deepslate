@@ -1,6 +1,6 @@
 import { Holder, Identifier } from '../core'
-import type { MinMaxNumberFunction, NormalNoise } from '../math'
-import { BlendedNoise, clamp, clampedMap, CubicSpline, lazyLerp3, NoiseParameters } from '../math'
+import type { BlendedNoise, MinMaxNumberFunction, NormalNoise } from '../math'
+import { clamp, clampedMap, CubicSpline, lazyLerp3, NoiseParameters } from '../math'
 import { computeIfAbsent, Json } from '../util'
 import { WorldgenRegistries } from './WorldgenRegistries'
 

@@ -37,7 +37,7 @@ export class BlendedNoise {
 		const factoredZ = scaledZ / this.xzFactor
 
 		const smear = this.yMultiplier * this.smearScaleMultiplier
-		const factoredDmear = smear / this.yFactor
+		const factoredSmear = smear / this.yFactor
 
 		let noise: ImprovedNoise | undefined
 		let value = 0
@@ -48,7 +48,7 @@ export class BlendedNoise {
 				const xx = PerlinNoise.wrap(factoredX * factor)
 				const yy = PerlinNoise.wrap(factoredY * factor)
 				const zz = PerlinNoise.wrap(factoredZ * factor)
-				value += noise.sample(xx, yy, zz, factoredDmear * factor, factoredY * factor) / factor
+				value += noise.sample(xx, yy, zz, factoredSmear * factor, factoredY * factor) / factor
 			}
 			factor /= 2
 		}
