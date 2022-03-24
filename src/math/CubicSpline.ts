@@ -61,8 +61,8 @@ export namespace CubicSpline {
 	}
 
 	export class MultiPoint<C> implements CubicSpline<C> {
-		private calculated_min = Number.NEGATIVE_INFINITY
-		private calculated_max = Number.POSITIVE_INFINITY
+		private calculatedMin = Number.NEGATIVE_INFINITY
+		private calculatedMax = Number.POSITIVE_INFINITY
 
 		constructor(
 			public coordinate: NumberFunction<C>,
@@ -97,11 +97,11 @@ export namespace CubicSpline {
 		}
 
 		public min() {
-			return this.calculated_min
+			return this.calculatedMin
 		}
 
 		public max() {
-			return this.calculated_max
+			return this.calculatedMax
 		}
 	
 		public mapAll(visitor: CubicSpline.CoordinateVisitor<C>): CubicSpline<C> {
@@ -122,71 +122,71 @@ export namespace CubicSpline {
 				return
 			}
 
-			const lastIdx = this.locations.length - 1;
-			var spline_min = Number.POSITIVE_INFINITY;
-			var spline_max = Number.NEGATIVE_INFINITY;
-			const coordinate_min = (this.coordinate as MinMaxNumberFunction<C>).minValue();
-			const coordinate_max = (this.coordinate as MinMaxNumberFunction<C>).maxValue();
+			const lastIdx = this.locations.length - 1
+			var splineMin = Number.POSITIVE_INFINITY
+			var splineMax = Number.NEGATIVE_INFINITY
+			const coordinateMin = (this.coordinate as MinMaxNumberFunction<C>).minValue()
+			const coordinateMax = (this.coordinate as MinMaxNumberFunction<C>).maxValue()
 
 			for(const innerSpline of this.values) {
 				innerSpline.calculateMinMax()
 			}
 
-			if (coordinate_min < this.locations[0]) {
-				const min_extend = MultiPoint.linearExtend(coordinate_min, this.locations, (this.values[0]).min(), this.derivatives, 0);
-				const max_extend = MultiPoint.linearExtend(coordinate_min, this.locations, (this.values[0]).max(), this.derivatives, 0);
-				spline_min = Math.min(spline_min, Math.min(min_extend, max_extend));
-				spline_max = Math.max(spline_max, Math.max(min_extend, max_extend));
+			if (coordinateMin < this.locations[0]) {
+				const minExtend = MultiPoint.linearExtend(coordinateMin, this.locations, (this.values[0]).min(), this.derivatives, 0)
+				const maxExtend = MultiPoint.linearExtend(coordinateMin, this.locations, (this.values[0]).max(), this.derivatives, 0)
+				splineMin = Math.min(splineMin, Math.min(minExtend, maxExtend))
+				splineMax = Math.max(splineMax, Math.max(minExtend, maxExtend))
 			}
 
-			if (coordinate_max > this.locations[lastIdx]) {
-				const min_extend = MultiPoint.linearExtend(coordinate_max, this.locations, (this.values[lastIdx]).min(), this.derivatives, lastIdx);
-				const max_extend = MultiPoint.linearExtend(coordinate_max, this.locations, (this.values[lastIdx]).max(), this.derivatives, lastIdx);
-				spline_min = Math.min(spline_min, Math.min(min_extend, max_extend));
-				spline_max = Math.max(spline_max, Math.max(min_extend, max_extend));
+			if (coordinateMax > this.locations[lastIdx]) {
+				const minExtend = MultiPoint.linearExtend(coordinateMax, this.locations, (this.values[lastIdx]).min(), this.derivatives, lastIdx)
+				const maxExtend = MultiPoint.linearExtend(coordinateMax, this.locations, (this.values[lastIdx]).max(), this.derivatives, lastIdx)
+				splineMin = Math.min(splineMin, Math.min(minExtend, maxExtend))
+				splineMax = Math.max(splineMax, Math.max(minExtend, maxExtend))
 			}
 
 			for(const innerSpline of this.values) {
-				spline_min = Math.min(spline_min, innerSpline.min());
-				spline_max = Math.max(spline_max, innerSpline.max());
+				splineMin = Math.min(splineMin, innerSpline.min())
+				splineMax = Math.max(splineMax, innerSpline.max())
 			}
 
 			for(var i = 0; i < lastIdx; ++i) {
-				const location_left = this.locations[i];
-				const location_right = this.locations[i + 1];
-				const location_delta = location_right - location_left;
-				const spline_left = this.values[i];
-				const spline_right = this.values[i + 1];
-				const minLeft = spline_left.min();
-				const maxLeft = spline_left.max();
-				const minRight = spline_right.min();
-				const maxRight = spline_right.max();
-				const derivative_left = this.derivatives[i];
-				const derivative_right = this.derivatives[i + 1];
-				if (derivative_left !== 0.0 || derivative_right !== 0.0) {
-					const max_value_delta_left = derivative_left * location_delta;
-					const max_value_delta_right = derivative_right * location_delta;
-					const min_value = Math.min(minLeft, minRight);
-					const max_value = Math.max(maxLeft, maxRight);
-					const min_delta_left = max_value_delta_left - maxRight + minLeft;
-					const max_delta_left = max_value_delta_left - minRight + maxLeft;
-					const min_delta_right = -max_value_delta_right + minRight - maxLeft;
-					const max_delta_right = -max_value_delta_right + maxRight - minLeft;
-					const min_delta = Math.min(min_delta_left, min_delta_right);
-					const max_delta = Math.max(max_delta_left, max_delta_right);
-					spline_min = Math.min(spline_min, min_value + 0.25 * min_delta);
-					spline_max = Math.max(spline_max, max_value + 0.25 * max_delta);
+				const locationLeft = this.locations[i]
+				const locationRight = this.locations[i + 1]
+				const locationDelta = locationRight - locationLeft
+				const splineLeft = this.values[i]
+				const splineRight = this.values[i + 1]
+				const minLeft = splineLeft.min()
+				const maxLeft = splineLeft.max()
+				const minRight = splineRight.min()
+				const maxRight = splineRight.max()
+				const derivativeLeft = this.derivatives[i]
+				const derivativeRight = this.derivatives[i + 1]
+				if (derivativeLeft !== 0.0 || derivativeRight !== 0.0) {
+					const maxValueDeltaLeft = derivativeLeft * locationDelta
+					const maxValueDeltaRight = derivativeRight * locationDelta
+					const minValue = Math.min(minLeft, minRight)
+					const maxValue = Math.max(maxLeft, maxRight)
+					const minDeltaLeft = maxValueDeltaLeft - maxRight + minLeft
+					const maxDeltaLeft = maxValueDeltaLeft - minRight + maxLeft
+					const minDeltaRight = -maxValueDeltaRight + minRight - maxLeft
+					const maxDeltaRight = -maxValueDeltaRight + maxRight - minLeft
+					const minDelta = Math.min(minDeltaLeft, minDeltaRight)
+					const maxDelta = Math.max(maxDeltaLeft, maxDeltaRight)
+					splineMin = Math.min(splineMin, minValue + 0.25 * minDelta)
+					splineMax = Math.max(splineMax, maxValue + 0.25 * maxDelta)
 				}
 			}
 
-			this.calculated_min = spline_min
-			this.calculated_max = spline_max
+			this.calculatedMin = splineMin
+			this.calculatedMax = splineMax
 		}		
 	
 
 		private static linearExtend(location: number, locations: number[], value: number, derivatives: number[], useIndex: number) {
-			const derivative = derivatives[useIndex];
-			return derivative == 0.0 ? value : value + derivative * (location - locations[useIndex]);
+			const derivative = derivatives[useIndex]
+			return derivative == 0.0 ? value : value + derivative * (location - locations[useIndex])
 		 }
  	}
 }

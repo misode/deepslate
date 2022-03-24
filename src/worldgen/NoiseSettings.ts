@@ -7,7 +7,7 @@ export type NoiseSettings = {
 	xzSize: number,
 	ySize: number,
 	topSlide: NoiseSlideSettings,
-	bottomSlide: NoiseSlideSettings
+	bottomSlide: NoiseSlideSettings,
 }
 export namespace NoiseSettings {
 	export function fromJson(obj: any): NoiseSettings {

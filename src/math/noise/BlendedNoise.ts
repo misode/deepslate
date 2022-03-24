@@ -28,16 +28,16 @@ export class BlendedNoise {
 	}
 
 	public sample(x: number, y: number, z: number) {
-		const scaled_x = x * this.xzMultiplier
-		const scaled_y = y * this.yMultiplier
-		const scaled_z = z * this.xzMultiplier
+		const scaledX = x * this.xzMultiplier
+		const scaledY = y * this.yMultiplier
+		const scaledZ = z * this.xzMultiplier
 
-		const factored_x = scaled_x / this.xzFactor
-		const factored_y = scaled_y / this.yFactor
-		const factored_z = scaled_z / this.xzFactor
+		const factoredX = scaledX / this.xzFactor
+		const factoredY = scaledY / this.yFactor
+		const factoredZ = scaledZ / this.xzFactor
 
 		const smear = this.yMultiplier * this.smearScaleMultiplier
-		const factored_smear = smear / this.yFactor
+		const factoredDmear = smear / this.yFactor
 
 		let noise: ImprovedNoise | undefined
 		let value = 0
@@ -45,10 +45,10 @@ export class BlendedNoise {
 		for (let i = 0; i < 8; i += 1) {
 			noise = this.mainNoise.getOctaveNoise(i)
 			if (noise) {
-				const xx = PerlinNoise.wrap(factored_x * factor)
-				const yy = PerlinNoise.wrap(factored_y * factor)
-				const zz = PerlinNoise.wrap(factored_z * factor)
-				value += noise.sample(xx, yy, zz, factored_smear * factor, factored_y * factor) / factor
+				const xx = PerlinNoise.wrap(factoredX * factor)
+				const yy = PerlinNoise.wrap(factoredY * factor)
+				const zz = PerlinNoise.wrap(factoredZ * factor)
+				value += noise.sample(xx, yy, zz, factoredDmear * factor, factoredY * factor) / factor
 			}
 			factor /= 2
 		}
@@ -58,15 +58,15 @@ export class BlendedNoise {
 		let min = 0
 		let max = 0
 		for (let i = 0; i < 16; i += 1) {
-			const xx = PerlinNoise.wrap(scaled_x * factor)
-			const yy = PerlinNoise.wrap(scaled_y * factor)
-			const zz = PerlinNoise.wrap(scaled_z * factor)
+			const xx = PerlinNoise.wrap(scaledX * factor)
+			const yy = PerlinNoise.wrap(scaledY * factor)
+			const zz = PerlinNoise.wrap(scaledZ * factor)
 			const smearsmear = smear * factor
 			if (value < 1 && (noise = this.minLimitNoise.getOctaveNoise(i))) {
-				min += noise.sample(xx, yy, zz, smearsmear, scaled_y * factor) / factor
+				min += noise.sample(xx, yy, zz, smearsmear, scaledY * factor) / factor
 			}
 			if (value > 0 && (noise = this.maxLimitNoise.getOctaveNoise(i))) {
-				max += noise.sample(xx, yy, zz, smearsmear, scaled_y * factor) / factor
+				max += noise.sample(xx, yy, zz, smearsmear, scaledY * factor) / factor
 			}
 			factor /= 2
 		}
@@ -74,4 +74,3 @@ export class BlendedNoise {
 		return clampedLerp(min / 512, max / 512, value) / 128
 	}
 }
-
