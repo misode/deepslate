@@ -6,8 +6,6 @@ export type NoiseSettings = {
 	height: number,
 	xzSize: number,
 	ySize: number,
-	topSlide: NoiseSlideSettings,
-	bottomSlide: NoiseSlideSettings,
 }
 export namespace NoiseSettings {
 	export function fromJson(obj: any): NoiseSettings {
@@ -17,8 +15,6 @@ export namespace NoiseSettings {
 			height: Json.readInt(root.height) ?? 256,
 			xzSize: Json.readInt(root.size_horizontal) ?? 1,
 			ySize: Json.readInt(root.size_vertical) ?? 1,
-			topSlide: NoiseSlideSettings.fromJson(root.top_slide),
-			bottomSlide: NoiseSlideSettings.fromJson(root.bottom_slide),
 		}
 	}
 
@@ -36,13 +32,6 @@ export namespace NoiseSettings {
 
 	export function minCellY(settings: NoiseSettings) {
 		return Math.floor(settings.minY / cellHeight(settings))
-	}
-
-	export function applySlides(settings: NoiseSettings, density: number, y: number) {
-		const yCell = Math.floor(y / cellHeight(settings)) - NoiseSettings.minCellY(settings)
-		density = NoiseSlideSettings.apply(settings.topSlide, density, NoiseSettings.cellCountY(settings) - yCell)
-		density = NoiseSlideSettings.apply(settings.bottomSlide, density, yCell)
-		return density
 	}
 }
 
