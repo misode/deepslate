@@ -1,8 +1,7 @@
 import { Holder, Identifier } from '../core'
 import type { MinMaxNumberFunction, NormalNoise } from '../math'
-import { BlendedNoise, clamp, clampedMap, CubicSpline, lazyLerp3, NoiseParameters, XoroshiroRandom } from '../math'
+import { BlendedNoise, clamp, clampedMap, CubicSpline, lazyLerp3, NoiseParameters } from '../math'
 import { computeIfAbsent, Json } from '../util'
-import { NoiseSettings } from './NoiseSettings'
 import { WorldgenRegistries } from './WorldgenRegistries'
 
 export abstract class DensityFunction implements MinMaxNumberFunction<DensityFunction.Context> {
@@ -68,7 +67,13 @@ export namespace DensityFunction {
 			case 'blend_alpha': return new ConstantMinMax(1, 0, 1)
 			case 'blend_offset': return new ConstantMinMax(0, -Infinity, Infinity)
 			case 'beardifier': return new ConstantMinMax(0, -Infinity, Infinity)
-			case 'old_blended_noise': return new OldBlendedNoise()
+			case 'old_blended_noise': return new OldBlendedNoise(
+				Json.readNumber(root.xz_scale) ?? 1,
+				Json.readNumber(root.y_scale) ?? 1, 
+				Json.readNumber(root.xz_facotr) ?? 80, 
+				Json.readNumber(root.y_factor) ?? 160, 
+				Json.readNumber(root.smear_scale_multiplier) ?? 8
+			)
 			case 'flat_cache': return new FlatCache(inputParser(root.argument))
 			case 'interpolated': return new Interpolated(inputParser(root.argument))
 			case 'cache_2d': return new Cache2D(inputParser(root.argument))
@@ -116,7 +121,6 @@ export namespace DensityFunction {
 			case 'quarter_negative':
 			case 'squeeze':
 				return new Mapped(type, inputParser(root.argument))
-			case 'slide': return new Slide(inputParser(root.argument))
 			case 'add':
 			case 'mul':
 			case 'min':
@@ -192,16 +196,21 @@ export namespace DensityFunction {
 	}
 
 	export class OldBlendedNoise extends DensityFunction {
-		private readonly blendedNoise: BlendedNoise
-		constructor(blendedNoise?: BlendedNoise) {
+		constructor(
+			public readonly xzScale: number,
+			public readonly yScale: number,
+			public readonly xzFactor: number,
+			public readonly yFactor: number,
+			public readonly smearScaleMultiplier: number,
+			private readonly blendedNoise?: BlendedNoise
+		) {
 			super()
-			this.blendedNoise = blendedNoise ?? new BlendedNoise(XoroshiroRandom.create(BigInt(0)), { xzScale: 1, yScale: 1, xzFactor: 80, yFactor: 160 }, 4, 8)
 		}
 		public compute(context: Context) {
-			return this.blendedNoise.sample(context.x, context.y, context.z)
+			return this.blendedNoise?.sample(context.x, context.y, context.z) ?? 0
 		}
 		public maxValue() {
-			return this.blendedNoise.maxValue
+			return this.blendedNoise?.maxValue ?? 0
 		}
 	}
 
@@ -625,36 +634,6 @@ export namespace DensityFunction {
 				min = Math.max(0, minInput)
 			}
 			return new Mapped(this.type, this.input, min, max)
-		}
-	}
-
-	export class Slide extends Transformer {
-		constructor(
-			input: DensityFunction,
-			public readonly settings?: NoiseSettings,
-		) {
-			super(input)
-		}
-		public transform(context: Context, density: number) {
-			if (!this.settings) {
-				return density
-			}
-			return NoiseSettings.applySlides(this.settings, density, context.y)
-		}
-		public mapAll(visitor: Visitor) {
-			return visitor.map(new Slide(this.input.mapAll(visitor), this.settings))
-		}
-		public minValue(): number {
-			if (!this.settings) {
-				return this.input.minValue()
-			}
-			return Math.min(this.input.minValue(), this.settings.bottomSlide.target, this.settings.topSlide.target)
-		}
-		public maxValue(): number {
-			if (!this.settings) {
-				return this.input.maxValue()
-			}
-			return Math.max(this.input.maxValue(), this.settings.bottomSlide.target, this.settings.topSlide.target)
 		}
 	}
 

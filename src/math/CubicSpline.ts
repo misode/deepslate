@@ -146,8 +146,6 @@ export namespace CubicSpline {
 				spline_max = Math.max(spline_max, Math.max(min_extend, max_extend));
 			}
 
-
-			console.debug(this.values)
 			for(const innerSpline of this.values) {
 				spline_min = Math.min(spline_min, innerSpline.min());
 				spline_max = Math.max(spline_max, innerSpline.max());

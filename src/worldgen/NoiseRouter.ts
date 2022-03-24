@@ -109,30 +109,27 @@ export namespace NoiseRouter {
 			if (fn instanceof DensityFunction.Interpolated) {
 				return fn.withCellSize(NoiseSettings.cellWidth(this.settings), NoiseSettings.cellHeight(this.settings))
 			}
+			if (fn instanceof DensityFunction.ShiftedNoise) {
+				const noise = Noises.instantiate(this.random, fn.noiseData)
+				return new DensityFunction.ShiftedNoise(fn.shiftX, fn.shiftY, fn.shiftZ, fn.xzScale, fn.yScale, fn.noiseData, noise)
+			}
 			if (fn instanceof DensityFunction.Noise) {
 				return new DensityFunction.Noise(fn.xzScale, fn.yScale, fn.noiseData, Noises.instantiate(this.random, fn.noiseData))
 			}
 			if (fn instanceof DensityFunction.ShiftNoise) {
 				return fn.withNewNoise(Noises.instantiate(this.random, fn.noiseData))
 			}
-			if (fn instanceof DensityFunction.ShiftedNoise) {
-				const noise = Noises.instantiate(this.random, fn.noiseData)
-				return new DensityFunction.ShiftedNoise(fn.shiftX, fn.shiftY, fn.shiftZ, fn.xzScale, fn.yScale, fn.noiseData, noise)
-			}
 			if (fn instanceof DensityFunction.WeirdScaledSampler) {
 				return new DensityFunction.WeirdScaledSampler(fn.input, fn.rarityValueMapper, fn.noiseData, Noises.instantiate(this.random, fn.noiseData))
 			}
 			if (fn instanceof DensityFunction.OldBlendedNoise) {
-				return new DensityFunction.OldBlendedNoise(new BlendedNoise(this.random.fromHashOf(Identifier.create('terrain').toString()), this.settings.sampling, NoiseSettings.cellWidth(this.settings), NoiseSettings.cellHeight(this.settings)))
+				return new DensityFunction.OldBlendedNoise(fn.xzScale, fn.yScale, fn.xzFactor, fn.yFactor, fn.smearScaleMultiplier, new BlendedNoise( this.random.fromHashOf(Identifier.create('terrain').toString()), fn.xzScale, fn.yScale, fn.xzFactor, fn.yFactor, fn.smearScaleMultiplier))
 			}
 			if (fn instanceof DensityFunction.Mapped) {
 				return fn.withMinMax()
 			}
 			if (fn instanceof DensityFunction.Ap2) {
 				return fn.withMinMax()
-			}
-			if (fn instanceof DensityFunction.Slide) {
-				return new DensityFunction.Slide(fn.input, this.settings)
 			}
 			return fn
 		}

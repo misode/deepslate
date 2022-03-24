@@ -1,4 +1,4 @@
-import { clampedLerp, NoiseSamplingSettings } from '../math'
+import { clampedLerp } from '../math'
 import { Json } from '../util'
 
 export type NoiseSettings = {
@@ -6,7 +6,6 @@ export type NoiseSettings = {
 	height: number,
 	xzSize: number,
 	ySize: number,
-	sampling: NoiseSamplingSettings,
 	topSlide: NoiseSlideSettings,
 	bottomSlide: NoiseSlideSettings
 }
@@ -18,7 +17,6 @@ export namespace NoiseSettings {
 			height: Json.readInt(root.height) ?? 256,
 			xzSize: Json.readInt(root.size_horizontal) ?? 1,
 			ySize: Json.readInt(root.size_vertical) ?? 1,
-			sampling: NoiseSamplingSettings.fromJson(root.sampling),
 			topSlide: NoiseSlideSettings.fromJson(root.top_slide),
 			bottomSlide: NoiseSlideSettings.fromJson(root.bottom_slide),
 		}
