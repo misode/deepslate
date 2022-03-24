@@ -1,7 +1,7 @@
 import { expect } from 'chai'
 import { BlockState } from '../../src/core'
 import type { SimpleNoiseRouter } from '../../src/worldgen'
-import { DensityFunction as DF, FluidStatus, NoiseChunk, NoiseRouter, NoiseSettings, TerrainShaper } from '../../src/worldgen'
+import { DensityFunction as DF, FluidStatus, NoiseChunk, NoiseRouter, NoiseSettings } from '../../src/worldgen'
 
 describe('NoiseChunk', () => {
 	const setup = (routerMods: Partial<SimpleNoiseRouter> = {}) => {
@@ -10,10 +10,6 @@ describe('NoiseChunk', () => {
 			height: 384,
 			xzSize: 1,
 			ySize: 2,
-			sampling: { xzScale: 1, yScale: 1, xzFactor: 80, yFactor: 80 },
-			topSlide: { target: 0, offset: 0, size: 0 },
-			bottomSlide: { target: 0, offset: 0, size: 0 },
-			terrainShaper: TerrainShaper.fromJson({ offset: 0, factor: 0, jaggedness: 0 }),
 		}
 		const simpleRouter = NoiseRouter.create(routerMods)
 		const cellWidth = NoiseSettings.cellWidth(settings)

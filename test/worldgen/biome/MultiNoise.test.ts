@@ -1,7 +1,7 @@
 import { expect } from 'chai'
 import { Identifier } from '../../../src/core'
 import type { NoiseSettings } from '../../../src/worldgen'
-import { Climate, DensityFunction as DF, MultiNoise, NoiseRouter, Noises, TerrainShaper } from '../../../src/worldgen'
+import { Climate, DensityFunction as DF, MultiNoise, NoiseRouter, Noises } from '../../../src/worldgen'
 
 describe('MultiNoise', () => {
 	it('nether', () => {
@@ -18,10 +18,6 @@ describe('MultiNoise', () => {
 			height: 128,
 			xzSize: 1,
 			ySize: 2,
-			sampling: { xzScale: 1, yScale: 3, xzFactor: 80, yFactor: 60 },
-			topSlide: { target: 0.9375, offset: 0, size: 3 },
-			bottomSlide: { target: 2.5, offset: -1, size: 4 },
-			terrainShaper: TerrainShaper.fromJson({ offset: 0, factor: 0, jaggedness: 0 }),
 		}
 		const router = NoiseRouter.create({
 			temperature: new DF.Noise(0.25, 0, Noises.TEMPERATURE),
