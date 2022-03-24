@@ -1,7 +1,7 @@
 import { expect } from 'chai'
 import { BlockState, Chunk, ChunkPos, Identifier } from '../../src/core'
 import type { NoiseGeneratorSettings, NoiseSettings, SimpleNoiseRouter } from '../../src/worldgen'
-import { DensityFunction as DF, FixedBiome, NoiseChunkGenerator, NoiseRouter, Noises, SurfaceRule, TerrainShaper } from '../../src/worldgen'
+import { DensityFunction as DF, FixedBiome, NoiseChunkGenerator, NoiseRouter, Noises, SurfaceRule } from '../../src/worldgen'
 
 describe('NoiseChunkGenerator', () => {
 	const setup = (seed: bigint, generatorSettings: Partial<NoiseGeneratorSettings> = {}, noiseSettings: Partial<NoiseSettings>, router: Partial<SimpleNoiseRouter>) => {
@@ -20,10 +20,6 @@ describe('NoiseChunkGenerator', () => {
 				height: 64,
 				xzSize: 1,
 				ySize: 1,
-				sampling: { xzScale: 1, yScale: 1, xzFactor: 80, yFactor: 80 },
-				topSlide: { target: 0, size: 0, offset: 0 },
-				bottomSlide: { target: 0, size: 0, offset: 0 },
-				terrainShaper: TerrainShaper.fromJson({ offset: 0, factor: 0, jaggedness: 0 }),
 				...noiseSettings,
 			},
 			noiseRouter: NoiseRouter.create(router),

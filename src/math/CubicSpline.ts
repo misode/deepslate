@@ -5,10 +5,22 @@ export interface NumberFunction<C> {
 	compute(c: C): number,
 }
 
+export interface MinMaxNumberFunction<C> extends NumberFunction<C> {
+	minValue(): number
+	maxValue(): number
+}
+
+export namespace MinMaxNumberFunction {
+	export function is(obj: unknown): obj is MinMaxNumberFunction<unknown> {
+		return typeof obj === 'object' && obj !== null && 'minValue' in obj && 'maxValue' in obj
+	}
+}
+
 export interface CubicSpline<C> extends NumberFunction<C> {
 	min(): number,
 	max(): number,
 	mapAll(visitor: CubicSpline.CoordinateVisitor<C>): CubicSpline<C>
+	calculateMinMax(): void
 }
 
 export namespace CubicSpline {
@@ -49,9 +61,14 @@ export namespace CubicSpline {
 		public mapAll() {
 			return this
 		}
+
+		public calculateMinMax() {}
 	}
 
 	export class MultiPoint<C> implements CubicSpline<C> {
+		private calculatedMin = Number.NEGATIVE_INFINITY
+		private calculatedMax = Number.POSITIVE_INFINITY
+
 		constructor(
 			public coordinate: NumberFunction<C>,
 			public locations: number[] = [],
@@ -64,10 +81,10 @@ export namespace CubicSpline {
 			const i = binarySearch(0, this.locations.length, n => coordinate < this.locations[n]) - 1
 			const n = this.locations.length - 1
 			if (i < 0) {
-				return this.values[0].compute(c) + this.derivatives[0] * (coordinate - this.locations[0])
+				return this.values[0].compute(c) + this.derivatives[0] * (coordinate - this.locations[0])  //TODO: us linear extend for this 
 			}
 			if (i === n) {
-				return this.values[n].compute(c) + this.derivatives[n] * (coordinate - this.locations[n])
+				return this.values[n].compute(c) + this.derivatives[n] * (coordinate - this.locations[n])  //TODO: us linear extend for this 
 			}
 			const loc0 = this.locations[i]
 			const loc1 = this.locations[i + 1]
@@ -85,11 +102,11 @@ export namespace CubicSpline {
 		}
 
 		public min() {
-			return Math.min(...this.values.map(v => v.min()))
+			return this.calculatedMin
 		}
 
 		public max() {
-			return Math.max(...this.values.map(v => v.max()))
+			return this.calculatedMax
 		}
 	
 		public mapAll(visitor: CubicSpline.CoordinateVisitor<C>): CubicSpline<C> {
@@ -103,6 +120,78 @@ export namespace CubicSpline {
 				: value)
 			this.derivatives.push(derivative)
 			return this
+		}
+
+		public calculateMinMax() {
+			if (!MinMaxNumberFunction.is(this.coordinate)) {
+				return
+			}
+
+			const lastIdx = this.locations.length - 1
+			var splineMin = Number.POSITIVE_INFINITY
+			var splineMax = Number.NEGATIVE_INFINITY
+			const coordinateMin = this.coordinate.minValue()
+			const coordinateMax = this.coordinate.maxValue()
+
+			for(const innerSpline of this.values) {
+				innerSpline.calculateMinMax()
+			}
+
+			if (coordinateMin < this.locations[0]) {
+				const minExtend = MultiPoint.linearExtend(coordinateMin, this.locations, (this.values[0]).min(), this.derivatives, 0)
+				const maxExtend = MultiPoint.linearExtend(coordinateMin, this.locations, (this.values[0]).max(), this.derivatives, 0)
+				splineMin = Math.min(splineMin, Math.min(minExtend, maxExtend))
+				splineMax = Math.max(splineMax, Math.max(minExtend, maxExtend))
+			}
+
+			if (coordinateMax > this.locations[lastIdx]) {
+				const minExtend = MultiPoint.linearExtend(coordinateMax, this.locations, (this.values[lastIdx]).min(), this.derivatives, lastIdx)
+				const maxExtend = MultiPoint.linearExtend(coordinateMax, this.locations, (this.values[lastIdx]).max(), this.derivatives, lastIdx)
+				splineMin = Math.min(splineMin, Math.min(minExtend, maxExtend))
+				splineMax = Math.max(splineMax, Math.max(minExtend, maxExtend))
+			}
+
+			for (const innerSpline of this.values) {
+				splineMin = Math.min(splineMin, innerSpline.min())
+				splineMax = Math.max(splineMax, innerSpline.max())
+			}
+
+			for (var i = 0; i < lastIdx; ++i) {
+				const locationLeft = this.locations[i]
+				const locationRight = this.locations[i + 1]
+				const locationDelta = locationRight - locationLeft
+				const splineLeft = this.values[i]
+				const splineRight = this.values[i + 1]
+				const minLeft = splineLeft.min()
+				const maxLeft = splineLeft.max()
+				const minRight = splineRight.min()
+				const maxRight = splineRight.max()
+				const derivativeLeft = this.derivatives[i]
+				const derivativeRight = this.derivatives[i + 1]
+				if (derivativeLeft !== 0.0 || derivativeRight !== 0.0) {
+					const maxValueDeltaLeft = derivativeLeft * locationDelta
+					const maxValueDeltaRight = derivativeRight * locationDelta
+					const minValue = Math.min(minLeft, minRight)
+					const maxValue = Math.max(maxLeft, maxRight)
+					const minDeltaLeft = maxValueDeltaLeft - maxRight + minLeft
+					const maxDeltaLeft = maxValueDeltaLeft - minRight + maxLeft
+					const minDeltaRight = -maxValueDeltaRight + minRight - maxLeft
+					const maxDeltaRight = -maxValueDeltaRight + maxRight - minLeft
+					const minDelta = Math.min(minDeltaLeft, minDeltaRight)
+					const maxDelta = Math.max(maxDeltaLeft, maxDeltaRight)
+					splineMin = Math.min(splineMin, minValue + 0.25 * minDelta)
+					splineMax = Math.max(splineMax, maxValue + 0.25 * maxDelta)
+				}
+			}
+
+			this.calculatedMin = splineMin
+			this.calculatedMax = splineMax
+		}
+	
+
+		private static linearExtend(location: number, locations: number[], value: number, derivatives: number[], useIndex: number) {
+			const derivative = derivatives[useIndex]
+			return derivative == 0.0 ? value : value + derivative * (location - locations[useIndex])
 		}
 	}
 }

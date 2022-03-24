@@ -1,12 +1,10 @@
 import { Holder, Identifier } from '../core'
-import type { NormalNoise } from '../math'
-import { BlendedNoise, clamp, clampedMap, CubicSpline, lazyLerp3, NoiseParameters, XoroshiroRandom } from '../math'
+import type { BlendedNoise, MinMaxNumberFunction, NormalNoise } from '../math'
+import { clamp, clampedMap, CubicSpline, lazyLerp3, NoiseParameters } from '../math'
 import { computeIfAbsent, Json } from '../util'
-import { TerrainShaper } from './biome/TerrainShaper'
-import { NoiseSettings } from './NoiseSettings'
 import { WorldgenRegistries } from './WorldgenRegistries'
 
-export abstract class DensityFunction {
+export abstract class DensityFunction implements MinMaxNumberFunction<DensityFunction.Context> {
 	public abstract compute(context: DensityFunction.Context): number
 
 	public minValue(): number {
@@ -69,7 +67,13 @@ export namespace DensityFunction {
 			case 'blend_alpha': return new ConstantMinMax(1, 0, 1)
 			case 'blend_offset': return new ConstantMinMax(0, -Infinity, Infinity)
 			case 'beardifier': return new ConstantMinMax(0, -Infinity, Infinity)
-			case 'old_blended_noise': return new OldBlendedNoise()
+			case 'old_blended_noise': return new OldBlendedNoise(
+				Json.readNumber(root.xz_scale) ?? 1,
+				Json.readNumber(root.y_scale) ?? 1, 
+				Json.readNumber(root.xz_facotr) ?? 80, 
+				Json.readNumber(root.y_factor) ?? 160, 
+				Json.readNumber(root.smear_scale_multiplier) ?? 8
+			)
 			case 'flat_cache': return new FlatCache(inputParser(root.argument))
 			case 'interpolated': return new Interpolated(inputParser(root.argument))
 			case 'cache_2d': return new Cache2D(inputParser(root.argument))
@@ -117,7 +121,6 @@ export namespace DensityFunction {
 			case 'quarter_negative':
 			case 'squeeze':
 				return new Mapped(type, inputParser(root.argument))
-			case 'slide': return new Slide(inputParser(root.argument))
 			case 'add':
 			case 'mul':
 			case 'min':
@@ -127,17 +130,7 @@ export namespace DensityFunction {
 				inputParser(root.argument2),
 			)
 			case 'spline': return new Spline(
-				CubicSpline.fromJson(root.spline, inputParser),
-				Json.readNumber(root.min_value) ?? 0,
-				Json.readNumber(root.max_value) ?? 1,
-			)
-			case 'terrain_shaper_spline': return new TerrainShaperSpline(
-				inputParser(root.continentalness),
-				inputParser(root.erosion),
-				inputParser(root.weirdness),
-				Json.readEnum(root.spline, SplineType),
-				Json.readNumber(root.min_value) ?? 0,
-				Json.readNumber(root.max_value) ?? 1,
+				CubicSpline.fromJson(root.spline, inputParser)
 			)
 			case 'constant': return new Constant(Json.readNumber(root.argument) ?? 0)
 			case 'y_clamped_gradient': return new YClampedGradient(
@@ -203,16 +196,21 @@ export namespace DensityFunction {
 	}
 
 	export class OldBlendedNoise extends DensityFunction {
-		private readonly blendedNoise: BlendedNoise
-		constructor(blendedNoise?: BlendedNoise) {
+		constructor(
+			public readonly xzScale: number,
+			public readonly yScale: number,
+			public readonly xzFactor: number,
+			public readonly yFactor: number,
+			public readonly smearScaleMultiplier: number,
+			private readonly blendedNoise?: BlendedNoise
+		) {
 			super()
-			this.blendedNoise = blendedNoise ?? new BlendedNoise(XoroshiroRandom.create(BigInt(0)), { xzScale: 1, yScale: 1, xzFactor: 80, yFactor: 160 }, 4, 8)
 		}
 		public compute(context: Context) {
-			return this.blendedNoise.sample(context.x, context.y, context.z)
+			return this.blendedNoise?.sample(context.x, context.y, context.z) ?? 0
 		}
 		public maxValue() {
-			return this.blendedNoise.maxValue
+			return this.blendedNoise?.maxValue ?? 0
 		}
 	}
 
@@ -639,36 +637,6 @@ export namespace DensityFunction {
 		}
 	}
 
-	export class Slide extends Transformer {
-		constructor(
-			input: DensityFunction,
-			public readonly settings?: NoiseSettings,
-		) {
-			super(input)
-		}
-		public transform(context: Context, density: number) {
-			if (!this.settings) {
-				return density
-			}
-			return NoiseSettings.applySlides(this.settings, density, context.y)
-		}
-		public mapAll(visitor: Visitor) {
-			return visitor.map(new Slide(this.input.mapAll(visitor), this.settings))
-		}
-		public minValue(): number {
-			if (!this.settings) {
-				return this.input.minValue()
-			}
-			return Math.min(this.input.minValue(), this.settings.bottomSlide.target, this.settings.topSlide.target)
-		}
-		public maxValue(): number {
-			if (!this.settings) {
-				return this.input.maxValue()
-			}
-			return Math.max(this.input.maxValue(), this.settings.bottomSlide.target, this.settings.topSlide.target)
-		}
-	}
-
 	const Ap2Type = ['add', 'mul', 'min', 'max'] as const
 
 	export class Ap2 extends DensityFunction {
@@ -737,59 +705,27 @@ export namespace DensityFunction {
 	export class Spline extends DensityFunction {
 		constructor(
 			public readonly spline: CubicSpline<Context>,
-			public readonly min: number,
-			public readonly max: number, 
 		) {
 			super()
 		}
 		public compute(context: Context) {
-			return clamp(this.spline.compute(context), this.min, this.max)
+			return this.spline.compute(context)
 		}
 		public mapAll(visitor: Visitor): DensityFunction {
-			return visitor.map(new Spline(this.spline.mapAll((fn) => {
+			const newCubicSpline = this.spline.mapAll((fn) => {
 				if (fn instanceof DensityFunction) {
 					return fn.mapAll(visitor)
 				}
 				return fn
-			}), this.min, this.max))
+			})
+			newCubicSpline.calculateMinMax()
+			return visitor.map(new Spline(newCubicSpline))
 		}
 		public minValue() {
-			return this.min
+			return this.spline.min()
 		}
 		public maxValue() {
-			return this.max
-		}
-	}
-
-	const SplineType = ['offset', 'factor', 'jaggedness'] as const
-
-	export class TerrainShaperSpline extends DensityFunction {
-		constructor(
-			public readonly continentalness: DensityFunction,
-			public readonly erosion: DensityFunction,
-			public readonly weirdness: DensityFunction,
-			public readonly spline: typeof SplineType[number],
-			public readonly min: number,
-			public readonly max: number, 
-			public readonly shaper?: TerrainShaper,
-		) {
-			super()
-		}
-		public compute(context: Context) {
-			if (!this.shaper) {
-				return 0
-			}
-			const point = TerrainShaper.point(this.continentalness.compute(context), this.erosion.compute(context), this.weirdness.compute(context))
-			return clamp(this.shaper[this.spline](point), this.min, this.max)
-		}
-		public mapAll(visitor: Visitor): DensityFunction {
-			return visitor.map(new TerrainShaperSpline(this.continentalness.mapAll(visitor), this.erosion.mapAll(visitor), this.weirdness.mapAll(visitor), this.spline, this.min, this.max, this.shaper))
-		}
-		public minValue() {
-			return this.min
-		}
-		public maxValue() {
-			return this.max
+			return this.spline.max()
 		}
 	}
 

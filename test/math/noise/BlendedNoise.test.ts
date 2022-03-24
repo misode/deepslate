@@ -1,12 +1,11 @@
 import { expect } from 'chai'
-import type { NoiseSamplingSettings } from '../../../src/math'
 import { BlendedNoise, LegacyRandom } from '../../../src/math'
 
 describe('BlendedNoise', () => {
 	const DELTA = 1e-3
-	const setup = (seed: number, sampling: NoiseSamplingSettings) => {
+	const setup = (seed: number, { xzScale, yScale, xzFactor, yFactor }: { xzScale: number, yScale: number, xzFactor: number, yFactor: number }) => {
 		const random = new LegacyRandom(BigInt(seed))
-		const noise = new BlendedNoise(random, sampling, 1, 1)
+		const noise = new BlendedNoise(random, xzScale, yScale, xzFactor, yFactor, 1)
 		return { random, noise }
 	}
 

@@ -1,7 +1,7 @@
 import { expect } from 'chai'
 import { CubicSpline, XoroshiroRandom } from '../../src/math'
 import type { NoiseSettings } from '../../src/worldgen'
-import { DensityFunction as DF, NoiseRouter, Noises, TerrainShaper } from '../../src/worldgen'
+import { DensityFunction as DF, NoiseRouter, Noises } from '../../src/worldgen'
 
 describe('DensityFunction', () => {
 	const ContextA = DF.context(1, 2, 3)
@@ -15,10 +15,6 @@ describe('DensityFunction', () => {
 			height: 384,
 			xzSize: 1,
 			ySize: 2,
-			sampling: { xzScale: 1, yScale: 1, xzFactor: 80, yFactor: 80 },
-			topSlide: { target: -5, offset: 1, size: 2 },
-			bottomSlide: { target: 10, offset: 0, size: 2 },
-			terrainShaper: TerrainShaper.fromJson({ offset: 0, factor: 0, jaggedness: 0 }),
 		}
 		const visitor = new NoiseRouter.Visitor(random, settings)
 		return fn.mapAll(visitor)
@@ -134,24 +130,14 @@ describe('DensityFunction', () => {
 		expect(fn2.compute(ContextC)).equal(-0.3)
 	})
 
-	it('Slide', () => {
-		const fn = wrap(new DF.Slide(new DF.Constant(0.5)))
-		expect(fn.compute(DF.context(0, 40, 0))).equal(0.5)
-		expect(fn.compute(DF.context(0, -64, 0))).equal(10)
-		expect(fn.compute(DF.context(0, 319, 0))).equal(-5)
-		expect(fn.compute(DF.context(0, -55, 0))).equal(5.25)
-		expect(fn.compute(DF.context(0, 305, 0))).equal(-2.25)
-		expect(fn.compute(DF.context(0, 290, 0))).equal(0.5)
-	})
-
 	it('Spline', () => {
-		const fn1 = wrap(new DF.Spline(new CubicSpline.Constant(0.8), -1, 1))
+		const fn1 = wrap(new DF.Spline(new CubicSpline.Constant(0.8)))
 		expect(fn1.compute(ContextA)).equal(0.8)
 		const spline = new CubicSpline.MultiPoint(new DF.YClampedGradient(0, 128, 0, 128))
 			.addPoint(0, 1)
 			.addPoint(5, 0.2)
 			.addPoint(20, 0.7)
-		const fn2 = wrap(new DF.Spline(spline, 0, 1))
+		const fn2 = wrap(new DF.Spline(spline))
 		expect(fn2.compute(DF.context(0, 0, 0))).equal(1)
 		expect(fn2.compute(DF.context(0, 3.2, 0))).equal(0.4363904)
 		expect(fn2.compute(DF.context(0, 5, 0))).equal(0.2)

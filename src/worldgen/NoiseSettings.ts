@@ -1,16 +1,11 @@
-import { clampedLerp, NoiseSamplingSettings } from '../math'
+import { clampedLerp } from '../math'
 import { Json } from '../util'
-import { TerrainShaper } from './biome/TerrainShaper'
 
 export type NoiseSettings = {
 	minY: number,
 	height: number,
 	xzSize: number,
 	ySize: number,
-	sampling: NoiseSamplingSettings,
-	topSlide: NoiseSlideSettings,
-	bottomSlide: NoiseSlideSettings,
-	terrainShaper: TerrainShaper,
 }
 export namespace NoiseSettings {
 	export function fromJson(obj: any): NoiseSettings {
@@ -20,10 +15,6 @@ export namespace NoiseSettings {
 			height: Json.readInt(root.height) ?? 256,
 			xzSize: Json.readInt(root.size_horizontal) ?? 1,
 			ySize: Json.readInt(root.size_vertical) ?? 1,
-			sampling: NoiseSamplingSettings.fromJson(root.sampling),
-			topSlide: NoiseSlideSettings.fromJson(root.top_slide),
-			bottomSlide: NoiseSlideSettings.fromJson(root.bottom_slide),
-			terrainShaper: TerrainShaper.fromJson(root.terrain_shaper),
 		}
 	}
 
@@ -41,13 +32,6 @@ export namespace NoiseSettings {
 
 	export function minCellY(settings: NoiseSettings) {
 		return Math.floor(settings.minY / cellHeight(settings))
-	}
-
-	export function applySlides(settings: NoiseSettings, density: number, y: number) {
-		const yCell = Math.floor(y / cellHeight(settings)) - NoiseSettings.minCellY(settings)
-		density = NoiseSlideSettings.apply(settings.topSlide, density, NoiseSettings.cellCountY(settings) - yCell)
-		density = NoiseSlideSettings.apply(settings.bottomSlide, density, yCell)
-		return density
 	}
 }
 
