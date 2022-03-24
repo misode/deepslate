@@ -161,8 +161,7 @@ export namespace NoiseRouter {
 		const cellHeight = NoiseSettings.cellHeight(settings)
 		for (let yCell = maxCellY; yCell >= minCellY; yCell -= 1) {
 			const y = yCell * cellHeight
-			const clamped = clamp(initialDensity.compute(DensityFunction.context(x, y, z)), -64, 64)
-			const density = NoiseSettings.applySlides(settings, clamped, y)
+			const density = clamp(initialDensity.compute(DensityFunction.context(x, y, z)), -64, 64)
 			if (density >= 0.390625) {
 				return y
 			}
