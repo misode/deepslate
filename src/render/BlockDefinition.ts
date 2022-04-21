@@ -1,5 +1,5 @@
 import { glMatrix, mat4 } from 'gl-matrix'
-import type { Identifier } from '../core'
+import { Identifier } from '../core'
 import type { BlockModelProvider } from './BlockModel'
 import { Cull } from './Cull'
 import type { TextureAtlasProvider } from './TextureAtlas'
@@ -33,7 +33,7 @@ export interface BlockDefinitionProvider {
 
 export class BlockDefinition {
 	constructor(
-		private readonly id: string,
+		private readonly id: Identifier,
 		private readonly variants: { [key: string]: ModelVariantEntry } | undefined,
 		private readonly multipart: ModelMultiPart[] | undefined,
 	) {
@@ -63,7 +63,11 @@ export class BlockDefinition {
 
 		for (const variant of variants) {
 			const newCull = Cull.rotate(cull, variant.x ?? 0, variant.y ?? 0)
-			const buffers = blockModelProvider.getBlockModel(variant.model)!.getBuffers(name, props, textureUVProvider, offset, newCull)
+			const blockModel = blockModelProvider.getBlockModel(Identifier.parse(variant.model))
+			if (!blockModel) {
+				throw new Error(`Cannot find block model ${variant.model}`)
+			}
+			const buffers = blockModel.getBuffers(name, props, textureUVProvider, offset, newCull)
 
 			if (variant.x || variant.y) {
 				const t = mat4.create()
@@ -115,6 +119,6 @@ export class BlockDefinition {
 	}
 
 	public static fromJson(id: string, data: any) {
-		return new BlockDefinition(id, data.variants, data.multipart)
+		return new BlockDefinition(Identifier.parse(id), data.variants, data.multipart)
 	}
 }

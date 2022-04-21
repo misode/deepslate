@@ -1,8 +1,11 @@
+import type { Identifier } from '../core'
+import { isPowerOfTwo, upperPowerOfTwo } from '../math'
+
 export type UV = [number, number, number, number]
 
 export interface TextureAtlasProvider {
 	getTextureAtlas(): ImageData
-	getTextureUV(texture: string): UV
+	getTextureUV(texture: Identifier): UV
 }
 
 export class TextureAtlas implements TextureAtlasProvider {
@@ -12,6 +15,9 @@ export class TextureAtlas implements TextureAtlasProvider {
 		private readonly img: ImageData,
 		private readonly idMap: Record<string, UV>,
 	) {
+		if (!isPowerOfTwo(img.width) || !isPowerOfTwo(img.height)) {
+			throw new Error(`Expected texture atlas dimensions to be powers of two, got ${img.width}x${img.height}.`)
+		}
 		this.part = 16 / img.width
 	}
 
@@ -19,13 +25,13 @@ export class TextureAtlas implements TextureAtlasProvider {
 		return this.img
 	}
 
-	public getTextureUV(id: string) {
-		return this.idMap[id] ?? [0, 0, this.part, this.part]
+	public getTextureUV(id: Identifier) {
+		return this.idMap[id.toString()] ?? [0, 0, this.part, this.part]
 	}
 
 	public static async fromBlobs(textures: { [id: string]: Blob }): Promise<TextureAtlas> {   
 		const initialWidth = Math.sqrt(Object.keys(textures).length + 1)
-		const width = Math.pow(2, Math.ceil(Math.log(initialWidth)/Math.log(2)))
+		const width = upperPowerOfTwo(initialWidth)
 		const pixelWidth = width * 16
 		const part = 1 / width
 

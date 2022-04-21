@@ -1,6 +1,7 @@
 import type { ReadonlyVec3 } from 'gl-matrix'
 import { glMatrix, mat4, vec3 } from 'gl-matrix'
-import type { Direction, Identifier } from '../core'
+import type { Direction } from '../core'
+import { Identifier } from '../core'
 import { BlockColors } from './BlockColors'
 import type { Cull } from './Cull'
 import type { TextureAtlasProvider, UV } from './TextureAtlas'
@@ -52,14 +53,14 @@ const rescaleAxis: {[key in Axis] : ReadonlyVec3} = {
 }
 
 export interface BlockModelProvider {
-	getBlockModel(id: string): BlockModel | null
+	getBlockModel(id: Identifier): BlockModel | null
 }
 
 export class BlockModel {
 	private flattened: boolean
 	constructor(
-		private readonly id: string,
-		private readonly parent: string | undefined,
+		private readonly id: Identifier,
+		private readonly parent: Identifier | undefined,
 		private textures: { [key: string]: string } | undefined,
 		private elements: BlockModelElement[] | undefined,
 	) {
@@ -179,10 +180,7 @@ export class BlockModel {
 		while (textureRef.startsWith('#')) {
 			textureRef = this.textures?.[textureRef.slice(1)] ?? ''
 		}
-		if (!textureRef.startsWith('minecraft:')) {
-			textureRef = 'minecraft:' + textureRef
-		}
-		return textureRef
+		return Identifier.parse(textureRef)
 	}
 
 	public flatten(accessor: BlockModelProvider) {
@@ -210,10 +208,7 @@ export class BlockModel {
 	}
 
 	public static fromJson(id: string, data: any) {
-		let parent = data.parent as string | undefined
-		if (parent && !parent.startsWith('minecraft:')) {
-			parent = 'minecraft:' + parent
-		}
-		return new BlockModel(id, parent, data.textures, data.elements)
+		const parent = data.parent === undefined ? undefined : Identifier.parse(data.parent)
+		return new BlockModel(Identifier.parse(id), parent, data.textures, data.elements)
 	}
 }
