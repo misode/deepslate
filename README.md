@@ -13,21 +13,20 @@ npm install deepslate
 
 ### Reading and writing binary NBT files
 ```ts
-import * as nbt from 'deepslate/nbt'
+import { readNbt, writeNbt } from 'deepslate'
 
 fetch('./example.nbt')
 	.then(res => res.arrayBuffer())
 	.then(data => {
-		const { result, compressed } = nbt.read(new Uint8Array(data))
+		const { value, name, compression } = readNbt(new Uint8Array(data))
 
-		nbt.write(result, compressed)
+		const newData = writeNbt(value, { name, compression })
 	})
 ```
 
 ### Rendering a structure
 ```ts
-import { Structure } from 'deepslate/core'
-import { StructureRenderer } from 'deepslate/render'
+import { Structure, StructureRenderer } from 'deepslate'
 import { mat4 } from 'gl-matrix'
 
 const structure = new Structure([4, 3, 4])
