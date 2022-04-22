@@ -2,17 +2,22 @@ import type { NbtTag, NbtValues } from './Tags'
 import { tagNames } from './Tags'
 import { decodeUTF8 } from './Util'
 
+export interface NbtReaderOptions {
+	littleEndian?: boolean
+	offset?: number
+}
+
 export class NbtReader {
 	public offset: number
 	private readonly littleEndian: boolean
-	private readonly arrayView: Uint8Array
-	private readonly dataView: DataView
+	private readonly array: Uint8Array
+	private readonly view: DataView
 
-	constructor(array: Uint8Array, littleEndian = false) {
-		this.offset = 0
-		this.littleEndian = littleEndian
-		this.arrayView = array
-		this.dataView = new DataView(array.buffer, array.byteOffset)
+	constructor(array: Uint8Array, options: NbtReaderOptions = {}) {
+		this.offset = options.offset ?? 0
+		this.littleEndian = options.littleEndian ?? false
+		this.array = array
+		this.view = new DataView(array.buffer, array.byteOffset)
 	}
 
 	end() {
@@ -20,7 +25,7 @@ export class NbtReader {
 	}
 
 	private readNum(type: 'getInt8' | 'getInt16' | 'getInt32' | 'getFloat32' | 'getFloat64', size: number) {
-		const value = this.dataView[type](this.offset, this.littleEndian)
+		const value = this.view[type](this.offset, this.littleEndian)
 		this.offset += size
 		return value
 	}
@@ -64,7 +69,7 @@ export class NbtReader {
 
 	string(): NbtValues['string'] {
 		const length = this.short()
-		const slice = this.arrayView.slice(this.offset,	this.offset + length)
+		const slice = this.array.slice(this.offset,	this.offset + length)
 		this.offset += length
 		return decodeUTF8(slice)
 	}

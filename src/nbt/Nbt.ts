@@ -1,12 +1,47 @@
 import pako from 'pako'
 import { NbtReader } from './Reader'
-import type { NamedNbtTag, NbtChunk } from './Tags'
+import type { NamedNbtTag, NbtValues } from './Tags'
 import { tagTypes } from './Tags'
-import { hasGzipHeader } from './Util'
+import { getBedrockHeader, hasGzipHeader, hasZlibHeader } from './Util'
 import { NbtWriter } from './Writer'
 
-export function readUncompressed(array: Uint8Array, littleEndian?: boolean): NamedNbtTag {
-	const reader = new NbtReader(array, littleEndian)
+export type NbtCompressionMode = 'gzip' | 'zlib' | 'none'
+
+export interface NbtReadOptions {
+	compression?: NbtCompressionMode
+	littleEndian?: boolean
+	bedrockHeader?: boolean
+}
+
+export interface NbtReadResult extends NamedNbtTag {
+	compression?: Exclude<NbtCompressionMode, 'none'>
+	littleEndian?: boolean
+	bedrockHeader?: number
+}
+
+export function readNbt(array: Uint8Array, options: NbtReadOptions = {}): NbtReadResult {
+	const bedrockHeader = options.bedrockHeader === false ? undefined : getBedrockHeader(array)
+	const isGzipCompressed = options.compression === 'gzip' ||
+		(!bedrockHeader && options.compression === undefined && hasGzipHeader(array))
+	const isZlibCompressed = options.compression === 'zlib' ||
+		(!bedrockHeader && options.compression === undefined && hasZlibHeader(array))
+
+	const uncompressedData = (isZlibCompressed || isGzipCompressed) ? pako.inflate(array) : array
+	const littleEndian = options.littleEndian === true || bedrockHeader !== undefined
+
+	const { name, value } = readNbtRaw(uncompressedData, littleEndian, bedrockHeader && 8)
+
+	return {
+		value,
+		name,
+		...(isGzipCompressed || isZlibCompressed) ? { compression: isGzipCompressed ? 'gzip' : 'zlib' } : {},
+		...littleEndian ? { littleEndian } : {},
+		...bedrockHeader ? { bedrockHeader } : {},
+	}
+}
+
+export function readNbtRaw(array: Uint8Array, littleEndian?: boolean, offset?: number): NamedNbtTag {
+	const reader = new NbtReader(array, { littleEndian, offset })
 	const type = reader.byte()
 	if (type !== tagTypes.compound) {
 		throw new Error('Top tag should be a compound')
@@ -17,17 +52,45 @@ export function readUncompressed(array: Uint8Array, littleEndian?: boolean): Nam
 	}
 }
 
-export function readCompressed(array: Uint8Array, littleEndian?: boolean): NamedNbtTag {
-	const uncompressed = pako.inflate(array)
-	return readUncompressed(uncompressed, littleEndian)
+export interface NbtWriteOptions {
+	name?: string
+	compression?: NbtCompressionMode
+	littleEndian?: boolean
+	bedrockHeader?: number
+	initialSize?: number
 }
 
-export function read(array: Uint8Array, littleEndian?: boolean) {
-	if (hasGzipHeader(array)) {
-		return { compressed: true, result: readCompressed(array, littleEndian) }
-	} else {
-		return { compressed: false, result: readUncompressed(array, littleEndian) }
+export function writeNbt(value: NbtValues['compound'], options: Partial<NbtWriteOptions> = {}) {
+	const littleEndian = options.littleEndian === true || options.bedrockHeader !== undefined
+	const array = writeNbtRaw({ value, name: options.name ?? '' }, littleEndian, options.bedrockHeader && 8)
+	if (options.bedrockHeader) {
+		const view = new DataView(array.buffer)
+		view.setInt32(0, options.bedrockHeader, true)
+		view.setInt32(4, array.byteLength - 8, true)
 	}
+	if (options.compression === 'gzip') {
+		return pako.gzip(array)
+	} else if (options.compression === 'zlib') {
+		return pako.deflate(array)
+	}
+	return array
+}
+
+export function writeNbtRaw(nbt: NamedNbtTag, littleEndian?: boolean, offset?: number) {
+	const writer = new NbtWriter({ littleEndian, offset })
+	writer.byte(tagTypes.compound)
+	writer.string(nbt.name)
+	writer.compound(nbt.value)
+	return writer.getData()
+}
+
+export interface NbtChunk {
+	x: number,
+	z: number,
+	timestamp: number,
+	compression: number,
+	data: Uint8Array,
+	nbt?: NamedNbtTag,
 }
 
 export function readRegion(array: Uint8Array): NbtChunk[] {
@@ -50,38 +113,6 @@ export function readRegion(array: Uint8Array): NbtChunk[] {
 		}
 	}
 	return chunks
-}
-
-export function readChunk(chunks: NbtChunk[], x: number, z: number) {
-	const chunk = findChunk(chunks, x, z)
-	switch (chunk.compression) {
-		case 1:
-		case 2: chunk.nbt = readCompressed(chunk.data); break
-		case 3: chunk.nbt = readUncompressed(chunk.data); break
-		default: throw new Error(`Invalid compression mode ${chunk.compression}`)
-	}
-	return chunk
-}
-
-export function writeUncompressed(value: NamedNbtTag, littleEndian?: boolean) {
-	const writer = new NbtWriter(littleEndian)
-	writer.byte(tagTypes.compound)
-	writer.string(value.name)
-	writer.compound(value.value)
-	return writer.getData()
-}
-
-export function writeCompressed(value: NamedNbtTag, littleEndian?: boolean, zlib?: boolean) {
-	const uncompressed = writeUncompressed(value, littleEndian)
-	return pako[zlib ? 'deflate' : 'gzip'](uncompressed)
-}
-
-export function write(value: NamedNbtTag, compressed: boolean, littleEndian?: boolean) {
-	if (compressed) {
-		return writeCompressed(value, littleEndian)
-	} else {
-		return writeUncompressed(value, littleEndian)
-	}
 }
 
 export function writeRegion(chunks: NbtChunk[]) {
@@ -111,21 +142,26 @@ export function writeRegion(chunks: NbtChunk[]) {
 	return array
 }
 
-export function writeChunk(chunks: NbtChunk[], x: number, z: number, nbt: NamedNbtTag) {
-	const chunk = findChunk(chunks, x, z)
+export function loadChunk(chunk: NbtChunk) {
 	switch (chunk.compression) {
-		case 1: chunk.data = writeCompressed(nbt); break
-		case 2: chunk.data = writeCompressed(nbt, false, true); break
-		case 3: chunk.data = writeUncompressed(nbt); break
+		case 1: chunk.nbt = readNbt(chunk.data, { compression: 'gzip' }); break
+		case 2: chunk.nbt = readNbt(chunk.data, { compression: 'zlib' }); break
+		case 3: chunk.nbt = readNbtRaw(chunk.data); break
 		default: throw new Error(`Invalid compression mode ${chunk.compression}`)
 	}
 	return chunk
 }
 
-function findChunk(chunks: NbtChunk[], x: number, z: number) {
-	const chunk = chunks.find(c => c.x === x && c.z === z)
-	if (chunk === undefined) {
-		throw new Error(`Cannot find chunk [${x}, ${z}]`)
+export function saveChunk(chunk: NbtChunk) {
+	if (!chunk.nbt) {
+		throw new Error('Cannot save chunk data, chunk is not loaded')
+	}
+	const { name, value } = chunk.nbt
+	switch (chunk.compression) {
+		case 1: chunk.data = writeNbt(value, { name, compression: 'gzip' }); break
+		case 2: chunk.data = writeNbt(value, { name, compression: 'zlib' }); break
+		case 3: chunk.data = writeNbt(value, { name }); break
+		default: throw new Error(`Invalid compression mode ${chunk.compression}`)
 	}
 	return chunk
 }

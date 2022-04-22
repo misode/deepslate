@@ -2,19 +2,24 @@ import type { NbtValues } from './Tags'
 import { tagTypes } from './Tags'
 import { encodeUTF8 } from './Util'
 
+export interface NbtWriterOptions {
+	littleEndian?: boolean
+	offset?: number
+}
+
 export class NbtWriter {
 	public offset: number
 	private readonly littleEndian: boolean
 	private buffer: ArrayBuffer
-	private arrayView: Uint8Array
-	private dataView: DataView
+	private array: Uint8Array
+	private view: DataView
 
-	constructor(littleEndian = false) {
-		this.offset = 0
-		this.littleEndian = littleEndian
+	constructor(options: NbtWriterOptions = {}) {
+		this.offset = options.offset ?? 0
+		this.littleEndian = options.littleEndian ?? false
 		this.buffer = new ArrayBuffer(1024)
-		this.arrayView = new Uint8Array(this.buffer)
-		this.dataView = new DataView(this.buffer)
+		this.array = new Uint8Array(this.buffer)
+		this.view = new DataView(this.buffer)
 	}
 
 	private accommodate(size: number) {
@@ -29,28 +34,28 @@ export class NbtWriter {
 		}
 
 		const newBuffer = new ArrayBuffer(newLength)
-		const newArrayView = new Uint8Array(newBuffer)
-		newArrayView.set(this.arrayView)
+		const newArray = new Uint8Array(newBuffer)
+		newArray.set(this.array)
 
 		if (this.offset > this.buffer.byteLength) {
-			newArrayView.fill(0, this.buffer.byteLength, this.offset)
+			newArray.fill(0, this.buffer.byteLength, this.offset)
 		}
 
 		this.buffer = newBuffer
-		this.dataView = new DataView(newBuffer)
-		this.arrayView = newArrayView
+		this.view = new DataView(newBuffer)
+		this.array = newArray
 	}
 
 	getData() {
 		this.accommodate(0)
-		return this.arrayView.slice(0, this.offset)
+		return this.array.slice(0, this.offset)
 	}
 
-	end(value: null) {}
+	end() {}
   
 	private writeNum(type: 'setInt8' | 'setInt16' | 'setInt32' | 'setFloat32' | 'setFloat64', size: number, value: number) {
 		this.accommodate(size)
-		this.dataView[type](this.offset, value, this.littleEndian)
+		this.view[type](this.offset, value, this.littleEndian)
 		this.offset += size
 	}
 
@@ -68,7 +73,7 @@ export class NbtWriter {
 	byteArray(value: NbtValues['byteArray']) {
 		this.int(value.length)
 		this.accommodate(value.length)
-		this.arrayView.set(value, this.offset)
+		this.array.set(value, this.offset)
 		this.offset += value.length
 	}
 
@@ -90,7 +95,7 @@ export class NbtWriter {
 		const bytes = encodeUTF8(value)
 		this.short(bytes.length)
 		this.accommodate(bytes.length)
-		this.arrayView.set(bytes, this.offset)
+		this.array.set(bytes, this.offset)
 		this.offset += bytes.length
 	}
 
