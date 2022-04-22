@@ -11,9 +11,9 @@ export function hasZlibHeader(array: Uint8Array) {
 
 export function getBedrockHeader(array: Uint8Array) {
 	const head = array.slice(0, 8)
-	const view = new DataView(head.buffer)
-	const version = view.getInt32(0, true)
-	const length = view.getInt32(4, true)
+	const view = new DataView(head.buffer, head.byteOffset)
+	const version = view.getUint32(0, true)
+	const length = view.getUint32(4, true)
 	if (head.length === 8 && version > 0 && version < 100 && length === array.byteLength - 8) {
 		return version
 	}
