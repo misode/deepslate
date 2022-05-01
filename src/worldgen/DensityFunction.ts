@@ -70,7 +70,7 @@ export namespace DensityFunction {
 			case 'old_blended_noise': return new OldBlendedNoise(
 				Json.readNumber(root.xz_scale) ?? 1,
 				Json.readNumber(root.y_scale) ?? 1, 
-				Json.readNumber(root.xz_facotr) ?? 80, 
+				Json.readNumber(root.xz_factor) ?? 80, 
 				Json.readNumber(root.y_factor) ?? 160, 
 				Json.readNumber(root.smear_scale_multiplier) ?? 8
 			)
