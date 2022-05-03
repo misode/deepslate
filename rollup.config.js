@@ -16,7 +16,7 @@ export default defineConfig([
 			commonjs(),
 			resolve(),
 			esbuild(),
-			!dev && terser(),
+			terser(),
 		],
 	}],
 	{
@@ -28,7 +28,6 @@ export default defineConfig([
 		],
 		plugins: [
 			esbuild(),
-			!dev && terser(),
 		],
 	},
 	{
