@@ -1,5 +1,5 @@
 import { Suite } from 'benchmark'
-import { XoroshiroRandom } from '../../src'
+import { XoroshiroRandom } from '../../'
 
 const NAME = 'XoroshiroRandom'
 const suite = new Suite(NAME)

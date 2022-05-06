@@ -1,5 +1,5 @@
 import { Suite } from 'benchmark'
-import { ImprovedNoise, XoroshiroRandom } from '../../src'
+import { ImprovedNoise, XoroshiroRandom } from '../../'
 
 const suite = new Suite('ImprovedNoise')
 

@@ -1,5 +1,5 @@
 import { Suite } from 'benchmark'
-import { PerlinNoise, XoroshiroRandom } from '../../src'
+import { PerlinNoise, XoroshiroRandom } from '../../'
 
 const suite = new Suite('PerlinNoise')
 
