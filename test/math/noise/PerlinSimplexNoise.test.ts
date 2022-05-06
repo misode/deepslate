@@ -1,5 +1,5 @@
+import { LegacyRandom, PerlinSimplexNoise } from '@math'
 import { expect } from 'chai'
-import { LegacyRandom, PerlinSimplexNoise } from '../@math'
 
 describe('PerlinSimplexNoise', () => {
 	const DELTA = 1e-5

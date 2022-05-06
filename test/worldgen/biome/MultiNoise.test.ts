@@ -1,7 +1,7 @@
+import { Identifier } from '@core'
+import type { NoiseSettings } from '@worldgen'
+import { Climate, DensityFunction as DF, MultiNoise, NoiseRouter, Noises } from '@worldgen'
 import { expect } from 'chai'
-import { Identifier } from '../@core'
-import type { NoiseSettings } from '../@worldgen'
-import { Climate, DensityFunction as DF, MultiNoise, NoiseRouter, Noises } from '../@worldgen'
 
 describe('MultiNoise', () => {
 	it('nether', () => {

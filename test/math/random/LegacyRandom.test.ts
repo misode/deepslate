@@ -1,5 +1,5 @@
+import { LegacyRandom } from '@math'
 import { expect } from 'chai'
-import { LegacyRandom } from '../@math'
 
 describe('LegacyRandom', () => {
 	it('nextInt', () => {

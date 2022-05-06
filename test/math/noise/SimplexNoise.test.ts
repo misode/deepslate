@@ -1,5 +1,5 @@
+import { LegacyRandom, SimplexNoise } from '@math'
 import { expect } from 'chai'
-import { LegacyRandom, SimplexNoise } from '../@math'
 
 describe('SimplexNoise', () => {
 	const DELTA = 1e-5
