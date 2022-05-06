@@ -1,0 +1,8 @@
+{
+  "name": "deepslate-core",
+  "version": "0.1.0",
+  "private": true,
+  "main": "dist/core.cjs.js",
+  "module": "dist/core.esm.js",
+  "types": "dist/core.d.ts"
+}

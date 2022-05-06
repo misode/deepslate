@@ -1,0 +1,8 @@
+{
+  "name": "deepslate-util",
+  "version": "0.1.0",
+  "private": true,
+  "main": "dist/util.cjs.js",
+  "module": "dist/util.esm.js",
+  "types": "dist/util.d.ts"
+}

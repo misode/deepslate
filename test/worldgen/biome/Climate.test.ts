@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { Climate } from '../../../src/worldgen'
+import { Climate } from '../@worldgen'
 
 describe('Climate', () => {
 	describe('RTree', () => {

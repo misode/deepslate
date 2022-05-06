@@ -1,0 +1,8 @@
+{
+  "name": "deepslate-nbt",
+  "version": "0.1.0",
+  "private": true,
+  "main": "dist/nbt.cjs.js",
+  "module": "dist/nbt.esm.js",
+  "types": "dist/nbt.d.ts"
+}

@@ -1,0 +1,8 @@
+{
+  "name": "deepslate-math",
+  "version": "0.1.0",
+  "private": true,
+  "main": "dist/math.cjs.js",
+  "module": "dist/math.esm.js",
+  "types": "dist/math.d.ts"
+}

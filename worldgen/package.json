@@ -1,0 +1,8 @@
+{
+  "name": "deepslate-worldgen",
+  "version": "0.1.0",
+  "private": true,
+  "main": "dist/worldgen.cjs.js",
+  "module": "dist/worldgen.esm.js",
+  "types": "dist/worldgen.d.ts"
+}

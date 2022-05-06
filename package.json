@@ -12,9 +12,57 @@
   "module": "./dist/deepslate.esm.js",
   "unpkg": "./dist/deepslate.umd.js",
   "types": "./dist/deepslate.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/deepslate.d.ts",
+      "import": "./dist/deepslate.esm.js",
+      "require": "./dist/deepslate.cjs.js",
+      "default": "./dist/deepslate.umd.js"
+    },
+    "./core": {
+      "types": "./core/dist/core.d.ts",
+      "import": "./core/dist/core.esm.js",
+      "require": "./core/dist/core.cjs.js",
+      "default": "./core/dist/core.umd.js"
+    },
+    "./math": {
+      "types": "./math/dist/math.d.ts",
+      "import": "./math/dist/math.esm.js",
+      "require": "./math/dist/math.cjs.js",
+      "default": "./math/dist/math.umd.js"
+    },
+    "./nbt": {
+      "types": "./nbt/dist/nbt.d.ts",
+      "import": "./nbt/dist/nbt.esm.js",
+      "require": "./nbt/dist/nbt.cjs.js",
+      "default": "./nbt/dist/nbt.umd.js"
+    },
+    "./render": {
+      "types": "./render/dist/render.d.ts",
+      "import": "./render/dist/render.esm.js",
+      "require": "./render/dist/render.cjs.js",
+      "default": "./render/dist/render.umd.js"
+    },
+    "./util": {
+      "types": "./util/dist/util.d.ts",
+      "import": "./util/dist/util.esm.js",
+      "require": "./util/dist/util.cjs.js",
+      "default": "./util/dist/util.umd.js"
+    },
+    "./worldgen": {
+      "types": "./worldgen/dist/worldgen.d.ts",
+      "import": "./worldgen/dist/worldgen.esm.js",
+      "require": "./worldgen/dist/worldgen.cjs.js",
+      "default": "./worldgen/dist/worldgen.umd.js"
+    }
+  },
   "files": [
-    "dist/*",
-    "!dist/**/*.tsbuildinfo"
+    "core/**/*",
+    "math/**/*",
+    "nbt/**/*",
+    "render/**/*",
+    "util/**/*",
+    "worldgen/**/*"
   ],
   "scripts": {
     "build": "rollup --config",
@@ -52,6 +100,7 @@
     "rollup-plugin-dts": "^3.0.2",
     "rollup-plugin-esbuild": "^4.8.2",
     "rollup-plugin-terser": "^7.0.2",
+    "rollup-plugin-typescript-paths": "^1.3.1",
     "ts-node": "^9.1.1",
     "typescript": "^4.2.3",
     "vite": "^2.3.4"

@@ -1,6 +1,6 @@
+import { NbtWriter } from '@nbt'
 import { expect } from 'chai'
 import 'mocha'
-import { NbtWriter } from '../../src/nbt'
 
 function matches(writer: NbtWriter, data: number[], message?: string) {
 	expect(writer.getData())

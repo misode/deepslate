@@ -1,7 +1,7 @@
 import { expect } from 'chai'
-import { Identifier } from '../../../src/core'
-import type { NoiseSettings } from '../../../src/worldgen'
-import { Climate, DensityFunction as DF, MultiNoise, NoiseRouter, Noises } from '../../../src/worldgen'
+import { Identifier } from '../@core'
+import type { NoiseSettings } from '../@worldgen'
+import { Climate, DensityFunction as DF, MultiNoise, NoiseRouter, Noises } from '../@worldgen'
 
 describe('MultiNoise', () => {
 	it('nether', () => {

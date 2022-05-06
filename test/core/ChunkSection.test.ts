@@ -1,5 +1,5 @@
+import { BlockState, ChunkSection } from '@core'
 import { expect } from 'chai'
-import { BlockState, ChunkSection } from '../../src/core'
 
 describe('ChunkSection', () => {
 	it('create', () => {

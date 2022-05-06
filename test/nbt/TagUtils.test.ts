@@ -1,7 +1,7 @@
+import type { NbtValues } from '@nbt'
+import { getListTag, getOptional, getTag } from '@nbt'
 import { expect } from 'chai'
 import 'mocha'
-import type { NbtValues } from '../../src/nbt'
-import { getListTag, getOptional, getTag } from '../../src/nbt'
 
 describe('TagUtils', () => {
 	const data: NbtValues['compound'] = {

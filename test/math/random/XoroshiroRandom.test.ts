@@ -1,6 +1,6 @@
 import { expect } from 'chai'
 import md5 from 'md5'
-import { XoroshiroRandom } from '../../../src/math'
+import { XoroshiroRandom } from '../@math'
 
 describe('XoroshiroRandom', () => {
 	it('seedUpgrade', () => {

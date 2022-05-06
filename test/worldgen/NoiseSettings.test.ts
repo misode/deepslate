@@ -1,5 +1,5 @@
+import { NoiseSettings } from '@worldgen'
 import { expect } from 'chai'
-import { NoiseSettings } from '../../src/worldgen'
 
 describe('NoiseSettings', () => {
 	const setup = () => {

@@ -1,13 +1,13 @@
 {
   "compilerOptions": {
-    "target": "es2015",
-    "module": "ES6",
+    "target": "esnext",
+    "module": "esnext",
     "lib": [
       "dom",
       "es2017",
       "es2020.bigint"
     ],
-    "rootDir": "src",
+    "rootDir": ".",
     "outDir": "lib",
 
     "strict": true,
@@ -17,13 +17,34 @@
     "noImplicitAny": true,
     "moduleResolution": "node",
 
-    "composite": true,
     "sourceMap": true,
     "declaration": true,
     "declarationMap": true,
-    "incremental": true
+
+    "baseUrl": ".",
+    "paths": {
+      "@core": ["core/src/index"],
+      "@core/*": ["core/src/*"],
+      "@math": ["math/src/index"],
+      "@math/*": ["math/src/*"],
+      "@nbt": ["nbt/src/index"],
+      "@nbt/*": ["nbt/src/*"],
+      "@render": ["render/src/index"],
+      "@render/*": ["render/src/*"],
+      "@util": ["util/src/index"],
+      "@util/*": ["util/src/*"],
+      "@worldgen": ["worldgen/src/index"],
+      "@worldgen/*": ["worldgen/src/*"]
+    }
   },
   "include": [
-    "./src/**/*.ts"
+    "core/**/*",
+    "math/**/*",
+    "nbt/**/*",
+    "render/**/*",
+    "test/**/*",
+    "util/**/*",
+    "worldgen/**/*",
+    "main.ts"
   ]
 }

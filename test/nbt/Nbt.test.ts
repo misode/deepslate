@@ -1,8 +1,8 @@
+import type { NamedNbtTag, NbtChunk } from '@nbt'
+import { loadChunk, readNbt, readNbtRaw, readRegion, saveChunk, writeNbt, writeNbtRaw, writeRegion } from '@nbt'
 import { expect } from 'chai'
 import 'mocha'
 import pako from 'pako'
-import type { NamedNbtTag, NbtChunk } from '../../src/nbt'
-import { loadChunk, readNbt, readNbtRaw, readRegion, saveChunk, writeNbt, writeNbtRaw, writeRegion } from '../../src/nbt'
 
 const raw = new Uint8Array([10, 0, 0, 1, 0, 3, 102, 111, 111, 4, 0])
 const rawCompressed = pako.gzip(raw)

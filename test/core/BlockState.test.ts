@@ -1,7 +1,7 @@
+import { BlockState, Identifier } from '@core'
+import type { NamedNbtTag } from '@nbt'
 import { expect } from 'chai'
 import 'mocha'
-import { BlockState, Identifier } from '../../src/core'
-import type { NamedNbtTag } from '../../src/nbt'
 
 describe('BlockState', () => {
 	it('constructor', () => {

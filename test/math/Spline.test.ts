@@ -1,5 +1,5 @@
+import { CubicSpline } from '@math'
 import { expect } from 'chai'
-import { CubicSpline } from '../../src/math'
 
 describe('Spline', () => {
 	const DELTA = 1e-7

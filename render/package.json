@@ -1,0 +1,8 @@
+{
+  "name": "deepslate-render",
+  "version": "0.1.0",
+  "private": true,
+  "main": "dist/render.cjs.js",
+  "module": "dist/render.esm.js",
+  "types": "dist/render.d.ts"
+}
