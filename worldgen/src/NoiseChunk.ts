@@ -59,8 +59,10 @@ export class NoiseChunk {
 	}
 
 	public getPreliminarySurfaceLevel(x: number, z: number) {
-		return computeIfAbsent(this.preliminarySurfaceLevel, ChunkPos.asLong(x, z), () => {
-			const level = NoiseRouter.computePreliminarySurfaceLevelScanning(this.settings, this.initialDensityWithoutJaggedness, x << 2, z << 2)
+		const xx = (x >> 2) << 2
+		const zz = (z >> 2) << 2
+		return computeIfAbsent(this.preliminarySurfaceLevel, ChunkPos.asLong(xx, zz), () => {
+			const level = NoiseRouter.computePreliminarySurfaceLevelScanning(this.settings, this.initialDensityWithoutJaggedness, xx << 2, zz << 2)
 			return level
 		})
 	}
