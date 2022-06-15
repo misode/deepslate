@@ -20,32 +20,32 @@
   ],
   "exports": {
     ".": {
-      "types": "./lib/index.d.ts",
-      "default": "./lib/index.js"
+      "types": "./lib/main.d.ts",
+      "default": "./lib/main.js"
     },
     "./core": {
-      "types": "./lib/core/index.d.ts",
-      "default": "./lib/core/index.js"
+      "types": "./lib/core/main.d.ts",
+      "default": "./lib/core/main.js"
     },
     "./math": {
-      "types": "./lib/math/index.d.ts",
-      "default": "./lib/math/index.js"
+      "types": "./lib/math/main.d.ts",
+      "default": "./lib/math/main.js"
     },
     "./nbt": {
-      "types": "./lib/nbt/index.d.ts",
-      "default": "./lib/nbt/index.js"
+      "types": "./lib/nbt/main.d.ts",
+      "default": "./lib/nbt/main.js"
     },
     "./render": {
-      "types": "./lib/render/index.d.ts",
-      "default": "./lib/render/index.js"
+      "types": "./lib/render/main.d.ts",
+      "default": "./lib/render/main.js"
     },
     "./util": {
-      "types": "./lib/util/index.d.ts",
-      "default": "./lib/util/index.js"
+      "types": "./lib/util/main.d.ts",
+      "default": "./lib/util/main.js"
     },
     "./worldgen": {
-      "types": "./lib/worldgen/index.d.ts",
-      "default": "./lib/worldgen/index.js"
+      "types": "./lib/worldgen/main.d.ts",
+      "default": "./lib/worldgen/main.js"
     }
   },
   "scripts": {
