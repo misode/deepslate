@@ -1,11 +1,11 @@
-import { Holder, Identifier } from '../core'
-import type { PositionalRandom } from '../math'
-import { BlendedNoise, clamp, LegacyRandom, XoroshiroRandom } from '../math'
-import { Json } from '../util'
-import { DensityFunction } from './DensityFunction'
-import { Noises } from './Noises'
-import { NoiseSettings } from './NoiseSettings'
-import { WorldgenRegistries } from './WorldgenRegistries'
+import { Holder, Identifier } from '../core/index.js'
+import type { PositionalRandom } from '../math/index.js'
+import { BlendedNoise, clamp, LegacyRandom, XoroshiroRandom } from '../math/index.js'
+import { Json } from '../util/index.js'
+import { DensityFunction } from './DensityFunction.js'
+import { Noises } from './Noises.js'
+import { NoiseSettings } from './NoiseSettings.js'
+import { WorldgenRegistries } from './WorldgenRegistries.js'
 
 export interface SimpleNoiseRouter {
 	barrier: DensityFunction,

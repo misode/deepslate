@@ -1,7 +1,7 @@
 import { expect } from 'chai'
-import 'mocha'
-import { BlockState, Identifier, Structure } from '../../src/core'
-import type { NamedNbtTag } from '../../src/nbt'
+import { describe, it } from 'vitest'
+import { BlockState, Identifier, Structure } from '../../src/core/index.js'
+import type { NamedNbtTag } from '../../src/nbt/index.js'
 
 describe('Structure', () => {
 	it('getSize', () => {

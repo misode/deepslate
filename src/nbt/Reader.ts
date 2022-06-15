@@ -1,6 +1,6 @@
-import type { NbtTag, NbtValues } from './Tags'
-import { tagNames } from './Tags'
-import { decodeUTF8 } from './Util'
+import type { NbtTag, NbtValues } from './Tags.js'
+import { tagNames } from './Tags.js'
+import { decodeUTF8 } from './Util.js'
 
 export interface NbtReaderOptions {
 	littleEndian?: boolean

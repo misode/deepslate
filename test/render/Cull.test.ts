@@ -1,6 +1,6 @@
 import { expect } from 'chai'
-import 'mocha'
-import { Cull } from '../../src/render/Cull'
+import { describe, it } from 'vitest'
+import { Cull } from '../../src/render/Cull.js'
 
 describe('Cull', () => {
 	it('rotate (none)', () => {

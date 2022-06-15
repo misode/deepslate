@@ -1,38 +1,38 @@
-import { Suite } from 'benchmark'
-import { XoroshiroRandom } from '../../src'
-
-const NAME = 'XoroshiroRandom'
-const suite = new Suite(NAME)
+import * as b from 'benny'
+import { XoroshiroRandom } from '../../src/index.js'
 
 const seed = BigInt(123)
 const random = XoroshiroRandom.create(seed)
 const positionalRandom = random.forkPositional()
 
-export default suite
-	.add('create', () => {
+b.suite('XoroshiroRandom',
+	b.add('create', () => {
 		XoroshiroRandom.create(seed)
-	})
-	.add('next', () => {
+	}),
+	b.add('next', () => {
 		random.next()
-	})
-	.add('nextDouble', () => {
+	}),
+	b.add('nextDouble', () => {
 		random.nextDouble()
-	})
-	.add('nextInt', () => {
+	}),
+	b.add('nextInt', () => {
 		random.nextInt(10)
-	})
-	.add('consume', () => {
+	}),
+	b.add('consume', () => {
 		random.consume(1)
-	})
-	.add('fork', () => {
+	}),
+	b.add('fork', () => {
 		random.fork()
-	})
-	.add('forkPositional', () => {
+	}),
+	b.add('forkPositional', () => {
 		random.forkPositional()
-	})
-	.add('positional fromHashOf', () => {
+	}),
+	b.add('positional fromHashOf', () => {
 		positionalRandom.fromHashOf('minecraft:temperature')
-	})
-	.add('positional at', () => {
+	}),
+	b.add('positional at', () => {
 		positionalRandom.at(1, 2, 3)
-	})
+	}),
+	b.cycle(),
+	b.complete(),
+)

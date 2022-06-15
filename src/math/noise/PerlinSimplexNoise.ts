@@ -1,5 +1,5 @@
-import type { Random } from '../random'
-import { SimplexNoise } from './SimplexNoise'
+import type { Random } from '../random/index.js'
+import { SimplexNoise } from './SimplexNoise.js'
 
 export class PerlinSimplexNoise {
 	public readonly noiseLevels: SimplexNoise[]

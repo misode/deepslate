@@ -1,9 +1,9 @@
-import { BlockPos, BlockState, ChunkPos } from '../core'
-import type { PositionalRandom } from '../math'
-import { clamp, clampedMap, map } from '../math'
-import { lazy } from '../util'
-import { DensityFunction } from './DensityFunction'
-import type { NoiseChunk } from './NoiseChunk'
+import { BlockPos, BlockState, ChunkPos } from '../core/index.js'
+import type { PositionalRandom } from '../math/index.js'
+import { clamp, clampedMap, map } from '../math/index.js'
+import { lazy } from '../util/index.js'
+import { DensityFunction } from './DensityFunction.js'
+import type { NoiseChunk } from './NoiseChunk.js'
 
 export class FluidStatus {
 	constructor(

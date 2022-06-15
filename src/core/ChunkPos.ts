@@ -1,4 +1,4 @@
-import type { BlockPos } from './BlockPos'
+import type { BlockPos } from './BlockPos.js'
 
 export type ChunkPos = [number, number]
 

@@ -1,5 +1,5 @@
-import { clampedLerp } from '../math'
-import { Json } from '../util'
+import { clampedLerp } from '../math/index.js'
+import { Json } from '../util/index.js'
 
 export type NoiseSettings = {
 	minY: number,

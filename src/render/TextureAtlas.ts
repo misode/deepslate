@@ -1,5 +1,5 @@
-import type { Identifier } from '../core'
-import { isPowerOfTwo, upperPowerOfTwo } from '../math'
+import type { Identifier } from '../core/index.js'
+import { isPowerOfTwo, upperPowerOfTwo } from '../math/index.js'
 
 export type UV = [number, number, number, number]
 

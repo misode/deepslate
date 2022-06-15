@@ -1,8 +1,8 @@
-import { Holder, Identifier } from '../core'
-import type { BlendedNoise, MinMaxNumberFunction, NormalNoise } from '../math'
-import { clamp, clampedMap, CubicSpline, lazyLerp3, NoiseParameters } from '../math'
-import { computeIfAbsent, Json } from '../util'
-import { WorldgenRegistries } from './WorldgenRegistries'
+import { Holder, Identifier } from '../core/index.js'
+import type { BlendedNoise, MinMaxNumberFunction, NormalNoise } from '../math/index.js'
+import { clamp, clampedMap, CubicSpline, lazyLerp3, NoiseParameters } from '../math/index.js'
+import { computeIfAbsent, Json } from '../util/index.js'
+import { WorldgenRegistries } from './WorldgenRegistries.js'
 
 export abstract class DensityFunction implements MinMaxNumberFunction<DensityFunction.Context> {
 	public abstract compute(context: DensityFunction.Context): number

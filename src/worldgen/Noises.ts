@@ -1,8 +1,8 @@
-import type { Holder } from '../core'
-import { Identifier } from '../core'
-import type { PositionalRandom } from '../math'
-import { NoiseParameters, NormalNoise } from '../math'
-import { WorldgenRegistries } from './WorldgenRegistries'
+import type { Holder } from '../core/index.js'
+import { Identifier } from '../core/index.js'
+import type { PositionalRandom } from '../math/index.js'
+import { NoiseParameters, NormalNoise } from '../math/index.js'
+import { WorldgenRegistries } from './WorldgenRegistries.js'
 
 export namespace Noises {
 	export const TEMPERATURE = create('temperature', -10, [1.5, 0, 1, 0, 0, 0])

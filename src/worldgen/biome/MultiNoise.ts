@@ -1,7 +1,7 @@
-import { Identifier } from '../../core'
-import { Json } from '../../util'
-import type { BiomeSource } from './BiomeSource'
-import { Climate } from './Climate'
+import { Identifier } from '../../core/index.js'
+import { Json } from '../../util/index.js'
+import type { BiomeSource } from './BiomeSource.js'
+import { Climate } from './Climate.js'
 
 export class MultiNoise implements BiomeSource {
 	constructor(

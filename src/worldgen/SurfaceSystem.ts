@@ -1,13 +1,13 @@
 
-import type { Chunk } from '../core'
-import { BlockPos, BlockState, ChunkPos } from '../core'
-import type { NormalNoise, PositionalRandom, Random } from '../math'
-import { lerp2, map, XoroshiroRandom } from '../math'
-import { computeIfAbsent, Json, lazy } from '../util'
-import type { NoiseChunk } from './NoiseChunk'
-import { Noises } from './Noises'
-import type { WorldgenContext } from './VerticalAnchor'
-import { VerticalAnchor } from './VerticalAnchor'
+import type { Chunk } from '../core/index.js'
+import { BlockPos, BlockState, ChunkPos } from '../core/index.js'
+import type { NormalNoise, PositionalRandom, Random } from '../math/index.js'
+import { lerp2, map, XoroshiroRandom } from '../math/index.js'
+import { computeIfAbsent, Json, lazy } from '../util/index.js'
+import type { NoiseChunk } from './NoiseChunk.js'
+import { Noises } from './Noises.js'
+import type { WorldgenContext } from './VerticalAnchor.js'
+import { VerticalAnchor } from './VerticalAnchor.js'
 
 export class SurfaceSystem {
 	private readonly surfaceNoise: NormalNoise

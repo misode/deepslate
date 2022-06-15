@@ -1,7 +1,8 @@
 import { expect } from 'chai'
-import { BlockState } from '../../src/core'
-import type { SimpleNoiseRouter } from '../../src/worldgen'
-import { DensityFunction as DF, FluidStatus, NoiseChunk, NoiseRouter, NoiseSettings } from '../../src/worldgen'
+import { describe, it } from 'vitest'
+import { BlockState } from '../../src/core/index.js'
+import type { SimpleNoiseRouter } from '../../src/worldgen/index.js'
+import { DensityFunction as DF, FluidStatus, NoiseChunk, NoiseRouter, NoiseSettings } from '../../src/worldgen/index.js'
 
 describe('NoiseChunk', () => {
 	const setup = (routerMods: Partial<SimpleNoiseRouter> = {}) => {

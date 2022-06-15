@@ -1,11 +1,11 @@
-import type { BlockState } from '../core'
-import { BlockPos, ChunkPos } from '../core'
-import { computeIfAbsent } from '../util'
-import type { FluidPicker } from './Aquifer'
-import { Aquifer, NoiseAquifer } from './Aquifer'
-import type { DensityFunction } from './DensityFunction'
-import { NoiseRouter } from './NoiseRouter'
-import { NoiseSettings } from './NoiseSettings'
+import type { BlockState } from '../core/index.js'
+import { BlockPos, ChunkPos } from '../core/index.js'
+import { computeIfAbsent } from '../util/index.js'
+import type { FluidPicker } from './Aquifer.js'
+import { Aquifer, NoiseAquifer } from './Aquifer.js'
+import type { DensityFunction } from './DensityFunction.js'
+import { NoiseRouter } from './NoiseRouter.js'
+import { NoiseSettings } from './NoiseSettings.js'
 
 export class NoiseChunk {
 	public readonly cellWidth: number

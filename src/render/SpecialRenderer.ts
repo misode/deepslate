@@ -1,8 +1,8 @@
-import { Direction, Identifier } from '../core'
-import { BlockDefinition } from './BlockDefinition'
-import { BlockModel } from './BlockModel'
-import type { Cull } from './Cull'
-import type { TextureAtlasProvider } from './TextureAtlas'
+import { Direction, Identifier } from '../core/index.js'
+import { BlockDefinition } from './BlockDefinition.js'
+import { BlockModel } from './BlockModel.js'
+import type { Cull } from './Cull.js'
+import type { TextureAtlasProvider } from './TextureAtlas.js'
 
 function dummy(id: Identifier, uvProvider: TextureAtlasProvider, offset: number, cull: Cull, model: BlockModel) {
 	const definition = new BlockDefinition(id, {'': { model: 'dummy' } }, undefined)

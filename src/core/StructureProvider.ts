@@ -1,6 +1,6 @@
-import type { NbtTag } from '../nbt'
-import type { BlockPos } from './BlockPos'
-import type { BlockState } from './BlockState'
+import type { NbtTag } from '../nbt/index.js'
+import type { BlockPos } from './BlockPos.js'
+import type { BlockState } from './BlockState.js'
 
 export type BlockNbt = { [key: string]: NbtTag }
 

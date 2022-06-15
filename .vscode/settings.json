@@ -16,5 +16,8 @@
 			"source.organizeImports": true,
 			"source.fixAll.eslint": true
 		}
-	}
+	},
+	"editor.insertSpaces": false,
+	"javascript.format.semicolons": "remove",
+	"typescript.format.semicolons": "remove",
 }

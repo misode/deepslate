@@ -1,6 +1,6 @@
-import type { Random } from '../random'
-import { XoroshiroRandom } from '../random'
-import { ImprovedNoise } from './ImprovedNoise'
+import type { Random } from '../random/index.js'
+import { XoroshiroRandom } from '../random/index.js'
+import { ImprovedNoise } from './ImprovedNoise.js'
 
 export class PerlinNoise {
 	public readonly noiseLevels: ImprovedNoise[]

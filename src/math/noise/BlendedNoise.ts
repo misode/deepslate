@@ -1,7 +1,7 @@
-import type { Random } from '../random'
-import { clampedLerp } from '../Util'
-import type { ImprovedNoise } from './ImprovedNoise'
-import { PerlinNoise } from './PerlinNoise'
+import type { Random } from '../random/index.js'
+import { clampedLerp } from '../Util.js'
+import type { ImprovedNoise } from './ImprovedNoise.js'
+import { PerlinNoise } from './PerlinNoise.js'
 
 export class BlendedNoise {
 	public readonly minLimitNoise: PerlinNoise

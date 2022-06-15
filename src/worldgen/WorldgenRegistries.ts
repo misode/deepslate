@@ -1,6 +1,6 @@
-import { Identifier, Registry } from '../core'
-import type { NoiseParameters } from '../math'
-import type { DensityFunction } from './DensityFunction'
+import { Identifier, Registry } from '../core/index.js'
+import type { NoiseParameters } from '../math/index.js'
+import type { DensityFunction } from './DensityFunction.js'
 
 export namespace WorldgenRegistries {
 	export const NOISE = register<NoiseParameters>('worldgen/noise')

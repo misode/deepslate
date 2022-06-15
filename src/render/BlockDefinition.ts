@@ -1,9 +1,9 @@
 import { glMatrix, mat4 } from 'gl-matrix'
-import { Identifier } from '../core'
-import type { BlockModelProvider } from './BlockModel'
-import { Cull } from './Cull'
-import type { TextureAtlasProvider } from './TextureAtlas'
-import { mergeFloat32Arrays, transformVectors } from './Util'
+import { Identifier } from '../core/index.js'
+import type { BlockModelProvider } from './BlockModel.js'
+import { Cull } from './Cull.js'
+import type { TextureAtlasProvider } from './TextureAtlas.js'
+import { mergeFloat32Arrays, transformVectors } from './Util.js'
 
 type ModelVariant = {
 	model: string,

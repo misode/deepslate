@@ -1,9 +1,9 @@
 import pako from 'pako'
-import { NbtReader } from './Reader'
-import type { NamedNbtTag, NbtValues } from './Tags'
-import { tagTypes } from './Tags'
-import { getBedrockHeader, hasGzipHeader, hasZlibHeader } from './Util'
-import { NbtWriter } from './Writer'
+import { NbtReader } from './Reader.js'
+import type { NamedNbtTag, NbtValues } from './Tags.js'
+import { tagTypes } from './Tags.js'
+import { getBedrockHeader, hasGzipHeader, hasZlibHeader } from './Util.js'
+import { NbtWriter } from './Writer.js'
 
 export type NbtCompressionMode = 'gzip' | 'zlib' | 'none'
 

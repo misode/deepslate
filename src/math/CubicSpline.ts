@@ -1,5 +1,5 @@
-import { Json } from '../util'
-import { binarySearch, lerp } from './Util'
+import { Json } from '../util/index.js'
+import { binarySearch, lerp } from './Util.js'
 
 export interface NumberFunction<C> {
 	compute(c: C): number,

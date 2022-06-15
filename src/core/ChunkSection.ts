@@ -1,4 +1,4 @@
-import { BlockState } from './BlockState'
+import { BlockState } from './BlockState.js'
 
 export class ChunkSection {
 	public static readonly WIDTH = 16

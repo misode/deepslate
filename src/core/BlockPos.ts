@@ -1,4 +1,4 @@
-import { Direction } from './Direction'
+import { Direction } from './Direction.js'
 
 export type BlockPos = [number, number, number]
 

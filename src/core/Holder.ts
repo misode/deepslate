@@ -1,5 +1,5 @@
-import { Identifier } from './Identifier'
-import type { Registry } from './Registry'
+import { Identifier } from './Identifier.js'
+import type { Registry } from './Registry.js'
 
 export interface Holder<T> {
 	value(): T

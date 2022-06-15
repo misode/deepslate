@@ -1,6 +1,6 @@
-import type { Random } from '../random'
-import { lerp3, smoothstep } from '../Util'
-import { SimplexNoise } from './SimplexNoise'
+import type { Random } from '../random/index.js'
+import { lerp3, smoothstep } from '../Util.js'
+import { SimplexNoise } from './SimplexNoise.js'
 
 export class ImprovedNoise {
 	public readonly p: number[]

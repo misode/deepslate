@@ -1,6 +1,6 @@
-import { Json } from '../../util'
-import type { Random } from '../random'
-import { PerlinNoise } from './PerlinNoise'
+import { Json } from '../../util/index.js'
+import type { Random } from '../random/index.js'
+import { PerlinNoise } from './PerlinNoise.js'
 
 export class NormalNoise {
 	private static readonly INPUT_FACTOR = 1.0181268882175227

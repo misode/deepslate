@@ -1,7 +1,7 @@
-import type { NamedNbtTag } from '../nbt'
-import { getOptional, getTag } from '../nbt'
-import { Json } from '../util'
-import { Identifier } from './Identifier'
+import type { NamedNbtTag } from '../nbt/index.js'
+import { getOptional, getTag } from '../nbt/index.js'
+import { Json } from '../util/index.js'
+import { Identifier } from './Identifier.js'
 
 export class BlockState {
 	public static readonly AIR = new BlockState(Identifier.create('air'))

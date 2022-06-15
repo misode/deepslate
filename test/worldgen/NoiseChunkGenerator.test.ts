@@ -1,7 +1,8 @@
 import { expect } from 'chai'
-import { BlockState, Chunk, ChunkPos, Identifier } from '../../src/core'
-import type { NoiseGeneratorSettings, NoiseSettings, SimpleNoiseRouter } from '../../src/worldgen'
-import { DensityFunction as DF, FixedBiome, NoiseChunkGenerator, NoiseRouter, Noises, SurfaceRule } from '../../src/worldgen'
+import { describe, it } from 'vitest'
+import { BlockState, Chunk, ChunkPos, Identifier } from '../../src/core/index.js'
+import type { NoiseGeneratorSettings, NoiseSettings, SimpleNoiseRouter } from '../../src/worldgen/index.js'
+import { DensityFunction as DF, FixedBiome, NoiseChunkGenerator, NoiseRouter, Noises, SurfaceRule } from '../../src/worldgen/index.js'
 
 describe('NoiseChunkGenerator', () => {
 	const setup = (seed: bigint, generatorSettings: Partial<NoiseGeneratorSettings> = {}, noiseSettings: Partial<NoiseSettings>, router: Partial<SimpleNoiseRouter>) => {

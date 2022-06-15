@@ -1,5 +1,6 @@
 import { expect } from 'chai'
-import { BlockState, Chunk, ChunkPos } from '../../src/core'
+import { describe, it } from 'vitest'
+import { BlockState, Chunk, ChunkPos } from '../../src/core/index.js'
 
 describe('Chunk', () => {
 	it('create', () => {

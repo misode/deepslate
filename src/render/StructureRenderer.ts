@@ -1,12 +1,12 @@
 import { mat4, vec3 } from 'gl-matrix'
-import type { Identifier, PlacedBlock, StructureProvider } from '../core'
-import { BlockPos, BlockState, Direction } from '../core'
-import type { BlockDefinitionProvider } from './BlockDefinition'
-import type { BlockModelProvider } from './BlockModel'
-import { ShaderProgram } from './ShaderProgram'
-import { SpecialRenderer, SpecialRenderers } from './SpecialRenderer'
-import type { TextureAtlasProvider } from './TextureAtlas'
-import { mergeFloat32Arrays, transformVectors } from './Util'
+import type { Identifier, PlacedBlock, StructureProvider } from '../core/index.js'
+import { BlockPos, BlockState, Direction } from '../core/index.js'
+import type { BlockDefinitionProvider } from './BlockDefinition.js'
+import type { BlockModelProvider } from './BlockModel.js'
+import { ShaderProgram } from './ShaderProgram.js'
+import { SpecialRenderer, SpecialRenderers } from './SpecialRenderer.js'
+import type { TextureAtlasProvider } from './TextureAtlas.js'
+import { mergeFloat32Arrays, transformVectors } from './Util.js'
 
 const vsSource = `
   attribute vec4 vertPos;

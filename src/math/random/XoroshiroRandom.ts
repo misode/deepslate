@@ -1,6 +1,6 @@
 import md5 from 'md5'
-import { getSeed, longfromBytes } from '../Util'
-import type { PositionalRandom, Random } from './Random'
+import { getSeed, longfromBytes } from '../Util.js'
+import type { PositionalRandom, Random } from './Random.js'
 
 export class XoroshiroRandom implements Random {
 	private static readonly SILVER_RATIO_64 = BigInt('7640891576956012809')

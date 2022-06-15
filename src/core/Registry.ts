@@ -1,5 +1,5 @@
-import { Holder } from './Holder'
-import { Identifier } from './Identifier'
+import { Holder } from './Holder.js'
+import { Identifier } from './Identifier.js'
 
 export class Registry<T> {
 	public static readonly REGISTRY = new Registry<Registry<unknown>>(Identifier.create('root'))

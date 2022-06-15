@@ -1,5 +1,6 @@
 import { expect } from 'chai'
-import { CubicSpline } from '../../src/math'
+import { describe, it } from 'vitest'
+import { CubicSpline } from '../../src/math/index.js'
 
 describe('Spline', () => {
 	const DELTA = 1e-7

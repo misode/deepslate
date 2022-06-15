@@ -1,6 +1,6 @@
-import { Identifier } from '../../core'
-import { Json } from '../../util'
-import type { BiomeSource } from './BiomeSource'
+import { Identifier } from '../../core/index.js'
+import { Json } from '../../util/index.js'
+import type { BiomeSource } from './BiomeSource.js'
 
 export class FixedBiome implements BiomeSource {
 	constructor(

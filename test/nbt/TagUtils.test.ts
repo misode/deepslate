@@ -1,7 +1,7 @@
 import { expect } from 'chai'
-import 'mocha'
-import type { NbtValues } from '../../src/nbt'
-import { getListTag, getOptional, getTag } from '../../src/nbt'
+import { describe, it } from 'vitest'
+import type { NbtValues } from '../../src/nbt/index.js'
+import { getListTag, getOptional, getTag } from '../../src/nbt/index.js'
 
 describe('TagUtils', () => {
 	const data: NbtValues['compound'] = {

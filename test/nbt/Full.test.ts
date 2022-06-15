@@ -1,7 +1,7 @@
 import { expect } from 'chai'
-import 'mocha'
-import type { NbtValues, tagTypes } from '../../src/nbt'
-import { NbtReader, NbtWriter } from '../../src/nbt'
+import { describe, it } from 'vitest'
+import type { NbtValues, tagTypes } from '../../src/nbt/index.js'
+import { NbtReader, NbtWriter } from '../../src/nbt/index.js'
 
 function test<T extends keyof typeof tagTypes>(type: T, data: NbtValues[T]) {
 	const writer = new NbtWriter()

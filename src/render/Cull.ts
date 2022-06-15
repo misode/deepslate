@@ -1,4 +1,4 @@
-import type { Direction } from '../core'
+import type { Direction } from '../core/index.js'
 
 export type Cull = {[key in Direction]?: boolean}
 

@@ -1,6 +1,6 @@
 import { expect } from 'chai'
-import 'mocha'
-import { BlockPos, Direction } from '../../src/core'
+import { describe, it } from 'vitest'
+import { BlockPos, Direction } from '../../src/core/index.js'
 
 describe('BlockPos', () => {
 	it('create', () => {

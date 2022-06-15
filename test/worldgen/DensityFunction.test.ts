@@ -1,7 +1,8 @@
 import { expect } from 'chai'
-import { CubicSpline, XoroshiroRandom } from '../../src/math'
-import type { NoiseSettings } from '../../src/worldgen'
-import { DensityFunction as DF, NoiseRouter, Noises } from '../../src/worldgen'
+import { describe, it } from 'vitest'
+import { CubicSpline, XoroshiroRandom } from '../../src/math/index.js'
+import type { NoiseSettings } from '../../src/worldgen/index.js'
+import { DensityFunction as DF, NoiseRouter, Noises } from '../../src/worldgen/index.js'
 
 describe('DensityFunction', () => {
 	const ContextA = DF.context(1, 2, 3)

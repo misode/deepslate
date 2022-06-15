@@ -1,4 +1,4 @@
-import type { NbtTag, NbtValues } from './Tags'
+import type { NbtTag, NbtValues } from './Tags.js'
 
 export function getTag<T extends keyof NbtValues>(tag: NbtValues['compound'], name: string, type: T): NbtValues[T]
 export function getTag(tags: NbtValues['compound'], name: string, type: string) {

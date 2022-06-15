@@ -1,6 +1,6 @@
-import type { NbtValues } from './Tags'
-import { tagTypes } from './Tags'
-import { encodeUTF8 } from './Util'
+import type { NbtValues } from './Tags.js'
+import { tagTypes } from './Tags.js'
+import { encodeUTF8 } from './Util.js'
 
 export interface NbtWriterOptions {
 	littleEndian?: boolean

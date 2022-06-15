@@ -1,11 +1,11 @@
 import type { ReadonlyVec3 } from 'gl-matrix'
 import { glMatrix, mat4, vec3 } from 'gl-matrix'
-import type { Direction } from '../core'
-import { Identifier } from '../core'
-import { BlockColors } from './BlockColors'
-import type { Cull } from './Cull'
-import type { TextureAtlasProvider, UV } from './TextureAtlas'
-import { mergeFloat32Arrays, transformVectors } from './Util'
+import type { Direction } from '../core/index.js'
+import { Identifier } from '../core/index.js'
+import { BlockColors } from './BlockColors.js'
+import type { Cull } from './Cull.js'
+import type { TextureAtlasProvider, UV } from './TextureAtlas.js'
+import { mergeFloat32Arrays, transformVectors } from './Util.js'
 
 type Axis = 'x' | 'y' | 'z'
 

@@ -1,9 +1,9 @@
-import { BlockState } from '../core'
-import { Json } from '../util'
-import type { SimpleNoiseRouter } from './NoiseRouter'
-import { NoiseRouter } from './NoiseRouter'
-import { NoiseSettings } from './NoiseSettings'
-import { SurfaceRule } from './SurfaceSystem'
+import { BlockState } from '../core/index.js'
+import { Json } from '../util/index.js'
+import type { SimpleNoiseRouter } from './NoiseRouter.js'
+import { NoiseRouter } from './NoiseRouter.js'
+import { NoiseSettings } from './NoiseSettings.js'
+import { SurfaceRule } from './SurfaceSystem.js'
 
 export interface NoiseGeneratorSettings {
 	noise: NoiseSettings,

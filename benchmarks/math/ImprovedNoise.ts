@@ -1,16 +1,17 @@
-import { Suite } from 'benchmark'
-import { ImprovedNoise, XoroshiroRandom } from '../../src'
-
-const suite = new Suite('ImprovedNoise')
+import * as b from 'benny'
+import { ImprovedNoise, XoroshiroRandom } from '../../src/index.js'
 
 const seed = BigInt(123)
 const random = XoroshiroRandom.create(seed)
 const noise = new ImprovedNoise(random)
 
-export default suite
-	.add('create', () => {
+b.suite('ImprovedNoise',
+	b.add('create', () => {
 		new ImprovedNoise(random)
-	})
-	.add('sample', () => {
+	}),
+	b.add('sample', () => {
 		noise.sample(1, 2, 3)
-	})
+	}),
+	b.cycle(),
+	b.complete(),
+)

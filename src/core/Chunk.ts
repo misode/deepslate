@@ -1,7 +1,7 @@
-import type { BlockPos } from './BlockPos'
-import { BlockState } from './BlockState'
-import type { ChunkPos } from './ChunkPos'
-import { ChunkSection } from './ChunkSection'
+import type { BlockPos } from './BlockPos.js'
+import { BlockState } from './BlockState.js'
+import type { ChunkPos } from './ChunkPos.js'
+import { ChunkSection } from './ChunkSection.js'
 
 export class Chunk {
 	public sections: ChunkSection[]

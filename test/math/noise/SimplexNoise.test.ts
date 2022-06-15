@@ -1,5 +1,6 @@
 import { expect } from 'chai'
-import { LegacyRandom, SimplexNoise } from '../../../src/math'
+import { describe, it } from 'vitest'
+import { LegacyRandom, SimplexNoise } from '../../../src/math/index.js'
 
 describe('SimplexNoise', () => {
 	const DELTA = 1e-5

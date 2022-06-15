@@ -8,19 +8,51 @@
     "type": "git",
     "url": "https://github.com/misode/deepslate.git"
   },
-  "main": "./dist/deepslate.cjs.js",
-  "module": "./dist/deepslate.esm.js",
+  "type": "module",
+  "main": "./lib/index.js",
+  "module": "./lib/index.js",
   "unpkg": "./dist/deepslate.umd.js",
-  "types": "./dist/deepslate.d.ts",
+  "types": "./lib/index.d.ts",
   "files": [
+    "lib/*",
     "dist/*",
-    "!dist/**/*.tsbuildinfo"
+    "!**/*.tsbuildinfo"
   ],
+  "exports": {
+    ".": {
+      "types": "./lib/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./core": {
+      "types": "./lib/core/index.d.ts",
+      "default": "./lib/core/index.js"
+    },
+    "./math": {
+      "types": "./lib/math/index.d.ts",
+      "default": "./lib/math/index.js"
+    },
+    "./nbt": {
+      "types": "./lib/nbt/index.d.ts",
+      "default": "./lib/nbt/index.js"
+    },
+    "./render": {
+      "types": "./lib/render/index.d.ts",
+      "default": "./lib/render/index.js"
+    },
+    "./util": {
+      "types": "./lib/util/index.d.ts",
+      "default": "./lib/util/index.js"
+    },
+    "./worldgen": {
+      "types": "./lib/worldgen/index.d.ts",
+      "default": "./lib/worldgen/index.js"
+    }
+  },
   "scripts": {
-    "build": "rollup --config",
-    "dev": "rollup --config --watch",
-    "test": "env TS_NODE_PROJECT=\"tsconfig.testing.json\" mocha --require esbuild-register 'test/**/*.test.ts'",
-    "benchmark": "env TS_NODE_PROJECT=\"tsconfig.testing.json\" ts-node benchmarks/index.ts",
+    "build": "tsc -b src --clean && tsc -b src && vite build",
+    "dev": "tsc -b -w src",
+    "test": "vitest -r ./test",
+    "benchmark": "esno benchmarks/index.ts",
     "lint": "eslint . --ext .ts",
     "version": "bash scripts/version.sh",
     "prepublishOnly": "npm run build"
@@ -31,29 +63,18 @@
     "pako": "^2.0.3"
   },
   "devDependencies": {
-    "@rollup/plugin-commonjs": "^20.0.0",
-    "@rollup/plugin-node-resolve": "^13.0.4",
-    "@types/benchmark": "^2.1.1",
     "@types/chai": "^4.2.14",
     "@types/md5": "^2.3.1",
-    "@types/mocha": "^8.2.0",
     "@types/pako": "^1.0.1",
     "@typescript-eslint/eslint-plugin": "^5.28.0",
     "@typescript-eslint/parser": "^5.28.0",
-    "benchmark": "^2.1.4",
+    "benny": "^3.7.1",
     "chai": "^4.2.0",
-    "esbuild": "^0.12.20",
-    "esbuild-register": "^3.3.2",
     "eslint": "^8.17.0",
+    "esno": "^0.16.3",
     "jszip": "^3.7.1",
-    "mocha": "^9.1.2",
-    "nyc": "^15.1.0",
-    "rollup": "^2.56.2",
-    "rollup-plugin-dts": "^3.0.2",
-    "rollup-plugin-esbuild": "^4.8.2",
-    "rollup-plugin-terser": "^7.0.2",
-    "ts-node": "^10.8.1",
     "typescript": "^4.7.3",
-    "vite": "^2.3.4"
+    "vite": "^2.3.4",
+    "vitest": "^0.15.1"
   }
 }

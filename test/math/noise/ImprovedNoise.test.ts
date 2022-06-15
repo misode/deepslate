@@ -1,5 +1,6 @@
 import { expect } from 'chai'
-import { ImprovedNoise, LegacyRandom } from '../../../src/math'
+import { describe, it } from 'vitest'
+import { ImprovedNoise, LegacyRandom } from '../../../src/math/index.js'
 
 describe('ImprovedNoise', () => {
 	const DELTA = 1e-5

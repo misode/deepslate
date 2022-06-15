@@ -1,9 +1,9 @@
-import type { NamedNbtTag } from '../nbt'
-import { getListTag, getOptional, getTag } from '../nbt'
-import type { BlockPos } from './BlockPos'
-import { BlockState } from './BlockState'
-import type { Identifier } from './Identifier'
-import type { BlockNbt, StructureProvider } from './StructureProvider'
+import type { NamedNbtTag } from '../nbt/index.js'
+import { getListTag, getOptional, getTag } from '../nbt/index.js'
+import type { BlockPos } from './BlockPos.js'
+import { BlockState } from './BlockState.js'
+import type { Identifier } from './Identifier.js'
+import type { BlockNbt, StructureProvider } from './StructureProvider.js'
 
 export type PlacedBlock = { pos: BlockPos, state: BlockState, nbt: BlockNbt | undefined }
 

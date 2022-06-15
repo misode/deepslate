@@ -1,6 +1,6 @@
 import { expect } from 'chai'
-import 'mocha'
-import { NbtWriter } from '../../src/nbt'
+import { describe, it } from 'vitest'
+import { NbtWriter } from '../../src/nbt/index.js'
 
 function matches(writer: NbtWriter, data: number[], message?: string) {
 	expect(writer.getData())
@@ -10,7 +10,7 @@ function matches(writer: NbtWriter, data: number[], message?: string) {
 describe('Writer', () => {
 	it('end', () => {
 		const writer = new NbtWriter()
-		writer.end(null)
+		writer.end()
 		matches(writer, [])
 	})
 

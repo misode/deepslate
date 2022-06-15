@@ -1,5 +1,6 @@
 import { expect } from 'chai'
-import { NoiseSettings } from '../../src/worldgen'
+import { describe, it } from 'vitest'
+import { NoiseSettings } from '../../src/worldgen/index.js'
 
 describe('NoiseSettings', () => {
 	const setup = () => {

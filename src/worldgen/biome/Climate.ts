@@ -1,7 +1,7 @@
-import { square } from '../../math'
-import { Json } from '../../util'
-import { DensityFunction } from '../DensityFunction'
-import type { NoiseRouter } from '../NoiseRouter'
+import { square } from '../../math/index.js'
+import { Json } from '../../util/index.js'
+import { DensityFunction } from '../DensityFunction.js'
+import type { NoiseRouter } from '../NoiseRouter.js'
 
 export namespace Climate {
 	const PARAMETER_SPACE = 7
