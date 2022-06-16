@@ -7,10 +7,10 @@ export class Identifier {
 		public readonly path: string,
 	) {
 		if (!namespace.match(/^[a-z0-9._-]+$/)) {
-			throw new Error(`Non [a-z0-9._-] character in namespace of ${namespace}:${path}`)
+			throw new Error(`Non [a-z0-9._-] character in namespace of ${namespace}${Identifier.SEPARATOR}${path}`)
 		}
 		if (!path.match(/^[a-z0-9/._-]+$/)) {
-			throw new Error(`Non [a-z0-9/._-] character in path of ${namespace}:${path}`)
+			throw new Error(`Non [a-z0-9/._-] character in path of ${namespace}${Identifier.SEPARATOR}${path}`)
 		}
 	}
 
@@ -22,7 +22,7 @@ export class Identifier {
 	}
 
 	public toString() {
-		return `${this.namespace}:${this.path}`
+		return this.namespace + Identifier.SEPARATOR + this.path
 	}
 
 	public static create(path: string) {

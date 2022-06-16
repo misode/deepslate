@@ -20,8 +20,18 @@ export class Registry<T> {
 		return Holder.reference(this, id)
 	}
 
+	public delete(id: Identifier) {
+		const deleted = this.storage.delete(id.toString())
+		this.builtin.delete(id.toString())
+		return deleted
+	}
+
 	public keys() {
 		return [...this.storage.keys()].map(e => Identifier.parse(e))
+	}
+
+	public has(id: Identifier) {
+		return this.storage.has(id.toString())
 	}
 
 	public get(id: Identifier) {
@@ -63,5 +73,17 @@ export class Registry<T> {
 
 	public cloneEmpty() {
 		return new Registry(this.key, this.parser)
+	}
+
+	public forEach(fn: (key: Identifier, value: T, registry: Registry<T>) => void) {
+		for (const [key, value] of this.storage.entries()) {
+			fn(Identifier.parse(key), value, this)
+		}
+	}
+
+	public map<U>(fn: (key: Identifier, value: T, registry: Registry<T>) => U): U[] {
+		return [...this.storage.entries()].map(([key, value]) => {
+			return fn(Identifier.parse(key), value, this)
+		})
 	}
 }

@@ -51,7 +51,7 @@ export namespace Noises {
 	export const SURFACE_SECONDARY = create('surface_secondary', -6, [1, 1, 0, 1])
 
 	function create(name: string, firstOctave: number, amplitudes: number[]): Holder<NoiseParameters> {
-		return WorldgenRegistries.NOISE.register(Identifier.create(name), NoiseParameters.create(firstOctave, amplitudes))
+		return WorldgenRegistries.NOISE.register(Identifier.create(name), NoiseParameters.create(firstOctave, amplitudes), true)
 	}
 
 	const noiseCache = new Map<string, [bigint | number, bigint | number, NormalNoise]>()
