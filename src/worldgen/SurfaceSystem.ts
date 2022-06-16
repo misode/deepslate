@@ -5,9 +5,10 @@ import type { NormalNoise, PositionalRandom, Random } from '../math/index.js'
 import { lerp2, map, XoroshiroRandom } from '../math/index.js'
 import { computeIfAbsent, Json, lazy } from '../util/index.js'
 import type { NoiseChunk } from './NoiseChunk.js'
-import { Noises } from './Noises.js'
+import { NoiseRouter } from './NoiseRouter.js'
 import type { WorldgenContext } from './VerticalAnchor.js'
 import { VerticalAnchor } from './VerticalAnchor.js'
+import { WorldgenRegistries } from './WorldgenRegistries.js'
 
 export class SurfaceSystem {
 	private readonly surfaceNoise: NormalNoise
@@ -21,8 +22,8 @@ export class SurfaceSystem {
 		seed: bigint,
 	) {
 		this.random = XoroshiroRandom.create(seed).forkPositional()
-		this.surfaceNoise = Noises.instantiate(this.random, Noises.SURFACE)
-		this.surfaceSecondaryNoise = Noises.instantiate(this.random, Noises.SURFACE_SECONDARY)
+		this.surfaceNoise = NoiseRouter.instantiate(this.random, WorldgenRegistries.SURFACE_NOISE)
+		this.surfaceSecondaryNoise = NoiseRouter.instantiate(this.random, WorldgenRegistries.SURFACE_SECONDARY_NOISE)
 		this.positionalRandoms = new Map()
 	}
 

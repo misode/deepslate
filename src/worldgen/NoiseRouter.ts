@@ -1,9 +1,8 @@
 import { Holder, Identifier } from '../core/index.js'
-import type { PositionalRandom } from '../math/index.js'
-import { BlendedNoise, clamp, LegacyRandom, XoroshiroRandom } from '../math/index.js'
+import type { NoiseParameters, PositionalRandom } from '../math/index.js'
+import { BlendedNoise, clamp, LegacyRandom, NormalNoise, XoroshiroRandom } from '../math/index.js'
 import { Json } from '../util/index.js'
 import { DensityFunction } from './DensityFunction.js'
-import { Noises } from './Noises.js'
 import { NoiseSettings } from './NoiseSettings.js'
 import { WorldgenRegistries } from './WorldgenRegistries.js'
 
@@ -110,17 +109,17 @@ export namespace NoiseRouter {
 				return fn.withCellSize(NoiseSettings.cellWidth(this.settings), NoiseSettings.cellHeight(this.settings))
 			}
 			if (fn instanceof DensityFunction.ShiftedNoise) {
-				const noise = Noises.instantiate(this.random, fn.noiseData)
+				const noise = instantiate(this.random, fn.noiseData)
 				return new DensityFunction.ShiftedNoise(fn.shiftX, fn.shiftY, fn.shiftZ, fn.xzScale, fn.yScale, fn.noiseData, noise)
 			}
 			if (fn instanceof DensityFunction.Noise) {
-				return new DensityFunction.Noise(fn.xzScale, fn.yScale, fn.noiseData, Noises.instantiate(this.random, fn.noiseData))
+				return new DensityFunction.Noise(fn.xzScale, fn.yScale, fn.noiseData, instantiate(this.random, fn.noiseData))
 			}
 			if (fn instanceof DensityFunction.ShiftNoise) {
-				return fn.withNewNoise(Noises.instantiate(this.random, fn.noiseData))
+				return fn.withNewNoise(instantiate(this.random, fn.noiseData))
 			}
 			if (fn instanceof DensityFunction.WeirdScaledSampler) {
-				return new DensityFunction.WeirdScaledSampler(fn.input, fn.rarityValueMapper, fn.noiseData, Noises.instantiate(this.random, fn.noiseData))
+				return new DensityFunction.WeirdScaledSampler(fn.input, fn.rarityValueMapper, fn.noiseData, instantiate(this.random, fn.noiseData))
 			}
 			if (fn instanceof DensityFunction.OldBlendedNoise) {
 				return new DensityFunction.OldBlendedNoise(fn.xzScale, fn.yScale, fn.xzFactor, fn.yFactor, fn.smearScaleMultiplier, new BlendedNoise( this.random.fromHashOf(Identifier.create('terrain').toString()), fn.xzScale, fn.yScale, fn.xzFactor, fn.yFactor, fn.smearScaleMultiplier))
@@ -167,5 +166,23 @@ export namespace NoiseRouter {
 			}
 		}
 		return Number.MAX_SAFE_INTEGER
+	}
+
+	const noiseCache = new Map<string, [bigint | number, bigint | number, NormalNoise]>()
+
+	export function instantiate(random: PositionalRandom, noise: Holder<NoiseParameters>): NormalNoise {
+		const key = noise.key()?.toString()
+		if (!key) {
+			throw new Error('Cannot instantiate noise from direct holder')
+		}
+
+		const randomKey = random.seedKey()
+		const cached = noiseCache.get(key)
+		if (cached && cached[0] === randomKey[0] && cached[1] === randomKey[1]) {
+			return cached[2]
+		}
+		const result = new NormalNoise(random.fromHashOf(key), noise.value())
+		noiseCache.set(key, [randomKey[0], randomKey[1], result])
+		return result
 	}
 }
