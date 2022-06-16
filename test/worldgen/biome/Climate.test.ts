@@ -1,5 +1,4 @@
-import { expect } from 'chai'
-import { describe, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { Climate } from '../../../src/worldgen/index.js'
 
 describe('Climate', () => {
@@ -14,7 +13,7 @@ describe('Climate', () => {
 			
 			expect(tree['root']).instanceof(Climate.RSubTree)
 			expect((tree['root'] as Climate.RSubTree<string>).children).lengthOf(3)
-			expect(tree['root'].space).deep.equal([
+			expect(tree['root'].space).toEqual([
 				new Climate.Param(0, 1),
 				new Climate.Param(0, 0),
 				new Climate.Param(0, 0.6),
@@ -33,9 +32,9 @@ describe('Climate', () => {
 			const tree = new Climate.RTree(points)
 			const distance = (node: Climate.RNode<string>, values: number[]) => node.distance(values)
 
-			expect(tree.search(Climate.target(0, 0, 0, 0, 0, 0), distance)).equal('red')
-			expect(tree.search(Climate.target(2, 0, 0, 0, 0, 0), distance)).equal('green')
-			expect(tree.search(Climate.target(0.2, 0, 0.7, -0.5, 0, 0), distance)).equal('blue')
+			expect(tree.search(Climate.target(0, 0, 0, 0, 0, 0), distance)).toEqual('red')
+			expect(tree.search(Climate.target(2, 0, 0, 0, 0, 0), distance)).toEqual('green')
+			expect(tree.search(Climate.target(0.2, 0, 0.7, -0.5, 0, 0), distance)).toEqual('blue')
 		})
 		it('search (complex)', () => {
 			const points: [Climate.ParamPoint, () => string][] = [
@@ -61,11 +60,11 @@ describe('Climate', () => {
 			expect(root.children[0]).instanceof(Climate.RSubTree)
 			expect(root.children[1]).instanceof(Climate.RLeaf)
 
-			expect(tree.search(Climate.target(0, 0, 0, 0, 0, 0), distance)).equal('red')
-			expect(tree.search(Climate.target(0.4, 0, 0, 0, 0.7, 0), distance)).equal('red')
-			expect(tree.search(Climate.target(0, 0.3, 0, -0.2, 0, 1), distance)).equal('purple')
-			expect(tree.search(Climate.target(0, 0, 0.7, -0.2, 0, 0.1), distance)).equal('black')
-			expect(tree.search(Climate.target(0, 0.6, 0, 0, 0, 0), distance)).equal('pink')
+			expect(tree.search(Climate.target(0, 0, 0, 0, 0, 0), distance)).toEqual('red')
+			expect(tree.search(Climate.target(0.4, 0, 0, 0, 0.7, 0), distance)).toEqual('red')
+			expect(tree.search(Climate.target(0, 0.3, 0, -0.2, 0, 1), distance)).toEqual('purple')
+			expect(tree.search(Climate.target(0, 0, 0.7, -0.2, 0, 0.1), distance)).toEqual('black')
+			expect(tree.search(Climate.target(0, 0.6, 0, 0, 0, 0), distance)).toEqual('pink')
 		})
 	})
 })

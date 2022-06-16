@@ -1,32 +1,31 @@
-import { expect } from 'chai'
-import { describe, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { BlockState, Identifier } from '../../src/core/index.js'
 import type { NamedNbtTag } from '../../src/nbt/index.js'
 
 describe('BlockState', () => {
 	it('constructor', () => {
 		const state = new BlockState('piston')
-		expect(state).deep.equal(new BlockState(new Identifier('minecraft', 'piston')))
+		expect(state).toEqual(new BlockState(new Identifier('minecraft', 'piston')))
 	})
 
 	it('getName', () => {
 		const state = new BlockState('jigsaw', { orientation: 'east_up' })
 		const name = state.getName()
-		expect(name).deep.equal(Identifier.create('jigsaw'))
+		expect(name).toEqual(Identifier.create('jigsaw'))
 	})
 
 	it('getProperties', () => {
 		const state = new BlockState('piston', { extended: 'false', facing: 'up' })
 		const props = state.getProperties()
 		expect(props).an('object').with.keys('extended', 'facing')
-		expect(props['extended']).equal('false')
-		expect(props['facing']).equal('up')
+		expect(props['extended']).toEqual('false')
+		expect(props['facing']).toEqual('up')
 	})
 
 	it('getProperty', () => {
 		const state = new BlockState('piston', { extended: 'false', facing: 'up' })
-		expect(state.getProperty('extended')).equal('false')
-		expect(state.getProperty('facing')).equal('up')
+		expect(state.getProperty('extended')).toEqual('false')
+		expect(state.getProperty('facing')).toEqual('up')
 	})
 
 	it('equals', () => {
@@ -43,7 +42,7 @@ describe('BlockState', () => {
 
 	it('toString', () => {
 		const state = new BlockState('piston', { extended: 'false', facing: 'up' })
-		expect(state.toString()).equal('minecraft:piston[extended=false,facing=up]')
+		expect(state.toString()).toEqual('minecraft:piston[extended=false,facing=up]')
 	})
 
 	it('fromNbt (no properties)', () => {
@@ -53,7 +52,7 @@ describe('BlockState', () => {
 		const stateA = BlockState.fromNbt(nbt)
 		const stateB = new BlockState('stone')
 
-		expect(stateA).deep.equal(stateB)
+		expect(stateA).toEqual(stateB)
 	})
 
 	it('fromNbt (properties)', () => {
@@ -67,7 +66,7 @@ describe('BlockState', () => {
 		const stateA = BlockState.fromNbt(nbt)
 		const stateB = new BlockState('piston', { extended: 'false', facing: 'up' })
 
-		expect(stateA).deep.equal(stateB)
+		expect(stateA).toEqual(stateB)
 	})
 
 	it('fromJson (no properties)', () => {
@@ -77,7 +76,7 @@ describe('BlockState', () => {
 		const stateA = BlockState.fromJson(json)
 		const stateB = new BlockState('stone')
 
-		expect(stateA).deep.equal(stateB)
+		expect(stateA).toEqual(stateB)
 	})
 
 	it('fromJson (properties)', () => {
@@ -91,6 +90,6 @@ describe('BlockState', () => {
 		const stateA = BlockState.fromJson(json)
 		const stateB = new BlockState('piston', { extended: 'false', facing: 'up' })
 
-		expect(stateA).deep.equal(stateB)
+		expect(stateA).toEqual(stateB)
 	})
 })

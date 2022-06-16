@@ -1,5 +1,4 @@
-import { expect } from 'chai'
-import { describe, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { BlockState, Chunk, ChunkPos, Identifier } from '../../src/core/index.js'
 import type { NoiseGeneratorSettings, NoiseSettings, SimpleNoiseRouter } from '../../src/worldgen/index.js'
 import { DensityFunction as DF, FixedBiome, NoiseChunkGenerator, NoiseRouter, Noises, SurfaceRule } from '../../src/worldgen/index.js'
@@ -35,7 +34,7 @@ describe('NoiseChunkGenerator', () => {
 		const { generator } = setup(BigInt(123), {}, {}, { finalDensity })
 		const chunk = new Chunk(0, 64, ChunkPos.create(4, 1))
 		generator.fill(chunk)
-		expect(printSlice(chunk)).equal('XXXX.......XXXXX|.XXXX......XXXXX|.XXX.......XXXX.|..XX........XXX.|............XXX.|............XX..|............XXXX|XX..........XXXX|XX....X.......XX|XXX.XX..........|XXXXX...........|XXXXX..........X|..XXXXXXX......X|...XXXXXXX......|...XXXXXXX......|.....XXXXX......|......XXXXXXX...|XX.....XXXXXX...|XXX....XXXXXX...|XX......XXXX....|.........XXX....|................|................|..XXXXXXX.......|..XXXXXXX.......|..XXXXXXX.......|...XXXXXX.......|.....XXXX.......|...XXXX.........|....XXX.........|....XXXX........|XXXXXXXX........|XXXXXXXX........|XXXXXXXX........|XXXXXXXX...X....|XXXXXXXX..XX....|XXXXXXXXX.......|XXXXXXXX........|...XXXXXX.......|....XXXXXXX.....|....XXXXXXXXX...|.....XXXXXXXXX..|.....XXXXXXXX...|X....XXXXXX.....|X.....XXXX......|XX.....XX.......|XX...........XXX|XX........XXXXXX|XXX......XXXXXXX|..XX...XXXXXXXXX|.XX.....XXXXXXXX|XXX.....XXXXXXX.|XXX.....XXXXX...|.XX.....XXXX....|XXXX....XXXX....|XXXXXXX..XXX....|.XXXXXX..X......|.XXXXX..........|..XXX.........XX|..XXX........XXX|..XXX.......XXXX|..XX.........XXX|..XXX.....X.....|...XXX....X.....')
+		expect(printSlice(chunk)).toEqual('XXXX.......XXXXX|.XXXX......XXXXX|.XXX.......XXXX.|..XX........XXX.|............XXX.|............XX..|............XXXX|XX..........XXXX|XX....X.......XX|XXX.XX..........|XXXXX...........|XXXXX..........X|..XXXXXXX......X|...XXXXXXX......|...XXXXXXX......|.....XXXXX......|......XXXXXXX...|XX.....XXXXXX...|XXX....XXXXXX...|XX......XXXX....|.........XXX....|................|................|..XXXXXXX.......|..XXXXXXX.......|..XXXXXXX.......|...XXXXXX.......|.....XXXX.......|...XXXX.........|....XXX.........|....XXXX........|XXXXXXXX........|XXXXXXXX........|XXXXXXXX........|XXXXXXXX...X....|XXXXXXXX..XX....|XXXXXXXXX.......|XXXXXXXX........|...XXXXXX.......|....XXXXXXX.....|....XXXXXXXXX...|.....XXXXXXXXX..|.....XXXXXXXX...|X....XXXXXX.....|X.....XXXX......|XX.....XX.......|XX...........XXX|XX........XXXXXX|XXX......XXXXXXX|..XX...XXXXXXXXX|.XX.....XXXXXXXX|XXX.....XXXXXXX.|XXX.....XXXXX...|.XX.....XXXX....|XXXX....XXXX....|XXXXXXX..XXX....|.XXXXXX..X......|.XXXXX..........|..XXX.........XX|..XXX........XXX|..XXX.......XXXX|..XX.........XXX|..XXX.....X.....|...XXX....X.....')
 	})
 })
 

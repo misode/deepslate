@@ -1,5 +1,4 @@
-import { expect } from 'chai'
-import { describe, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { Identifier } from '../../../src/core/index.js'
 import type { NoiseSettings } from '../../../src/worldgen/index.js'
 import { Climate, DensityFunction as DF, MultiNoise, NoiseRouter, Noises } from '../../../src/worldgen/index.js'
@@ -26,10 +25,10 @@ describe('MultiNoise', () => {
 		})
 		const sampler = Climate.Sampler.fromRouter(NoiseRouter.withSettings(router, settings, BigInt(123)))
 
-		expect(nether.getBiome(0, 0, 0, sampler)).deep.equal(Identifier.create('basalt_deltas'))
-		expect(nether.getBiome(200, 0, 0, sampler)).deep.equal(Identifier.create('basalt_deltas'))
-		expect(nether.getBiome(400, 0, 0, sampler)).deep.equal(Identifier.create('nether_wastes'))
-		expect(nether.getBiome(600, 0, 0, sampler)).deep.equal(Identifier.create('crimson_forest'))
-		expect(nether.getBiome(0, 0, -500, sampler)).deep.equal(Identifier.create('soul_sand_valley'))
+		expect(nether.getBiome(0, 0, 0, sampler)).toEqual(Identifier.create('basalt_deltas'))
+		expect(nether.getBiome(200, 0, 0, sampler)).toEqual(Identifier.create('basalt_deltas'))
+		expect(nether.getBiome(400, 0, 0, sampler)).toEqual(Identifier.create('nether_wastes'))
+		expect(nether.getBiome(600, 0, 0, sampler)).toEqual(Identifier.create('crimson_forest'))
+		expect(nether.getBiome(0, 0, -500, sampler)).toEqual(Identifier.create('soul_sand_valley'))
 	})
 })

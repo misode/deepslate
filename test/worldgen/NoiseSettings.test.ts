@@ -1,5 +1,4 @@
-import { expect } from 'chai'
-import { describe, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { NoiseSettings } from '../../src/worldgen/index.js'
 
 describe('NoiseSettings', () => {
@@ -15,21 +14,21 @@ describe('NoiseSettings', () => {
 
 	it('cellWidth', () => {
 		const { settings } = setup()
-		expect(NoiseSettings.cellWidth(settings)).equal(4)
+		expect(NoiseSettings.cellWidth(settings)).toEqual(4)
 	})
 
 	it('cellHeight', () => {
 		const { settings } = setup()
-		expect(NoiseSettings.cellHeight(settings)).equal(8)
+		expect(NoiseSettings.cellHeight(settings)).toEqual(8)
 	})
 
 	it('cellCountY', () => {
 		const { settings } = setup()
-		expect(NoiseSettings.cellCountY(settings)).equal(48)
+		expect(NoiseSettings.cellCountY(settings)).toEqual(48)
 	})
 
 	it('minCellY', () => {
 		const { settings } = setup()
-		expect(NoiseSettings.minCellY(settings)).equal(-8)
+		expect(NoiseSettings.minCellY(settings)).toEqual(-8)
 	})
 })

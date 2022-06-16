@@ -1,5 +1,4 @@
-import { expect } from 'chai'
-import { describe, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { ImprovedNoise, LegacyRandom } from '../../../src/math/index.js'
 
 describe('ImprovedNoise', () => {
@@ -13,22 +12,22 @@ describe('ImprovedNoise', () => {
 	it('create (xo, yo, zo)', () => {
 		const { noise } = setup()
 
-		expect(noise.xo).closeTo(179.49112098377014, DELTA)
-		expect(noise.yo).closeTo(178.89801548324886, DELTA)
-		expect(noise.zo).closeTo(139.89344963681773, DELTA)
+		expect(noise.xo).toBeCloseTo(179.49112098377014, DELTA)
+		expect(noise.yo).toBeCloseTo(178.89801548324886, DELTA)
+		expect(noise.zo).toBeCloseTo(139.89344963681773, DELTA)
 	})
 
 	it('create (p)', () => {
 		const { noise } = setup()
 
-		expect(noise.p.slice(0, 10)).deep.equal([12, -96, -12, -36, -104, 102, 106, 117, -105, -119])
+		expect(noise.p.slice(0, 10)).toEqual([12, -96, -12, -36, -104, 102, 106, 117, -105, -119])
 	})
 
 	it('sample', () => {
 		const { noise } = setup()
 
-		expect(noise.sample(0, 0, 0)).closeTo(0.009862268437005883, DELTA)
-		expect(noise.sample(0.5, 4, -2)).closeTo(-0.11885865493740287, DELTA)
-		expect(noise.sample(-204, 28, 12)).closeTo(-0.589681280485348, DELTA)
+		expect(noise.sample(0, 0, 0)).toBeCloseTo(0.009862268437005883, DELTA)
+		expect(noise.sample(0.5, 4, -2)).toBeCloseTo(-0.11885865493740287, DELTA)
+		expect(noise.sample(-204, 28, 12)).toBeCloseTo(-0.589681280485348, DELTA)
 	})
 })

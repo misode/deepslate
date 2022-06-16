@@ -1,5 +1,4 @@
-import { expect } from 'chai'
-import { describe, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { BlockState } from '../../src/core/index.js'
 import type { SimpleNoiseRouter } from '../../src/worldgen/index.js'
 import { DensityFunction as DF, FluidStatus, NoiseChunk, NoiseRouter, NoiseSettings } from '../../src/worldgen/index.js'
@@ -25,12 +24,12 @@ describe('NoiseChunk', () => {
 
 	it('getInterpolatedState (zeroes)', () => {
 		const { chunk } = setup()
-		expect(chunk.getFinalState(0, 0, 0)).equal(BlockState.AIR)
+		expect(chunk.getFinalState(0, 0, 0)).toEqual(BlockState.AIR)
 	})
 
 	it('getInterpolatedState (flat terrain)', () => {
 		const { chunk } = setup({ finalDensity: new DF.YClampedGradient(-64, 320, -1, 1) })
-		expect(chunk.getFinalState(0, 0, 0)).equal(BlockState.AIR)
-		expect(chunk.getFinalState(0, 200, 0)).equal(undefined)
+		expect(chunk.getFinalState(0, 0, 0)).toEqual(BlockState.AIR)
+		expect(chunk.getFinalState(0, 200, 0)).toEqual(undefined)
 	})
 })

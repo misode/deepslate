@@ -1,10 +1,8 @@
-import { expect } from 'chai'
-import { describe, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { NbtWriter } from '../../src/nbt/index.js'
 
-function matches(writer: NbtWriter, data: number[], message?: string) {
-	expect(writer.getData())
-		.deep.equal(new Uint8Array(data), message)
+function matches(writer: NbtWriter, data: number[]) {
+	expect(writer.getData()).toEqual(new Uint8Array(data))
 }
 
 describe('Writer', () => {

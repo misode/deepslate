@@ -1,6 +1,5 @@
-import { expect } from 'chai'
 import pako from 'pako'
-import { describe, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import type { NamedNbtTag, NbtChunk } from '../../src/nbt/index.js'
 import { loadChunk, readNbt, readNbtRaw, readRegion, saveChunk, writeNbt, writeNbtRaw, writeRegion } from '../../src/nbt/index.js'
 
@@ -26,25 +25,25 @@ const chunks = (): NbtChunk[] => [
 
 describe('Nbt', () => {
 	it('readNbt', () => {
-		expect(readNbt(raw)).deep.equal(nbt)
+		expect(readNbt(raw)).toEqual(nbt)
 	})
 
 	it('readNbt (invalid)', () => {
 		const rawInvalid = new Uint8Array([2, 0, 0, 4, 10])
-		expect(() => readNbt(rawInvalid)).throw()
+		expect(() => readNbt(rawInvalid)).toThrow()
 	})
 
 	it('readNbt (gzip compressed)', () => {
-		expect(readNbt(rawCompressed)).deep.equal({ ...nbt, compression: 'gzip' })
+		expect(readNbt(rawCompressed)).toEqual({ ...nbt, compression: 'gzip' })
 	})
 
 	it('readNbt (zlib compressed)', () => {
-		expect(readNbt(rawZCompressed)).deep.equal({ ...nbt, compression: 'zlib' })
+		expect(readNbt(rawZCompressed)).toEqual({ ...nbt, compression: 'zlib' })
 	})
 
 	it('readNbt (little endian)', () => {
 		const rawLittleEndian = new Uint8Array([10, 0, 0, 3, 3, 0, 102, 111, 111, 16, 58, 1, 0, 0])
-		expect(readNbt(rawLittleEndian, { littleEndian: true })).deep.equal({
+		expect(readNbt(rawLittleEndian, { littleEndian: true })).toEqual({
 			value: { foo: { type: 'int', value: 80400 } },
 			name: '',
 			littleEndian: true,
@@ -53,7 +52,7 @@ describe('Nbt', () => {
 
 	it('readNbt (bedrock header)', () => {
 		const rawWithHeader = new Uint8Array([9, 0, 0, 0, 11, 0, 0, 0, 10, 0, 0, 1, 3, 0, 102, 111, 111, 4, 0])
-		expect(readNbt(rawWithHeader)).deep.equal({
+		expect(readNbt(rawWithHeader)).toEqual({
 			...nbt,
 			littleEndian: true,
 			bedrockHeader: 9,
@@ -61,39 +60,39 @@ describe('Nbt', () => {
 	})
 
 	it('readNbtRaw', () => {
-		expect(readNbtRaw(raw)).deep.equal(nbt)
+		expect(readNbtRaw(raw)).toEqual(nbt)
 	})
 
 	it('writeNbt', () => {
-		expect(writeNbt(nbt.value)).deep.equal(raw)
+		expect(writeNbt(nbt.value)).toEqual(raw)
 	})
 
 	it('writeNbt (gzip compressed)', () => {
 		const array = writeNbt(nbt.value, { name: nbt.name, compression: 'gzip' })
-		expect(array).deep.equal(rawCompressed)
+		expect(array).toEqual(rawCompressed)
 	})
 
 	it('writeNbt (zlib compressed)', () => {
 		const array = writeNbt(nbt.value, { name: nbt.name, compression: 'zlib' })
-		expect(array).deep.equal(rawZCompressed)
+		expect(array).toEqual(rawZCompressed)
 	})
 
 	it('writeNbt (little endian)', () => {
 		const array = writeNbt({ foo: { type: 'int', value: 80400 } }, { littleEndian: true })
-		expect(array).deep.equal(new Uint8Array([10, 0, 0, 3, 3, 0, 102, 111, 111, 16, 58, 1, 0, 0]))
+		expect(array).toEqual(new Uint8Array([10, 0, 0, 3, 3, 0, 102, 111, 111, 16, 58, 1, 0, 0]))
 	})
 
 	it('writeNbt (bedrock header)', () => {
 		const array = writeNbt(nbt.value, { bedrockHeader: 9 })
-		expect(array).deep.equal(new Uint8Array([9, 0, 0, 0, 11, 0, 0, 0, 10, 0, 0, 1, 3, 0, 102, 111, 111, 4, 0]))
+		expect(array).toEqual(new Uint8Array([9, 0, 0, 0, 11, 0, 0, 0, 10, 0, 0, 1, 3, 0, 102, 111, 111, 4, 0]))
 	})
 
 	it('writeNbtRaw', () => {
-		expect(writeNbtRaw(nbt)).deep.equal(raw)
+		expect(writeNbtRaw(nbt)).toEqual(raw)
 	})
 
 	it('readRegion', () => {
-		expect(readRegion(rawRegion)).deep.equal(chunks())
+		expect(readRegion(rawRegion)).toEqual(chunks())
 	})
 
 	it('readRegion (empty)', () => {
@@ -101,61 +100,61 @@ describe('Nbt', () => {
 	})
 
 	it('writeRegion', () => {
-		expect(writeRegion(chunks())).deep.equal(rawRegion)
+		expect(writeRegion(chunks())).toEqual(rawRegion)
 	})
 
 	it('writeRegion (empty)', () => {
-		expect(writeRegion([])).deep.equal(rawEmptyRegion)
+		expect(writeRegion([])).toEqual(rawEmptyRegion)
 	})
 
 	it('loadChunk (gzip)', () => {
 		const chunk = loadChunk(chunks()[0])
-		expect(chunk.nbt).deep.equal({ ...nbt, compression: 'gzip' })
+		expect(chunk.nbt).toEqual({ ...nbt, compression: 'gzip' })
 	})
 
 	it('loadChunk (zlib)', () => {
 		const chunk = loadChunk(chunks()[1])
-		expect(chunk.nbt).deep.equal({ ...nbt, compression: 'zlib' })
+		expect(chunk.nbt).toEqual({ ...nbt, compression: 'zlib' })
 	})
 
 	it('loadChunk (raw)', () => {
 		const chunk = loadChunk(chunks()[2])
-		expect(chunk.nbt).deep.equal(nbt)
+		expect(chunk.nbt).toEqual(nbt)
 	})
 
 	it('loadChunk (invalid compression)', () => {
-		expect(() => loadChunk(chunks()[3])).throw()
+		expect(() => loadChunk(chunks()[3])).toThrow()
 	})
 
 	it('saveChunk (gzip)', () => {
 		const chunk = chunks()[0]
 		chunk.nbt = nbt
 		saveChunk(chunk)
-		expect(chunk.data).deep.equal(rawCompressed)
+		expect(chunk.data).toEqual(rawCompressed)
 	})
 
 	it('saveChunk (zlib)', () => {
 		const chunk = chunks()[1]
 		chunk.nbt = nbt
 		saveChunk(chunk)
-		expect(chunk.data).deep.equal(rawZCompressed)
+		expect(chunk.data).toEqual(rawZCompressed)
 	})
 
 	it('saveChunk (raw)', () => {
 		const chunk = chunks()[2]
 		chunk.nbt = nbt
 		saveChunk(chunk)
-		expect(chunk.data).deep.equal(raw)
+		expect(chunk.data).toEqual(raw)
 	})
 
 	it('saveChunk (invalid compression)', () => {
 		const chunk = chunks()[3]
 		chunk.nbt = nbt
-		expect(() => saveChunk(chunk)).throw()
+		expect(() => saveChunk(chunk)).toThrow()
 	})
 
 	it('saveChunk (not loaded)', () => {
 		const chunk = chunks()[0]
-		expect(() => saveChunk(chunk)).throw()
+		expect(() => saveChunk(chunk)).toThrow()
 	})
 })

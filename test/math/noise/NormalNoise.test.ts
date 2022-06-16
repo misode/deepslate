@@ -1,5 +1,4 @@
-import { expect } from 'chai'
-import { describe, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { LegacyRandom, NormalNoise } from '../../../src/math/index.js'
 
 describe('NormalNoise', () => {
@@ -13,14 +12,14 @@ describe('NormalNoise', () => {
 	it('valueFactor', () => {
 		const { noise } = setup()
 
-		expect(noise.valueFactor).equal(1.111111111111111)
+		expect(noise.valueFactor).toEqual(1.111111111111111)
 	})
 
 	it('sample', () => {
 		const { noise } = setup()
 
-		expect(noise.sample(0, 0, 0)).closeTo(-0.11173738673691287, DELTA)
-		expect(noise.sample(0.5, 4, -2)).closeTo(-0.12418270136523879, DELTA)
-		expect(noise.sample(-204, 28, 12)).closeTo(-0.593348747968403, DELTA)
+		expect(noise.sample(0, 0, 0)).toBeCloseTo(-0.11173738673691287, DELTA)
+		expect(noise.sample(0.5, 4, -2)).toBeCloseTo(-0.12418270136523879, DELTA)
+		expect(noise.sample(-204, 28, 12)).toBeCloseTo(-0.593348747968403, DELTA)
 	})
 })

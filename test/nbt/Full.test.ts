@@ -1,5 +1,4 @@
-import { expect } from 'chai'
-import { describe, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import type { NbtValues, tagTypes } from '../../src/nbt/index.js'
 import { NbtReader, NbtWriter } from '../../src/nbt/index.js'
 
@@ -13,13 +12,13 @@ function test<T extends keyof typeof tagTypes>(type: T, data: NbtValues[T]) {
 	const reader = new NbtReader(raw)
 	// @ts-ignore
 	const data2 = reader[type]()
-	expect(data2).deep.equal(data)
+	expect(data2).toEqual(data)
 
 	const writer2 = new NbtWriter()
 	// @ts-ignore
 	writer2[type](data2)
 	const raw2 = writer2.getData()
-	expect(raw2).deep.equal(raw)
+	expect(raw2).toEqual(raw)
 }
 
 describe('Full', () => {
