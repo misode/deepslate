@@ -4,6 +4,7 @@ import { computeIfAbsent } from '../util/index.js'
 import type { FluidPicker } from './Aquifer.js'
 import { FluidStatus } from './Aquifer.js'
 import type { BiomeSource } from './biome/index.js'
+import { Climate } from './biome/index.js'
 import { NoiseChunk } from './NoiseChunk.js'
 import type { NoiseGeneratorSettings } from './NoiseGeneratorSettings.js'
 import { NoiseRouter } from './NoiseRouter.js'
@@ -16,6 +17,7 @@ export class NoiseChunkGenerator {
 	private readonly noiseChunkCache: Map<bigint, NoiseChunk>
 	private readonly surfaceSystem: SurfaceSystem
 	private readonly globalFluidPicker: FluidPicker
+	private readonly climateSampler: Climate.Sampler
 
 	constructor(
 		seed: bigint,
@@ -34,9 +36,10 @@ export class NoiseChunkGenerator {
 			}
 			return defaultFluid
 		}
+		this.climateSampler = Climate.Sampler.fromRouter(this.router)
 	}
 
-	public fill(chunk: Chunk, /** @deprecated */ onlyFirstZ: boolean = false) {
+	public fill(chunk: Chunk, onlyFirstZ: boolean = false) {
 		const minY = Math.max(chunk.minY, this.settings.noise.minY)
 		const maxY = Math.min(chunk.maxY, this.settings.noise.minY + this.settings.noise.height)
 
@@ -83,6 +86,10 @@ export class NoiseChunkGenerator {
 		const noiseChunk = this.getNoiseChunk(chunk)
 		const context = WorldgenContext.create(this.settings.noise.minY, this.settings.noise.height)
 		this.surfaceSystem.buildSurface(chunk, noiseChunk, context, () => biome)
+	}
+
+	public computeBiome(quartX: number, quartY: number, quartZ: number) {
+		return this.biomeSource.getBiome(quartX, quartY, quartZ, this.climateSampler)
 	}
 
 	private getNoiseChunk(chunk: Chunk) {

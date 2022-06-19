@@ -1,6 +1,6 @@
 import { Holder, Identifier } from '../core/index.js'
 import type { BlendedNoise, MinMaxNumberFunction, NormalNoise } from '../math/index.js'
-import { clamp, clampedMap, CubicSpline, lazyLerp3, NoiseParameters } from '../math/index.js'
+import { clamp, clampedMap, CubicSpline, lazyLerp3, LegacyRandom, NoiseParameters, SimplexNoise } from '../math/index.js'
 import { computeIfAbsent, Json } from '../util/index.js'
 import { WorldgenRegistries } from './WorldgenRegistries.js'
 
@@ -368,9 +368,41 @@ export namespace DensityFunction {
 		}
 	}
 
-	class EndIslands extends DensityFunction {
-		public compute() {
-			return 0 // TODO
+	export class EndIslands extends DensityFunction {
+		private readonly islandNoise: SimplexNoise
+		constructor(seed?: bigint) {
+			super()
+			const random = new LegacyRandom(seed ?? BigInt(0))
+			random.consume(17292)
+			this.islandNoise = new SimplexNoise(random)
+		}
+		private getHeightValue(x: number, z: number) {
+			const x0 = Math.floor(x / 2)
+			const z0 = Math.floor(z / 2)
+			const x1 = x % 2
+			const z1 = z % 2
+			let f = clamp(100 - Math.sqrt(x * x + z * z), -100, 80)
+
+			for (let i = -12; i <= 12; i += 1) {
+				for (let j = -12; j <= 12; j += 1) {
+					const x2 = x0 + i
+					const z2 = z0 + j
+					if (x2 * x2 + z2 * z2 <= 4096 || this.islandNoise.sample2D(x2, z2) >= -0.9) {
+						continue
+					}
+					const f1 = (Math.abs(x2) * 3439 + Math.abs(z2) * 147) % 13 + 9
+					const x3 = x1 + i * 2
+					const z3 = z1 + j * 2
+					const f2 = 100 - Math.sqrt(x3 * x3 + z3 * z3) * f1
+					const f3 = clamp(f2, -100, 80)
+					f = Math.max(f, f3)
+				}
+			}
+
+			return f
+		}
+		public compute({ x, y, z }: DensityFunction.Context) {
+			return (this.getHeightValue(Math.floor(x / 8), Math.floor(z / 8)) - 8) / 128
 		}
 		public minValue() {
 			return -0.84375

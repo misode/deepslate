@@ -30,26 +30,26 @@ export interface NoiseRouter extends SimpleNoiseRouter {
 }
 
 export namespace NoiseRouter {
-	const parser = (obj: unknown) => Holder.parser(WorldgenRegistries.DENSITY_FUNCTION, DensityFunction.fromJson)(obj).value()
+	const fieldParser = (obj: unknown) => new DensityFunction.HolderHolder(Holder.parser(WorldgenRegistries.DENSITY_FUNCTION, DensityFunction.fromJson)(obj))
 
 	export function fromJson(obj: unknown): SimpleNoiseRouter {
 		const root = Json.readObject(obj) ?? {}
 		return {
-			barrier: parser(root.barrier),
-			fluidLevelFloodedness: parser(root.fluid_level_floodedness),
-			fluidLevelSpread: parser(root.fluid_level_spread),
-			lava: parser(root.lava),
-			temperature: parser(root.temperature),
-			vegetation: parser(root.vegetation),
-			continents: parser(root.continents),
-			erosion: parser(root.erosion),
-			depth: parser(root.depth),
-			ridges: parser(root.ridges),
-			initialDensityWithoutJaggedness: parser(root.initial_density_without_jaggedness),
-			finalDensity: parser(root.final_density),
-			veinToggle: parser(root.vein_toggle),
-			veinRidged: parser(root.vein_ridged),
-			veinGap: parser(root.vein_gap),
+			barrier: fieldParser(root.barrier),
+			fluidLevelFloodedness: fieldParser(root.fluid_level_floodedness),
+			fluidLevelSpread: fieldParser(root.fluid_level_spread),
+			lava: fieldParser(root.lava),
+			temperature: fieldParser(root.temperature),
+			vegetation: fieldParser(root.vegetation),
+			continents: fieldParser(root.continents),
+			erosion: fieldParser(root.erosion),
+			depth: fieldParser(root.depth),
+			ridges: fieldParser(root.ridges),
+			initialDensityWithoutJaggedness: fieldParser(root.initial_density_without_jaggedness),
+			finalDensity: fieldParser(root.final_density),
+			veinToggle: fieldParser(root.vein_toggle),
+			veinRidged: fieldParser(root.vein_ridged),
+			veinGap: fieldParser(root.vein_gap),
 		}
 	}
 
@@ -76,7 +76,7 @@ export namespace NoiseRouter {
 
 	export function withSettings(simple: SimpleNoiseRouter, settings: NoiseSettings, seed: bigint, legacyRandomSource: boolean = false): NoiseRouter {
 		const random = (legacyRandomSource ? new LegacyRandom(seed) : XoroshiroRandom.create(seed)).forkPositional()
-		const visitor = new Visitor(random, settings)
+		const visitor = new Visitor(random, settings, seed)
 		return {
 			...visitor.mapAll(simple),
 			aquiferPositionalRandomFactory: random.fromHashOf(Identifier.create('aquifer').toString()).forkPositional(),
@@ -90,6 +90,7 @@ export namespace NoiseRouter {
 		constructor(
 			private readonly random: PositionalRandom,
 			private readonly settings: NoiseSettings,
+			private readonly legacySeed?: bigint,
 		) {}
 
 		public map(fn: DensityFunction): DensityFunction {
@@ -123,6 +124,9 @@ export namespace NoiseRouter {
 			}
 			if (fn instanceof DensityFunction.OldBlendedNoise) {
 				return new DensityFunction.OldBlendedNoise(fn.xzScale, fn.yScale, fn.xzFactor, fn.yFactor, fn.smearScaleMultiplier, new BlendedNoise( this.random.fromHashOf(Identifier.create('terrain').toString()), fn.xzScale, fn.yScale, fn.xzFactor, fn.yFactor, fn.smearScaleMultiplier))
+			}
+			if (fn instanceof DensityFunction.EndIslands) {
+				return new DensityFunction.EndIslands(this.legacySeed)
 			}
 			if (fn instanceof DensityFunction.Mapped) {
 				return fn.withMinMax()

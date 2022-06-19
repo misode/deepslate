@@ -122,12 +122,12 @@ export namespace Climate {
 
 	export class Sampler {
 		constructor(
-			private readonly temperature: DensityFunction,
-			private readonly humidity: DensityFunction,
-			private readonly continentalness: DensityFunction,
-			private readonly erosion: DensityFunction,
-			private readonly depth: DensityFunction,
-			private readonly weirdness: DensityFunction,
+			public readonly temperature: DensityFunction,
+			public readonly humidity: DensityFunction,
+			public readonly continentalness: DensityFunction,
+			public readonly erosion: DensityFunction,
+			public readonly depth: DensityFunction,
+			public readonly weirdness: DensityFunction,
 		) {}
 
 		public static fromRouter(router: NoiseRouter) {
@@ -147,6 +147,9 @@ export namespace Climate {
 		private readonly root: RNode<T>
 
 		constructor(points: [ParamPoint, () => T][]) {
+			if (points.length === 0) {
+				throw new Error('At least one point is required to build search tree')
+			}
 			this.root = RTree.build(points.map(([point, thing]) => new RLeaf(point, thing)))
 		}
 
