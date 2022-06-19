@@ -17,10 +17,10 @@ export namespace Holder {
 		}
 	}
 
-	export function direct<T>(value: T): Holder<T> {
+	export function direct<T>(value: T, id?: Identifier): Holder<T> {
 		return {
 			value: () => value,
-			key: () => undefined,
+			key: () => id,
 		}
 	}
 

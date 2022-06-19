@@ -1,11 +1,14 @@
 import { describe, expect, it } from 'vitest'
-import { BlockState, Chunk, ChunkPos, Identifier } from '../../src/core/index.js'
+import { BlockState, Chunk, ChunkPos, Holder, Identifier } from '../../src/core/index.js'
+import { NoiseParameters } from '../../src/math/index.js'
 import type { NoiseGeneratorSettings, NoiseSettings, SimpleNoiseRouter } from '../../src/worldgen/index.js'
-import { DensityFunction as DF, FixedBiome, NoiseChunkGenerator, NoiseRouter, Noises, SurfaceRule } from '../../src/worldgen/index.js'
+import { DensityFunction as DF, FixedBiomeSource, NoiseChunkGenerator, NoiseRouter, SurfaceRule } from '../../src/worldgen/index.js'
 
 describe('NoiseChunkGenerator', () => {
+	const SHIFT = Holder.direct(NoiseParameters.create(-3, [1, 1, 1, 0]), Identifier.create('offset'))
+
 	const setup = (seed: bigint, generatorSettings: Partial<NoiseGeneratorSettings> = {}, noiseSettings: Partial<NoiseSettings>, router: Partial<SimpleNoiseRouter>) => {
-		const biomeSource = new FixedBiome(Identifier.create('plains'))
+		const biomeSource = new FixedBiomeSource(Identifier.create('plains'))
 		const settings: NoiseGeneratorSettings = {
 			defaultBlock: BlockState.STONE,
 			defaultFluid: BlockState.WATER,
@@ -30,7 +33,7 @@ describe('NoiseChunkGenerator', () => {
 	}
 
 	it('fill', () => {
-		const finalDensity = new DF.Noise(1, 1, Noises.SHIFT)
+		const finalDensity = new DF.Noise(1, 1, SHIFT)
 		const { generator } = setup(BigInt(123), {}, {}, { finalDensity })
 		const chunk = new Chunk(0, 64, ChunkPos.create(4, 1))
 		generator.fill(chunk)

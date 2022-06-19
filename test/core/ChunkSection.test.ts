@@ -5,7 +5,7 @@ describe('ChunkSection', () => {
 	it('create', () => {
 		const section = new ChunkSection(0)
 		expect(section.minY).toEqual(0)
-		expect(section['storage']).lengthOf(4096)
+		expect(section['states']['storage']).lengthOf(4096)
 		
 		const section2 = new ChunkSection(3)
 		expect(section2.minY).toEqual(3)

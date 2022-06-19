@@ -1,18 +1,22 @@
 import { describe, expect, it } from 'vitest'
-import { Identifier } from '../../../src/core/index.js'
+import { Holder, Identifier } from '../../../src/core/index.js'
+import { NoiseParameters } from '../../../src/math/index.js'
 import type { NoiseSettings } from '../../../src/worldgen/index.js'
-import { Climate, DensityFunction as DF, MultiNoise, NoiseRouter, Noises } from '../../../src/worldgen/index.js'
+import { Climate, DensityFunction as DF, MultiNoiseBiomeSource, NoiseRouter } from '../../../src/worldgen/index.js'
 
 describe('MultiNoise', () => {
+	const TEMPERATURE = Holder.direct(NoiseParameters.create(-10, [1.5, 0, 1, 0, 0, 0]), Identifier.create('temperature'))
+	const VEGETATION = Holder.direct(NoiseParameters.create(-8, [1, 1, 0, 0, 0, 0]), Identifier.create('vegetation'))
+
 	it('nether', () => {
-		const netherBiomes = new Climate.Parameters([
+		const netherBiomes: [Climate.ParamPoint, () => Identifier][] = [
 			[Climate.parameters(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0), () => Identifier.create('nether_wastes')],
 			[Climate.parameters(0.0, -0.5, 0.0, 0.0, 0.0, 0.0, 0.0), () => Identifier.create('soul_sand_valley')],
 			[Climate.parameters(0.4, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0), () => Identifier.create('crimson_forest')],
 			[Climate.parameters(0.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.375), () => Identifier.create('warped_forest')],
 			[Climate.parameters(-0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.175), () => Identifier.create('basalt_deltas')],
-		])
-		const nether = new MultiNoise(netherBiomes)
+		]
+		const nether = new MultiNoiseBiomeSource(netherBiomes)
 		const settings: NoiseSettings = {
 			minY: 0,
 			height: 128,
@@ -20,8 +24,8 @@ describe('MultiNoise', () => {
 			ySize: 2,
 		}
 		const router = NoiseRouter.create({
-			temperature: new DF.Noise(0.25, 0, Noises.TEMPERATURE),
-			vegetation: new DF.Noise(0.25, 0, Noises.VEGETATION),
+			temperature: new DF.Noise(0.25, 0, TEMPERATURE),
+			vegetation: new DF.Noise(0.25, 0, VEGETATION),
 		})
 		const sampler = Climate.Sampler.fromRouter(NoiseRouter.withSettings(router, settings, BigInt(123)))
 

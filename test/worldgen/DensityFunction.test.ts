@@ -1,12 +1,17 @@
 import { describe, expect, it } from 'vitest'
-import { CubicSpline, XoroshiroRandom } from '../../src/math/index.js'
+import { Holder } from '../../src/core/Holder.js'
+import { Identifier } from '../../src/core/Identifier.js'
+import { CubicSpline, NoiseParameters, XoroshiroRandom } from '../../src/math/index.js'
 import type { NoiseSettings } from '../../src/worldgen/index.js'
-import { DensityFunction as DF, NoiseRouter, Noises } from '../../src/worldgen/index.js'
+import { DensityFunction as DF, NoiseRouter } from '../../src/worldgen/index.js'
 
 describe('DensityFunction', () => {
 	const ContextA = DF.context(1, 2, 3)
 	const ContextB = DF.context(2, 3, 4)
 	const ContextC = DF.context(12, -30, 1)
+
+	const SHIFT = Holder.direct(NoiseParameters.create(-3, [1, 1, 1, 0]), Identifier.create('offset'))
+	const EROSION = Holder.direct(NoiseParameters.create(-9, [1, 1, 0, 1, 1]), Identifier.create('erosion'))
 
 	const wrap = (fn: DF) => {
 		const random = XoroshiroRandom.create(BigInt(123)).forkPositional()
@@ -27,15 +32,15 @@ describe('DensityFunction', () => {
 	})
 
 	it('Noise', () => {
-		const fn = wrap(new DF.Noise(1, 1, Noises.SHIFT))
+		const fn = wrap(new DF.Noise(1, 1, SHIFT))
 		expect(fn.compute(ContextA)).toEqual(0.3004295819443726)
 		expect(fn.compute(ContextB)).toEqual(0.3085235014681946)
 		expect(fn.compute(ContextC)).toEqual(-0.43773259014323784)
 	})
 
 	it('WeirdScaledSampler', () => {
-		const input = new DF.Noise(1, 1, Noises.SHIFT)
-		const fn = wrap(new DF.WeirdScaledSampler(input, 'type_1', Noises.EROSION))
+		const input = new DF.Noise(1, 1, SHIFT)
+		const fn = wrap(new DF.WeirdScaledSampler(input, 'type_1', EROSION))
 		expect(fn.compute(ContextA)).toEqual(0.05986336811047935)
 		expect(fn.compute(ContextB)).toEqual(0.06476443600923233)
 		expect(fn.compute(ContextC)).toEqual(0.022910520878785496)
@@ -95,7 +100,7 @@ describe('DensityFunction', () => {
 	it('Add', () => {
 		const fn1 = wrap(new DF.Ap2('add', new DF.Constant(2), new DF.Constant(3)))
 		expect(fn1.compute(ContextA)).toEqual(5)
-		const fn2 = wrap(new DF.Ap2('add', new DF.Noise(16, 1, Noises.SHIFT), new DF.Constant(2)))
+		const fn2 = wrap(new DF.Ap2('add', new DF.Noise(16, 1, SHIFT), new DF.Constant(2)))
 		expect(fn2.compute(ContextA)).toEqual(1.9594976210617139)
 		expect(fn2.compute(ContextB)).toEqual(1.9887069396954864)
 		expect(fn2.compute(ContextC)).toEqual(1.6672203651115742)
@@ -104,7 +109,7 @@ describe('DensityFunction', () => {
 	it('Mul', () => {
 		const fn1 = wrap(new DF.Ap2('mul', new DF.Constant(2), new DF.Constant(3)))
 		expect(fn1.compute(ContextA)).toEqual(6)
-		const fn2 = wrap(new DF.Ap2('mul', new DF.Noise(16, 1, Noises.SHIFT), new DF.Constant(20)))
+		const fn2 = wrap(new DF.Ap2('mul', new DF.Noise(16, 1, SHIFT), new DF.Constant(20)))
 		expect(fn2.compute(ContextA)).toEqual(-0.8100475787657212)
 		expect(fn2.compute(ContextB)).toEqual(-0.2258612060902705)
 		expect(fn2.compute(ContextC)).toEqual(-6.655592697768515)
@@ -115,7 +120,7 @@ describe('DensityFunction', () => {
 	it('Min', () => {
 		const fn1 = wrap(new DF.Ap2('min', new DF.Constant(2), new DF.Constant(3)))
 		expect(fn1.compute(ContextA)).toEqual(2)
-		const fn2 = wrap(new DF.Ap2('min', new DF.Noise(16, 1, Noises.SHIFT), new DF.Constant(-0.3)))
+		const fn2 = wrap(new DF.Ap2('min', new DF.Noise(16, 1, SHIFT), new DF.Constant(-0.3)))
 		expect(fn2.compute(ContextA)).toEqual(-0.3)
 		expect(fn2.compute(ContextB)).toEqual(-0.3)
 		expect(fn2.compute(ContextC)).toEqual(-0.33277963488842577)
@@ -124,7 +129,7 @@ describe('DensityFunction', () => {
 	it('Max', () => {
 		const fn1 = wrap(new DF.Ap2('max', new DF.Constant(2), new DF.Constant(3)))
 		expect(fn1.compute(ContextA)).toEqual(3)
-		const fn2 = wrap(new DF.Ap2('max', new DF.Noise(16, 1, Noises.SHIFT), new DF.Constant(-0.3)))
+		const fn2 = wrap(new DF.Ap2('max', new DF.Noise(16, 1, SHIFT), new DF.Constant(-0.3)))
 		expect(fn2.compute(ContextA)).toEqual(-0.04050237893828606)
 		expect(fn2.compute(ContextB)).toEqual(-0.011293060304513524)
 		expect(fn2.compute(ContextC)).toEqual(-0.3)
