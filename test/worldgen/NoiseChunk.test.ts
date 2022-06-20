@@ -1,24 +1,36 @@
 import { describe, expect, it } from 'vitest'
 import { BlockState } from '../../src/core/index.js'
-import type { SimpleNoiseRouter } from '../../src/worldgen/index.js'
-import { DensityFunction as DF, FluidStatus, NoiseChunk, NoiseRouter, NoiseSettings } from '../../src/worldgen/index.js'
+import type { NoiseGeneratorSettings } from '../../src/worldgen/index.js'
+import { DensityFunction as DF, FluidStatus, NoiseChunk, NoiseRouter, NoiseSettings, SurfaceRule } from '../../src/worldgen/index.js'
+import { RandomState } from '../../src/worldgen/RandomState.js'
 
 describe('NoiseChunk', () => {
-	const setup = (routerMods: Partial<SimpleNoiseRouter> = {}) => {
-		const settings: NoiseSettings = {
+	const setup = (routerMods: Partial<NoiseRouter> = {}) => {
+		const noiseSettings: NoiseSettings = {
 			minY: -64,
 			height: 384,
 			xzSize: 1,
 			ySize: 2,
 		}
-		const simpleRouter = NoiseRouter.create(routerMods)
-		const cellWidth = NoiseSettings.cellWidth(settings)
+		const cellWidth = NoiseSettings.cellWidth(noiseSettings)
 		const cellCountXZ = Math.floor(16 / cellWidth) // 4
-		const cellHeight = NoiseSettings.cellHeight(settings)
-		const cellNoiseMinY = Math.floor(settings.minY / cellHeight) // -8
-		const cellCountY = Math.floor(settings.height / cellHeight) // 48
-		const router = NoiseRouter.withSettings(simpleRouter, settings, BigInt(123))
-		const chunk = new NoiseChunk(cellCountXZ, cellCountY, cellNoiseMinY, router, 16, -32, settings, false, () => new FluidStatus(-64, BlockState.AIR))
+		const cellHeight = NoiseSettings.cellHeight(noiseSettings)
+		const cellNoiseMinY = Math.floor(noiseSettings.minY / cellHeight) // -8
+		const cellCountY = Math.floor(noiseSettings.height / cellHeight) // 48
+		const settings: NoiseGeneratorSettings = {
+			aquifersEnabled: false,
+			disableMobGeneration: false,
+			legacyRandomSource: false,
+			oreVeinsEnabled: false,
+			seaLevel: 63,
+			defaultBlock: BlockState.STONE,
+			defaultFluid: BlockState.WATER,
+			noise: noiseSettings,
+			noiseRouter: NoiseRouter.create(routerMods),
+			surfaceRule: SurfaceRule.NOOP,
+		}
+		const randomState = new RandomState(settings, BigInt(123))
+		const chunk = new NoiseChunk(cellCountXZ, cellCountY, cellNoiseMinY, randomState, 16, -32, noiseSettings, false, () => new FluidStatus(-64, BlockState.AIR))
 		return { chunk }
 	}
 

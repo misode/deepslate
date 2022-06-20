@@ -1,12 +1,13 @@
-import { describe, expect, it } from 'vitest'
-import { Holder, Identifier } from '../../../src/core/index.js'
+import { afterEach, describe, expect, it } from 'vitest'
+import { Identifier } from '../../../src/core/index.js'
 import { NoiseParameters } from '../../../src/math/index.js'
-import type { NoiseSettings } from '../../../src/worldgen/index.js'
-import { Climate, DensityFunction as DF, MultiNoiseBiomeSource, NoiseRouter } from '../../../src/worldgen/index.js'
+import { Climate, DensityFunction as DF, MultiNoiseBiomeSource, NoiseGeneratorSettings, NoiseRouter, WorldgenRegistries } from '../../../src/worldgen/index.js'
+import { RandomState } from '../../../src/worldgen/RandomState.js'
 
 describe('MultiNoise', () => {
-	const TEMPERATURE = Holder.direct(NoiseParameters.create(-10, [1.5, 0, 1, 0, 0, 0]), Identifier.create('temperature'))
-	const VEGETATION = Holder.direct(NoiseParameters.create(-8, [1, 1, 0, 0, 0, 0]), Identifier.create('vegetation'))
+	afterEach(() => {
+		WorldgenRegistries.NOISE.clear()
+	})
 
 	it('nether', () => {
 		const netherBiomes: [Climate.ParamPoint, () => Identifier][] = [
@@ -17,17 +18,18 @@ describe('MultiNoise', () => {
 			[Climate.parameters(-0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.175), () => Identifier.create('basalt_deltas')],
 		]
 		const nether = new MultiNoiseBiomeSource(netherBiomes)
-		const settings: NoiseSettings = {
-			minY: 0,
-			height: 128,
-			xzSize: 1,
-			ySize: 2,
-		}
-		const router = NoiseRouter.create({
-			temperature: new DF.Noise(0.25, 0, TEMPERATURE),
-			vegetation: new DF.Noise(0.25, 0, VEGETATION),
+
+		const temperature = WorldgenRegistries.NOISE.register(Identifier.create('temperature'), NoiseParameters.create(-10, [1.5, 0, 1, 0, 0, 0]))
+		const vegetation = WorldgenRegistries.NOISE.register(Identifier.create('vegetation'), NoiseParameters.create(-8, [1, 1, 0, 0, 0, 0]))
+		const settings = NoiseGeneratorSettings.create({
+			noise: { minY: 0, height: 128, xzSize: 1, ySize: 2 },
+			noiseRouter: NoiseRouter.create({
+				temperature: new DF.Noise(0.25, 0, temperature),
+				vegetation: new DF.Noise(0.25, 0, vegetation),
+			}),
 		})
-		const sampler = Climate.Sampler.fromRouter(NoiseRouter.withSettings(router, settings, BigInt(123)))
+		const randomState = new RandomState(settings, BigInt(123))
+		const sampler = randomState.sampler
 
 		expect(nether.getBiome(0, 0, 0, sampler)).toEqual(Identifier.create('basalt_deltas'))
 		expect(nether.getBiome(200, 0, 0, sampler)).toEqual(Identifier.create('basalt_deltas'))

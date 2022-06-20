@@ -1,23 +1,14 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { BlockState, Chunk, ChunkPos, Holder, Identifier } from '../../src/core/index.js'
 import { NoiseParameters } from '../../src/math/index.js'
-import type { NoiseGeneratorSettings, NoiseSettings, SimpleNoiseRouter } from '../../src/worldgen/index.js'
-import { DensityFunction as DF, FixedBiomeSource, NoiseChunkGenerator, NoiseRouter, SurfaceRule } from '../../src/worldgen/index.js'
+import type { NoiseSettings } from '../../src/worldgen/index.js'
+import { DensityFunction as DF, FixedBiomeSource, NoiseChunkGenerator, NoiseGeneratorSettings, NoiseRouter, WorldgenRegistries } from '../../src/worldgen/index.js'
+import { RandomState } from '../../src/worldgen/RandomState.js'
 
 describe('NoiseChunkGenerator', () => {
-	const SHIFT = Holder.direct(NoiseParameters.create(-3, [1, 1, 1, 0]), Identifier.create('offset'))
-
-	const setup = (seed: bigint, generatorSettings: Partial<NoiseGeneratorSettings> = {}, noiseSettings: Partial<NoiseSettings>, router: Partial<SimpleNoiseRouter>) => {
+	const setup = (seed: bigint, generatorSettings: Partial<NoiseGeneratorSettings> = {}, noiseSettings: Partial<NoiseSettings>, router: Partial<NoiseRouter>) => {
 		const biomeSource = new FixedBiomeSource(Identifier.create('plains'))
-		const settings: NoiseGeneratorSettings = {
-			defaultBlock: BlockState.STONE,
-			defaultFluid: BlockState.WATER,
-			seaLevel: 0,
-			disableMobGeneration: false,
-			aquifersEnabled: false,
-			oreVeinsEnabled: false,
-			legacyRandomSource: true,
-			surfaceRule: SurfaceRule.NOOP,
+		const settings = NoiseGeneratorSettings.create({
 			noise: {
 				minY: 0,
 				height: 64,
@@ -27,17 +18,26 @@ describe('NoiseChunkGenerator', () => {
 			},
 			noiseRouter: NoiseRouter.create(router),
 			...generatorSettings,
-		}
-		const generator = new NoiseChunkGenerator(seed, biomeSource, settings)
-		return { biomeSource, settings, generator }
+		})
+		const generator = new NoiseChunkGenerator(biomeSource, settings)
+		const randomState = new RandomState(settings, seed)
+		return { biomeSource, settings, generator, randomState }
 	}
 
+	beforeEach(() => {
+		WorldgenRegistries.NOISE.register(Identifier.create('offset'), NoiseParameters.create(-3, [1, 1, 1, 0]))
+	})
+
+	afterEach(() => {
+		WorldgenRegistries.NOISE.clear()
+	})
+
 	it('fill', () => {
-		const finalDensity = new DF.Noise(1, 1, SHIFT)
-		const { generator } = setup(BigInt(123), {}, {}, { finalDensity })
+		const finalDensity = new DF.Noise(1, 1, Holder.reference(WorldgenRegistries.NOISE, Identifier.create('offset')))
+		const { generator, randomState } = setup(BigInt(123), {}, {}, { finalDensity })
 		const chunk = new Chunk(0, 64, ChunkPos.create(4, 1))
-		generator.fill(chunk)
-		expect(printSlice(chunk)).toEqual('XXXX.......XXXXX|.XXXX......XXXXX|.XXX.......XXXX.|..XX........XXX.|............XXX.|............XX..|............XXXX|XX..........XXXX|XX....X.......XX|XXX.XX..........|XXXXX...........|XXXXX..........X|..XXXXXXX......X|...XXXXXXX......|...XXXXXXX......|.....XXXXX......|......XXXXXXX...|XX.....XXXXXX...|XXX....XXXXXX...|XX......XXXX....|.........XXX....|................|................|..XXXXXXX.......|..XXXXXXX.......|..XXXXXXX.......|...XXXXXX.......|.....XXXX.......|...XXXX.........|....XXX.........|....XXXX........|XXXXXXXX........|XXXXXXXX........|XXXXXXXX........|XXXXXXXX...X....|XXXXXXXX..XX....|XXXXXXXXX.......|XXXXXXXX........|...XXXXXX.......|....XXXXXXX.....|....XXXXXXXXX...|.....XXXXXXXXX..|.....XXXXXXXX...|X....XXXXXX.....|X.....XXXX......|XX.....XX.......|XX...........XXX|XX........XXXXXX|XXX......XXXXXXX|..XX...XXXXXXXXX|.XX.....XXXXXXXX|XXX.....XXXXXXX.|XXX.....XXXXX...|.XX.....XXXX....|XXXX....XXXX....|XXXXXXX..XXX....|.XXXXXX..X......|.XXXXX..........|..XXX.........XX|..XXX........XXX|..XXX.......XXXX|..XX.........XXX|..XXX.....X.....|...XXX....X.....')
+		generator.fill(randomState, chunk)
+		expect(printSlice(chunk)).toEqual('.....XXXX.......|.....XXX........|.....XXX....X...|......X....XX..X|............X..X|.X.............X|XXX.............|XXX.............|XXX.............|XXX......XX....X|XXX.....XXXXXXXX|XXXX..XXXXXXXXXX|XXXXXXXXXXXXXXXX|XXXXXXXXXXXXXXXX|XXXXXXXXXXXXXXXX|XXXXXXXXXXXXXXX.|XXXXXXX.XXXXXXX.|XXXXXX...XXXXXXX|XXX.........XXXX|XXX.........XXXX|XXX..........XXX|XX...........XXX|..............XX|...............X|................|X...XXXX........|XXXXXXXXXXXX..X.|XXXXXXXXXXXXXXXX|XXXXXXXXXXXXXXXX|XXXXXXXXXXXXXXXX|XXXXXXXXXXX..XXX|XXXXXXXXXX..XXXX|XXXXXXXX........|XXXXXXXX........|XXXXXXXX........|XXXXXXXX........|XXXXXXXXX.XXX...|XXXXXXXXXXXXXX..|XXXXXXX.XXXXXXX.|XXXXX...XXXXXXX.|XXXXX....XXXXX..|XXXXXX...XXXXX..|XXXXXX...XXXXX..|XXXXXXXX..XXX...|.XXXX......XXX..|............X...|...........XX...|............XXX.|............XXX.|...........XXXXX|..XX........XXXX|..XX.........XX.|..XX.........X..|.XXX.........X..|XXX.............|XX..............|XXX.............|XXXX............|XXXX............|XXX.............|XX..............|................|.....XXXX......X|...XXXXXX....XXX')
 	})
 })
 

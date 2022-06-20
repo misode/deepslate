@@ -4,6 +4,7 @@ import { clamp, clampedMap, map } from '../math/index.js'
 import { lazy } from '../util/index.js'
 import { DensityFunction } from './DensityFunction.js'
 import type { NoiseChunk } from './NoiseChunk.js'
+import type { NoiseRouter } from './NoiseRouter.js'
 
 export class FluidStatus {
 	constructor(
@@ -55,10 +56,7 @@ export class NoiseAquifer implements Aquifer {
 	constructor(
 		private readonly noiseChunk: NoiseChunk,
 		chunkPos: ChunkPos,
-		private readonly barrierNoise: DensityFunction,
-		private readonly fluidLevelFloodednessNoise: DensityFunction,
-		private readonly fluidLevelSpreadNoise: DensityFunction,
-		private readonly lavaNoise: DensityFunction,
+		private readonly router: NoiseRouter,
 		private readonly random: PositionalRandom,
 		minY: number,
 		height: number,
@@ -125,7 +123,7 @@ export class NoiseAquifer implements Aquifer {
 				if (status1.at(y).is(BlockState.WATER) && this.globalFluidPicker(x, y - 1, z).at(y - 1).is(BlockState.LAVA)) {
 					pressure = 1
 				} else if (similarity12 > -1) {
-					const barrier = lazy(() => this.barrierNoise.compute(DensityFunction.context(x, y * 0.5, z)))
+					const barrier = lazy(() => this.router.barrier.compute(DensityFunction.context(x, y * 0.5, z)))
 					const pressure12 = this.calculatePressure(y, status1, status2, barrier)
 					const pressure13 = this.calculatePressure(y, status1, status3, barrier)
 					const pressure23 = this.calculatePressure(y, status2, status3, barrier)
@@ -207,7 +205,7 @@ export class NoiseAquifer implements Aquifer {
 		}
 
 		const allowedFloodedness = isAquifer ? clampedMap(minPreliminarySurface + 8 - y, 0, 64, 1, 0) : 0
-		const floodedness = clamp(this.fluidLevelFloodednessNoise.compute(DensityFunction.context(x, y * 0.67, z)), -1, 1)
+		const floodedness = clamp(this.router.fluidLevelFloodedness.compute(DensityFunction.context(x, y * 0.67, z)), -1, 1)
 		if (floodedness > map(allowedFloodedness, 1, 0, -0.3, 0.8)) {
 			return globalStatus
 		}
@@ -216,7 +214,7 @@ export class NoiseAquifer implements Aquifer {
 		}
 
 		const gridY = Math.floor(y / 40)
-		const spread = this.fluidLevelSpreadNoise.compute(DensityFunction.context(Math.floor(x / 16), gridY, Math.floor(z / 16)))
+		const spread = this.router.fluidLevelSpread.compute(DensityFunction.context(Math.floor(x / 16), gridY, Math.floor(z / 16)))
 		const level = gridY * 40 + 20 + Math.floor(spread / 3) * 3
 		const statusLevel = Math.min(minPreliminarySurface, level)
 		const fluid = this.getFluidType(x, y, z, globalStatus.type, level)
@@ -225,7 +223,7 @@ export class NoiseAquifer implements Aquifer {
 
 	private getFluidType(x: number, y: number, z: number, global: BlockState, level: number) {
 		if (level <= -10) {
-			const lava = this.lavaNoise.compute(DensityFunction.context(Math.floor(x / 64), Math.floor(y / 40), Math.floor(z / 64)))
+			const lava = this.router.lava.compute(DensityFunction.context(Math.floor(x / 64), Math.floor(y / 40), Math.floor(z / 64)))
 			if (Math.abs(lava) > 0.3) {
 				return BlockState.LAVA
 			}

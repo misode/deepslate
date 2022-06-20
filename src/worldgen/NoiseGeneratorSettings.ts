@@ -1,6 +1,5 @@
 import { BlockState } from '../core/index.js'
 import { Json } from '../util/index.js'
-import type { SimpleNoiseRouter } from './NoiseRouter.js'
 import { NoiseRouter } from './NoiseRouter.js'
 import { NoiseSettings } from './NoiseSettings.js'
 import { SurfaceRule } from './SurfaceSystem.js'
@@ -10,7 +9,7 @@ export interface NoiseGeneratorSettings {
 	surfaceRule: SurfaceRule,
 	defaultBlock: BlockState,
 	defaultFluid: BlockState,
-	noiseRouter: SimpleNoiseRouter,
+	noiseRouter: NoiseRouter,
 	seaLevel: number,
 	disableMobGeneration: boolean,
 	aquifersEnabled: boolean,
@@ -32,6 +31,22 @@ export namespace NoiseGeneratorSettings {
 			aquifersEnabled: Json.readBoolean(root.aquifers_enabled) ?? false,
 			oreVeinsEnabled: Json.readBoolean(root.ore_veins_enabled) ?? false,
 			legacyRandomSource: Json.readBoolean(root.legacy_random_source) ?? false,
+		}
+	}
+
+	export function create(settings: Partial<NoiseGeneratorSettings>): NoiseGeneratorSettings {
+		return {
+			surfaceRule: SurfaceRule.NOOP,
+			noise: NoiseSettings.create({}),
+			defaultBlock: BlockState.STONE,
+			defaultFluid: BlockState.WATER,
+			noiseRouter: NoiseRouter.create({}),
+			seaLevel: 0,
+			disableMobGeneration: false,
+			aquifersEnabled: false,
+			oreVeinsEnabled: false,
+			legacyRandomSource: false,
+			...settings,
 		}
 	}
 }

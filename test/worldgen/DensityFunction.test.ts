@@ -1,29 +1,37 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { Holder } from '../../src/core/Holder.js'
 import { Identifier } from '../../src/core/Identifier.js'
-import { CubicSpline, NoiseParameters, XoroshiroRandom } from '../../src/math/index.js'
-import type { NoiseSettings } from '../../src/worldgen/index.js'
-import { DensityFunction as DF, NoiseRouter } from '../../src/worldgen/index.js'
+import { CubicSpline, NoiseParameters } from '../../src/math/index.js'
+import { DensityFunction as DF, NoiseGeneratorSettings, NoiseRouter, WorldgenRegistries } from '../../src/worldgen/index.js'
+import { RandomState } from '../../src/worldgen/RandomState.js'
 
 describe('DensityFunction', () => {
 	const ContextA = DF.context(1, 2, 3)
 	const ContextB = DF.context(2, 3, 4)
 	const ContextC = DF.context(12, -30, 1)
 
-	const SHIFT = Holder.direct(NoiseParameters.create(-3, [1, 1, 1, 0]), Identifier.create('offset'))
-	const EROSION = Holder.direct(NoiseParameters.create(-9, [1, 1, 0, 1, 1]), Identifier.create('erosion'))
+	const SHIFT = Holder.reference(WorldgenRegistries.NOISE, Identifier.create('offset'))
+	const EROSION = Holder.reference(WorldgenRegistries.NOISE, Identifier.create('erosion'))
 
 	const wrap = (fn: DF) => {
-		const random = XoroshiroRandom.create(BigInt(123)).forkPositional()
-		const settings: NoiseSettings = {
-			minY: -64,
-			height: 384,
-			xzSize: 1,
-			ySize: 2,
-		}
-		const visitor = new NoiseRouter.Visitor(random, settings)
-		return fn.mapAll(visitor)
+		const settings = NoiseGeneratorSettings.create({
+			noise: { minY: -64, height: 384, xzSize: 1, ySize: 2 },
+			noiseRouter: NoiseRouter.create({
+				finalDensity: fn,
+			}),
+		})
+		const randomState = new RandomState(settings, BigInt(123))
+		return randomState.router.finalDensity
 	}
+
+	beforeEach(() => {
+		WorldgenRegistries.NOISE.register(Identifier.create('offset'), NoiseParameters.create(-3, [1, 1, 1, 0]))
+		WorldgenRegistries.NOISE.register(Identifier.create('erosion'), NoiseParameters.create(-9, [1, 1, 0, 1, 1]))
+	})
+
+	afterEach(() => {
+		WorldgenRegistries.NOISE.clear()
+	})
 
 	it('Constant', () => {
 		const fn: DF = new DF.Constant(5)

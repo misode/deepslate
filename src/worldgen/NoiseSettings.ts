@@ -18,6 +18,16 @@ export namespace NoiseSettings {
 		}
 	}
 
+	export function create(settings: Partial<NoiseSettings>): NoiseSettings {
+		return {
+			minY: 0,
+			height: 256,
+			xzSize: 1,
+			ySize: 1,
+			...settings,
+		}
+	}
+
 	export function cellHeight(settings: NoiseSettings) {
 		return settings.ySize << 2
 	}

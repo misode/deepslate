@@ -3,9 +3,9 @@ import { BlockPos, ChunkPos } from '../core/index.js'
 import { computeIfAbsent } from '../util/index.js'
 import type { FluidPicker } from './Aquifer.js'
 import { Aquifer, NoiseAquifer } from './Aquifer.js'
-import type { DensityFunction } from './DensityFunction.js'
-import { NoiseRouter } from './NoiseRouter.js'
+import { DensityFunction } from './DensityFunction.js'
 import { NoiseSettings } from './NoiseSettings.js'
+import type { RandomState } from './RandomState.js'
 
 export class NoiseChunk {
 	public readonly cellWidth: number
@@ -18,13 +18,13 @@ export class NoiseChunk {
 	private readonly preliminarySurfaceLevel: Map<bigint, number> = new Map()
 	private readonly aquifer: Aquifer
 	private readonly materialRule: MaterialRule
-	private readonly initialDensityWithoutJaggedness: DensityFunction
+	private readonly initialDensity: DensityFunction
 
 	constructor(
 		public readonly cellCountXZ: number,
 		public readonly cellCountY: number,
 		public readonly cellNoiseMinY: number,
-		private readonly router: NoiseRouter,
+		randomState: RandomState,
 		public readonly minX: number,
 		public readonly minZ: number,
 		public readonly settings: NoiseSettings,
@@ -45,28 +45,31 @@ export class NoiseChunk {
 			const chunkPos = ChunkPos.fromBlockPos(BlockPos.create(minX, 0, minZ))
 			const minY = cellNoiseMinY * NoiseSettings.cellHeight(settings)
 			const height = cellCountY * NoiseSettings.cellHeight(settings)
-			this.aquifer = new NoiseAquifer(this, chunkPos, router.barrier, router.fluidLevelFloodedness, router.fluidLevelSpread, router.lava, router.aquiferPositionalRandomFactory, minY, height, fluidPicker)
+			this.aquifer = new NoiseAquifer(this, chunkPos, randomState.router, randomState.aquiferRandom, minY, height, fluidPicker)
 		}
-		const finalDensity = this.router.finalDensity
+		const finalDensity = randomState.router.finalDensity
 		this.materialRule = MaterialRule.fromList([
 			(context) => this.aquifer.compute(context, finalDensity.compute(context)),
 		])
-		this.initialDensityWithoutJaggedness = this.router.initialDensityWithoutJaggedness
+		this.initialDensity = randomState.router.initialDensityWithoutJaggedness
 	}
 
 	public getFinalState(x: number, y: number, z: number): BlockState | undefined {
 		return this.materialRule({ x, y, z })
 	}
 
-	public getPreliminarySurfaceLevel(x: number, z: number) {
-		return computeIfAbsent(this.preliminarySurfaceLevel, ChunkPos.asLong(x, z), () => {
-			const level = NoiseRouter.computePreliminarySurfaceLevelScanning(this.settings, this.initialDensityWithoutJaggedness, x << 2, z << 2)
-			return level
+	public getPreliminarySurfaceLevel(quartX: number, quartZ: number) {
+		return computeIfAbsent(this.preliminarySurfaceLevel, ChunkPos.asLong(quartX, quartZ), () => {
+			const x = quartX << 2
+			const z = quartZ << 2
+			for (let y = this.settings.minY + this.settings.height; y >= this.settings.minY; y -= this.cellHeight) {
+				const density = this.initialDensity.compute(DensityFunction.context(x, y, z))
+				if (density > 0.390625) {
+					return y
+				}
+			}
+			return Number.MAX_SAFE_INTEGER
 		})
-	}
-
-	public getAquifer() {
-		return this.aquifer
 	}
 }
 
