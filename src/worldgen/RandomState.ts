@@ -1,5 +1,6 @@
 import type { Holder } from '../core/index.js'
-import { BlendedNoise, computeIfAbsent, DensityFunction, Identifier, LegacyRandom, NoiseParameters, NoiseSettings, NormalNoise, WorldgenRegistries, XoroshiroRandom } from '../index.js'
+import { Registry } from '../core/index.js'
+import { BlendedNoise, computeIfAbsent, DensityFunction, Identifier, LegacyRandom, NoiseParameters, NoiseSettings, NormalNoise, XoroshiroRandom } from '../index.js'
 import type { PositionalRandom } from '../math/index.js'
 import { Climate } from './biome/index.js'
 import type { NoiseGeneratorSettings } from './NoiseGeneratorSettings.js'
@@ -100,8 +101,9 @@ export class RandomState {
 	}
 
 	public getOrCreateNoise(id: Identifier) {
+		const noises = Registry.REGISTRY.getOrThrow(Identifier.create('worldgen/noise')) as Registry<NoiseParameters>
 		return computeIfAbsent(this.noiseCache, id.toString(), key =>
-			new NormalNoise(this.random.fromHashOf(key), WorldgenRegistries.NOISE.getOrThrow(id))
+			new NormalNoise(this.random.fromHashOf(key), noises.getOrThrow(id))
 		)
 	}
 
