@@ -9,6 +9,9 @@ export class CheckerboardBiomeSource implements BiomeSource {
 		private readonly shift: number,
 		private readonly biomes: Identifier[],
 	) {
+		if (biomes.length === 0) {
+			throw new Error('Cannot create checkerboard biome source without biomes')
+		}
 		this.n = biomes.length
 	}
 

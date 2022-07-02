@@ -6,10 +6,10 @@ export class Identifier {
 		public readonly namespace: string,
 		public readonly path: string,
 	) {
-		if (!namespace.match(/^[a-z0-9._-]+$/)) {
+		if (!namespace.match(/^[a-z0-9._-]*$/)) {
 			throw new Error(`Non [a-z0-9._-] character in namespace of ${namespace}${Identifier.SEPARATOR}${path}`)
 		}
-		if (!path.match(/^[a-z0-9/._-]+$/)) {
+		if (!path.match(/^[a-z0-9/._-]*$/)) {
 			throw new Error(`Non [a-z0-9/._-] character in path of ${namespace}${Identifier.SEPARATOR}${path}`)
 		}
 	}

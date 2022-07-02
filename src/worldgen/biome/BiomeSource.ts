@@ -3,7 +3,7 @@ import { Json } from '../../util/index.js'
 import { CheckerboardBiomeSource } from './CheckerboardBiomeSource.js'
 import type { Climate } from './Climate.js'
 import { FixedBiomeSource } from './FixedBiomeSource.js'
-import { MultiNoiseBiomeSource } from './MultiNoiseBiome.js'
+import { MultiNoiseBiomeSource } from './MultiNoiseBiomeSource.js'
 import { TheEndBiomeSource } from './TheEndBiomeSource.js'
 
 export interface BiomeSource {
