@@ -20,8 +20,8 @@
   ],
   "exports": {
     ".": {
-      "types": "./lib/main.d.ts",
-      "default": "./lib/main.js"
+      "types": "./lib/index.d.ts",
+      "default": "./lib/index.js"
     },
     "./core": {
       "types": "./lib/core/main.d.ts",
