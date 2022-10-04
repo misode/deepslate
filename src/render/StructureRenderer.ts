@@ -3,46 +3,12 @@ import type { Identifier, PlacedBlock, StructureProvider } from '../core/index.j
 import { BlockPos, BlockState, Direction } from '../core/index.js'
 import type { BlockDefinitionProvider } from './BlockDefinition.js'
 import type { BlockModelProvider } from './BlockModel.js'
+import type { RenderBuffers } from './Renderer.js'
+import { Renderer } from './Renderer.js'
 import { ShaderProgram } from './ShaderProgram.js'
 import { SpecialRenderer, SpecialRenderers } from './SpecialRenderer.js'
 import type { TextureAtlasProvider } from './TextureAtlas.js'
 import { mergeFloat32Arrays, transformVectors } from './Util.js'
-
-const vsSource = `
-  attribute vec4 vertPos;
-  attribute vec2 texCoord;
-  attribute vec3 tintColor;
-  attribute vec3 normal;
-
-  uniform mat4 mView;
-  uniform mat4 mProj;
-
-  varying highp vec2 vTexCoord;
-  varying highp vec3 vTintColor;
-  varying highp float vLighting;
-
-  void main(void) {
-    gl_Position = mProj * mView * vertPos;
-    vTexCoord = texCoord;
-    vTintColor = tintColor;
-    vLighting = normal.y * 0.2 + abs(normal.z) * 0.1 + 0.8;
-  }
-`
-
-const fsSource = `
-  precision highp float;
-  varying highp vec2 vTexCoord;
-  varying highp vec3 vTintColor;
-  varying highp float vLighting;
-
-  uniform sampler2D sampler;
-
-  void main(void) {
-    vec4 texColor = texture2D(sampler, vTexCoord);
-    if(texColor.a < 0.01) discard;
-    gl_FragColor = vec4(texColor.xyz * vTintColor * vLighting, texColor.a);
-  }
-`
 
 const vsColor = `
   attribute vec4 vertPos;
@@ -92,14 +58,19 @@ const fsGrid = `
   }
 `
 
-type StructureBuffers = {
-	position: WebGLBuffer,
-	texCoord: WebGLBuffer,
-	tintColor: WebGLBuffer,
-	normal: WebGLBuffer,
+interface ChunkRenderBuffers extends RenderBuffers {
 	blockPos: WebGLBuffer,
-	index: WebGLBuffer,
-	length: number,
+}
+
+interface RenderChunk {
+	positions: Float32Array[],
+	textureCoordinates: number[],
+	tintColors: number[],
+	normals: number[],
+	blockPositions: number[],
+	indices: number[],
+	indexOffset: number,
+	buffer?: ChunkRenderBuffers,
 }
 
 type GridBuffers = {
@@ -123,51 +94,40 @@ export interface BlockPropertiesProvider {
 
 export interface Resources extends BlockDefinitionProvider, BlockModelProvider, TextureAtlasProvider, BlockFlagsProvider, BlockPropertiesProvider {}
 
-type Chunk = {
-	positions: Float32Array[],
-	textureCoordinates: number[],
-	tintColors: number[],
-	normals: number[],
-	blockPositions: number[],
-	indices: number[],
-	indexOffset: number,
-	buffer?: StructureBuffers,
+interface StructureRendererOptions {
+	facesPerBuffer?: number,
+	chunkSize?: number,
+	useInvisibleBlockBuffer?: boolean,
 }
 
-export class StructureRenderer {
-	private readonly shaderProgram: WebGLProgram
+export class StructureRenderer extends Renderer {
+	private readonly chunkSize: number
+
 	private readonly gridShaderProgram: WebGLProgram
 	private readonly colorShaderProgram: WebGLProgram
-
-	private chunks: Chunk[][][] = []
+	
+	private chunks: RenderChunk[][][] = []
 
 	private gridBuffers: GridBuffers
 	private readonly outlineBuffers: GridBuffers
 	private invisibleBlockBuffers: GridBuffers | undefined
 	private readonly atlasTexture: WebGLTexture
-	private projMatrix: mat4
-	private activeShader: WebGLProgram
-	private readonly chunkSize: number
 	private readonly useInvisibleBlockBuffer: boolean
 
 	constructor(
-		private readonly gl: WebGLRenderingContext,
+		gl: WebGLRenderingContext,
 		private structure: StructureProvider,
 		private readonly resources: Resources,
-		options?: {
-			facesPerBuffer?: number,
-			chunkSize?: number,
-			useInvisibleBlockBuffer?: boolean,
-		}
+		options?: StructureRendererOptions,
 	) {
-		if (options?.facesPerBuffer){
-			console.warn('webgl render warning: facesPerBuffer option has been removed in favor of chunkSize')
-		}
-    
+		super(gl)
+
 		this.chunkSize = options?.chunkSize ?? 16
+		if (options?.facesPerBuffer){
+			console.warn('[deepslate renderer warning]: facesPerBuffer option has been removed in favor of chunkSize')
+		}
 		this.useInvisibleBlockBuffer = options?.useInvisibleBlockBuffer ?? true
 
-		this.shaderProgram = new ShaderProgram(gl, vsSource, fsSource).getProgram()
 		this.gridShaderProgram = new ShaderProgram(gl, vsGrid, fsGrid).getProgram()
 		this.colorShaderProgram = new ShaderProgram(gl, vsColor, fsColor).getProgram()
 
@@ -175,10 +135,7 @@ export class StructureRenderer {
 		this.gridBuffers = this.getGridBuffers()
 		this.outlineBuffers = this.getOutlineBuffers()
 		this.invisibleBlockBuffers = this.getInvisibleBlockBuffers()
-		this.atlasTexture = this.getBlockTexture()
-		this.projMatrix = this.getPerspective()
-		this.activeShader = this.shaderProgram
-		this.initialize()
+		this.atlasTexture = this.createAtlasTexture(this.resources.getTextureAtlas())
 	}
 
 	public setStructure(structure: StructureProvider) {
@@ -187,36 +144,7 @@ export class StructureRenderer {
 		this.gridBuffers = this.getGridBuffers()
 		this.invisibleBlockBuffers = this.getInvisibleBlockBuffers()
 	}
-
-	private initialize() {
-		this.gl.enable(this.gl.DEPTH_TEST)
-		this.gl.depthFunc(this.gl.LEQUAL)
-
-		this.gl.enable(this.gl.BLEND)
-		this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA)
-
-		this.gl.enable(this.gl.CULL_FACE)
-		this.gl.cullFace(this.gl.BACK)
-	}
-
-	private getBlockTexture() {
-		const texture = this.gl.createTexture()!
-		this.gl.bindTexture(this.gl.TEXTURE_2D, texture)
-		this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, this.gl.RGBA, this.gl.UNSIGNED_BYTE, this.resources.getTextureAtlas())
-		this.gl.generateMipmap(this.gl.TEXTURE_2D)
-		this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.NEAREST)
-		return texture
-	}
-
-	private getPerspective() {
-		const fieldOfView = 70 * Math.PI / 180
-		const aspect = (this.gl.canvas as HTMLCanvasElement).clientWidth / (this.gl.canvas as HTMLCanvasElement).clientHeight
-		const projMatrix = mat4.create()
-		mat4.perspective(projMatrix, fieldOfView, aspect, 0.1, 500.0)
-		return projMatrix
-	}
-
-	private getChunk(chunkPos: vec3): Chunk{
+	private getChunk(chunkPos: vec3): RenderChunk{
 		const x = Math.abs(chunkPos[0]) * 2 + (chunkPos[0] < 0 ? 1 : 0)
 		const y = Math.abs(chunkPos[1]) * 2 + (chunkPos[1] < 0 ? 1 : 0)
 		const z = Math.abs(chunkPos[2]) * 2 + (chunkPos[2] < 0 ? 1 : 0)
@@ -241,7 +169,7 @@ export class StructureRenderer {
 
 	public updateStructureBuffers(chunkPositions?: vec3[]): void {
 
-		const pushBuffers = (buffers: any, pos: vec3, chunk: Chunk) => {
+		const pushBuffers = (buffers: any, pos: vec3, chunk: RenderChunk) => {
 			const t = mat4.create()
 			mat4.translate(t, t, pos)
 			transformVectors(buffers.position, t)
@@ -266,7 +194,7 @@ export class StructureRenderer {
 			chunk.indexOffset += buffers.texCoord.length / 2
 		}
 
-		const resetChunk = (chunk: Chunk) => {
+		const resetChunk = (chunk: RenderChunk) => {
 			chunk.positions = []
 			chunk.textureCoordinates = []
 			chunk.tintColors = []
@@ -276,7 +204,7 @@ export class StructureRenderer {
 			chunk.indexOffset = 0
 		}
 
-		const refreshBuffer = (chunk: Chunk) => {
+		const refreshBuffer = (chunk: RenderChunk) => {
 			if (chunk.buffer) {
 				this.updateBuffer(chunk.buffer.position, this.gl.ARRAY_BUFFER, mergeFloat32Arrays(...chunk.positions))
 				this.updateBuffer(chunk.buffer.texCoord, this.gl.ARRAY_BUFFER, new Float32Array(chunk.textureCoordinates)),
@@ -466,25 +394,12 @@ export class StructureRenderer {
 		for (let i = 0; i < 24; i += 1) colors.push(...color)
 	}
 
-	private createBuffer(type: number, array: ArrayBuffer) {
-		const buffer = this.gl.createBuffer()!
-		this.gl.bindBuffer(type, buffer)
-		this.gl.bufferData(type, array, this.gl.DYNAMIC_DRAW)
-		return buffer
-	}
-
-	private updateBuffer(buffer: WebGLBuffer, type: number, array: ArrayBuffer) {
-		this.gl.bindBuffer(type, buffer)
-		this.gl.bufferData(type, array, this.gl.STATIC_DRAW)
-	}
-
 	public drawGrid(viewMatrix: mat4) {
 		this.setShader(this.gridShaderProgram)
+		this.prepareDraw(viewMatrix)
 
 		this.setVertexAttr('vertPos', 3, this.gridBuffers.position)
 		this.setVertexAttr('vertColor', 3, this.gridBuffers.color)
-		this.setUniform('mView', viewMatrix)
-		this.setUniform('mProj', this.projMatrix)
 
 		this.gl.drawArrays(this.gl.LINES, 0, this.gridBuffers.length)
 	}
@@ -493,35 +408,24 @@ export class StructureRenderer {
 		if (!this.useInvisibleBlockBuffer)
 			return
 		this.setShader(this.gridShaderProgram)
+		this.prepareDraw(viewMatrix)
 
 		this.setVertexAttr('vertPos', 3, this.invisibleBlockBuffers!.position)
 		this.setVertexAttr('vertColor', 3, this.invisibleBlockBuffers!.color)
-		this.setUniform('mView', viewMatrix)
-		this.setUniform('mProj', this.projMatrix)
 
 		this.gl.drawArrays(this.gl.LINES, 0, this.invisibleBlockBuffers!.length)
 	}
 
 	public drawStructure(viewMatrix: mat4) {
 		this.setShader(this.shaderProgram)
-
-		this.gl.activeTexture(this.gl.TEXTURE0)
-		this.gl.bindTexture(this.gl.TEXTURE_2D, this.atlasTexture)
-
-		this.setUniform('mView', viewMatrix)
-		this.setUniform('mProj', this.projMatrix)
+		this.setTexture(this.atlasTexture)
+		this.prepareDraw(viewMatrix)
 
 		this.chunks.forEach(x => {
 			x.forEach(y => {
 				y.forEach(chunk => {
 					if (!chunk.buffer) return
-					this.setVertexAttr('vertPos', 3, chunk.buffer.position)
-					this.setVertexAttr('texCoord', 2, chunk.buffer.texCoord)
-					this.setVertexAttr('tintColor', 3, chunk.buffer.tintColor)
-					this.setVertexAttr('normal', 3, chunk.buffer.normal)
-					this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, chunk.buffer.index)
-
-					this.gl.drawElements(this.gl.TRIANGLES, chunk.buffer.length, this.gl.UNSIGNED_SHORT, 0)
+					this.drawBuffers(chunk.buffer)
 				})
 			})
 		})
@@ -529,9 +433,7 @@ export class StructureRenderer {
 
 	public drawColoredStructure(viewMatrix: mat4) {
 		this.setShader(this.colorShaderProgram)
-
-		this.setUniform('mView', viewMatrix)
-		this.setUniform('mProj', this.projMatrix)
+		this.prepareDraw(viewMatrix)
 
 		this.chunks.forEach(x => {
 			x.forEach(y => {
@@ -550,37 +452,14 @@ export class StructureRenderer {
 	public drawOutline(viewMatrix: mat4, pos: vec3) {
 		this.setShader(this.gridShaderProgram)
 
-		this.setVertexAttr('vertPos', 3, this.outlineBuffers.position)
-		this.setVertexAttr('vertColor', 3, this.outlineBuffers.color)
-
 		const translatedMatrix = mat4.create()
 		mat4.copy(translatedMatrix, viewMatrix)
 		mat4.translate(translatedMatrix, translatedMatrix, pos)
-		this.setUniform('mView', translatedMatrix)
-		this.setUniform('mProj', this.projMatrix)
+		this.prepareDraw(translatedMatrix)
+
+		this.setVertexAttr('vertPos', 3, this.outlineBuffers.position)
+		this.setVertexAttr('vertColor', 3, this.outlineBuffers.color)
 
 		this.gl.drawArrays(this.gl.LINES, 0, this.outlineBuffers.length)
-	}
-
-	public setViewport(x: number, y: number, width: number, height: number) {
-		this.gl.viewport(x, y, width, height)
-		this.projMatrix = this.getPerspective()
-	}
-
-	private setShader(shader: WebGLProgram) {
-		this.gl.useProgram(shader)
-		this.activeShader = shader
-	}
-
-	private setVertexAttr(name: string, size: number, buffer: WebGLBuffer | null) {
-		const location = this.gl.getAttribLocation(this.activeShader, name)
-		this.gl.bindBuffer(this.gl.ARRAY_BUFFER, buffer)
-		this.gl.vertexAttribPointer(location, size, this.gl.FLOAT, false, 0, 0)
-		this.gl.enableVertexAttribArray(location)
-	}
-
-	private setUniform(name: string, value: Float32List) {
-		const location = this.gl.getUniformLocation(this.activeShader, name)    
-		this.gl.uniformMatrix4fv(location, false, value)
 	}
 }

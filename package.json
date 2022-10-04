@@ -52,6 +52,7 @@
     "build": "tsc -b src --clean && tsc -b src && vite build",
     "dev": "tsc -b -w src",
     "test": "vitest -r ./test",
+    "demo": "vite ./demo",
     "benchmark": "esno benchmarks/index.ts",
     "lint": "eslint . --ext .ts",
     "version": "bash scripts/version.sh",

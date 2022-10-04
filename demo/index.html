@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Deepslate demo</title>
+	<style>
+		.row {
+			display: flex;
+			margin-bottom: 10px;
+			align-items: center;
+		}
+		canvas {
+			display: block;
+			background: black;
+		}
+		input {
+			padding: 4px;
+			margin-left: 8px;
+		}
+		.invalid {
+			color: #cb0000;
+		}
+	</style>
+</head>
+<body>
+	<div class="row">
+		<canvas id="item-display" width="64" height="64"></canvas>
+		<input id="item-input" list="item-list" type="text" value="stone">
+	</div>
+	<canvas id="structure-display" width="600" height="400"></canvas>
+	<script src="./main.ts" type="module"></script>
+</body>
+</html>

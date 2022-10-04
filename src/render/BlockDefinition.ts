@@ -1,5 +1,6 @@
 import { glMatrix, mat4 } from 'gl-matrix'
 import { Identifier } from '../core/index.js'
+import { BlockColors } from './BlockColors.js'
 import type { BlockModelProvider } from './BlockModel.js'
 import { Cull } from './Cull.js'
 import type { TextureAtlasProvider } from './TextureAtlas.js'
@@ -67,7 +68,8 @@ export class BlockDefinition {
 			if (!blockModel) {
 				throw new Error(`Cannot find block model ${variant.model}`)
 			}
-			const buffers = blockModel.getBuffers(name, props, textureUVProvider, offset, newCull)
+			const tint = BlockColors[name.path]?.(props)
+			const buffers = blockModel.getBuffers(textureUVProvider, offset, newCull, tint)
 
 			if (variant.x || variant.y) {
 				const t = mat4.create()

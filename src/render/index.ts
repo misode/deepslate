@@ -1,5 +1,6 @@
 export * from './BlockColors.js'
 export * from './BlockDefinition.js'
 export * from './BlockModel.js'
+export * from './ItemRenderer.js'
 export * from './StructureRenderer.js'
 export * from './TextureAtlas.js'

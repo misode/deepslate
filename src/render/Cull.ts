@@ -30,4 +30,8 @@ export namespace Cull {
 	
 		return { up, down, north, east, south, west }
 	}
+
+	export function none(): Cull {
+		return Object.create(null)
+	}
 }

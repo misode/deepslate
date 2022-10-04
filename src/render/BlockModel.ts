@@ -2,12 +2,13 @@ import type { ReadonlyVec3 } from 'gl-matrix'
 import { glMatrix, mat4, vec3 } from 'gl-matrix'
 import type { Direction } from '../core/index.js'
 import { Identifier } from '../core/index.js'
-import { BlockColors } from './BlockColors.js'
 import type { Cull } from './Cull.js'
 import type { TextureAtlasProvider, UV } from './TextureAtlas.js'
 import { mergeFloat32Arrays, transformVectors } from './Util.js'
 
 type Axis = 'x' | 'y' | 'z'
+
+type Display = 'thirdperson_righthand' | 'thirdperson_lefthand' | 'firstperson_righthand' | 'firstperson_lefthand' | 'gui' | 'head' | 'ground' | 'fixed'
 
 type BlockModelFace = {
 	texture: string,
@@ -29,6 +30,14 @@ type BlockModelElement = {
 	faces?: {
 		[key in Direction]?: BlockModelFace
 	},
+}
+
+type BlockModelDisplay = {
+	[key in Display]?: {
+		rotation?: [number, number, number],
+		translation?: [number, number, number],
+		scale?: [number, number, number],
+	}
 }
 
 const faceRotations = {
@@ -63,18 +72,19 @@ export class BlockModel {
 		private readonly parent: Identifier | undefined,
 		private textures: { [key: string]: string } | undefined,
 		private elements: BlockModelElement[] | undefined,
+		private display?: BlockModelDisplay | undefined,
 	) {
 		this.flattened = false
 	}
 
-	public getBuffers(name: Identifier, props: {[key: string]: string}, uvProvider: TextureAtlasProvider, offset: number, cull: Cull) {
+	public getBuffers(uvProvider: TextureAtlasProvider, offset: number, cull: Cull, tint?: number[]) {
 		const position: Float32Array[] = []
 		const texCoord: number[] = []
 		const tintColor: number[] = []
 		const index: number[] = []
 
 		for (const element of this.elements ?? []) {
-			const buffers = this.getElementBuffers(name, props, element, offset, uvProvider, cull)
+			const buffers = this.getElementBuffers(element, offset, uvProvider, cull, tint)
 			position.push(buffers.position)
 			texCoord.push(...buffers.texCoord)
 			tintColor.push(...buffers.tintColor)
@@ -90,7 +100,7 @@ export class BlockModel {
 		}
 	}
 
-	private getElementBuffers(name: Identifier, props: {[key: string]: string}, e: BlockModelElement, i: number, uvProvider: TextureAtlasProvider, cull: {[key in Direction]?: boolean}) {
+	private getElementBuffers(e: BlockModelElement, i: number, uvProvider: TextureAtlasProvider, cull: {[key in Direction]?: boolean}, tint?: number[]) {
 		const x0 = e.from[0]
 		const y0 = e.from[1]
 		const z0 = e.from[2]
@@ -120,8 +130,8 @@ export class BlockModel {
 				u0 + uv[r[2]], v0 + uv[r[3]],
 				u0 + uv[r[4]], v0 + uv[r[5]],
 				u0 + uv[r[6]], v0 + uv[r[7]])
-			const tint = (face.tintindex ?? -1) >= 0 ? (BlockColors[name.path]?.(props) ?? [1, 1, 1]) : [1, 1, 1]
-			tintColors.push(...tint, ...tint, ...tint, ...tint)
+			const t = (face.tintindex ?? -1) >= 0 ? (tint ?? [1, 1, 1]) : [1, 1, 1]
+			tintColors.push(...t, ...t, ...t, ...t)
 			positions.push(...pos)
 			indices.push(i, i+1, i+2,  i, i+2, i+3)
 			i += 4
@@ -203,12 +213,28 @@ export class BlockModel {
 					this.textures![t] = parent.textures![t]
 				}
 			})
+			if (!this.display) {
+				this.display = {}
+			}
+			Object.keys(parent.display ?? {}).forEach(k => {
+				const l = k as Display
+				if (!this.display![l]) {
+					this.display![l] = parent.display![l]
+				} else {
+					Object.keys(parent.display![l] ?? {}).forEach(m => {
+						const n = m as 'rotation' | 'translation' | 'scale'
+						if (!this.display![l]![n]) {
+							this.display![l]![n] = parent.display![l]![n]
+						}
+					})
+				}
+			})
 			this.flattened = true
 		}
 	}
 
 	public static fromJson(id: string, data: any) {
 		const parent = data.parent === undefined ? undefined : Identifier.parse(data.parent)
-		return new BlockModel(Identifier.parse(id), parent, data.textures, data.elements)
+		return new BlockModel(Identifier.parse(id), parent, data.textures, data.elements, data.display)
 	}
 }

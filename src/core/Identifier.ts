@@ -25,6 +25,10 @@ export class Identifier {
 		return this.namespace + Identifier.SEPARATOR + this.path
 	}
 
+	public withPrefix(prefix: string) {
+		return new Identifier(this.namespace, prefix + this.path)
+	}
+
 	public static create(path: string) {
 		return new Identifier(this.DEFAULT_NAMESPACE, path)
 	}
