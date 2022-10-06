@@ -2,7 +2,7 @@ import type { ReadonlyVec3 } from 'gl-matrix'
 import { glMatrix, mat4, vec3 } from 'gl-matrix'
 import type { Direction } from '../core/index.js'
 import { Identifier } from '../core/index.js'
-import type { Cull } from './Cull.js'
+import { Cull } from './Cull.js'
 import type { TextureAtlasProvider, UV } from './TextureAtlas.js'
 import { mergeFloat32Arrays, transformVectors } from './Util.js'
 
@@ -40,6 +40,8 @@ type BlockModelDisplay = {
 	}
 }
 
+type BlockModelGuiLight = 'front' | 'side'
+
 const faceRotations = {
 	0: [0, 3, 2, 3, 2, 1, 0, 1],
 	90: [2, 3, 2, 1, 0, 1, 0, 3],
@@ -66,15 +68,54 @@ export interface BlockModelProvider {
 }
 
 export class BlockModel {
-	private flattened: boolean
+	private static readonly BUILTIN_GENERATED = Identifier.create('builtin/generated')
+
 	constructor(
 		private readonly id: Identifier,
-		private readonly parent: Identifier | undefined,
+		private parent: Identifier | undefined,
 		private textures: { [key: string]: string } | undefined,
 		private elements: BlockModelElement[] | undefined,
 		private display?: BlockModelDisplay | undefined,
-	) {
-		this.flattened = false
+		private guiLight?: BlockModelGuiLight | undefined,
+	) {}
+
+	public getDisplayBuffers(display: Display, uvProvider: TextureAtlasProvider, offset: number, tint?: number[]) {
+		const buffers = this.getBuffers(uvProvider, offset, Cull.none(), tint)
+		
+		const transform = this.display?.[display]
+		const t = mat4.create()
+		mat4.identity(t)
+		mat4.translate(t, t, [8, 8, 8])
+		if (transform?.translation) {
+			mat4.translate(t, t, transform.translation)
+		}
+		if (transform?.rotation) {
+			mat4.rotateX(t, t, transform.rotation[0] * Math.PI/180)
+			mat4.rotateY(t, t, transform.rotation[1] * Math.PI/180)
+			mat4.rotateZ(t, t, -transform.rotation[2] * Math.PI/180)
+		}
+		if (transform?.scale) {
+			mat4.scale(t, t, transform.scale)
+		}
+		mat4.translate(t, t, [-8, -8, -8])
+		transformVectors(buffers.position, t)
+
+		const normals = []
+		for (let i = 0; i < buffers.position.length; i += 12) {
+			const a = vec3.fromValues(buffers.position[i], buffers.position[i + 1], buffers.position[i + 2])
+			const b = vec3.fromValues(buffers.position[i + 3], buffers.position[i + 4], buffers.position[i + 5])
+			const c = vec3.fromValues(buffers.position[i + 6], buffers.position[i + 7], buffers.position[i + 8])
+			vec3.subtract(b, b, a)
+			vec3.subtract(c, c, a)
+			vec3.cross(b, b, c)
+			vec3.normalize(b, b)
+			normals.push(...b, ...b, ...b, ...b)
+		}
+
+		return {
+			...buffers,
+			normal: normals,
+		}
 	}
 
 	public getBuffers(uvProvider: TextureAtlasProvider, offset: number, cull: Cull, tint?: number[]) {
@@ -194,43 +235,60 @@ export class BlockModel {
 	}
 
 	public flatten(accessor: BlockModelProvider) {
-		if (!this.flattened && this.parent) {
-			const parent = accessor.getBlockModel(this.parent)
-			if (!parent) {
-				console.warn(`parent ${this.parent} does not exist!`)
-				this.flattened = true
-				return
-			}
-			parent.flatten(accessor)
-			if (!this.elements) {
-				this.elements = parent.elements
-			}
-			if (!this.textures) {
-				this.textures = {}
-			}
-			Object.keys(parent.textures ?? {}).forEach(t => {
-				if (!this.textures![t]) {
-					this.textures![t] = parent.textures![t]
-				}
-			})
-			if (!this.display) {
-				this.display = {}
-			}
-			Object.keys(parent.display ?? {}).forEach(k => {
-				const l = k as Display
-				if (!this.display![l]) {
-					this.display![l] = parent.display![l]
-				} else {
-					Object.keys(parent.display![l] ?? {}).forEach(m => {
-						const n = m as 'rotation' | 'translation' | 'scale'
-						if (!this.display![l]![n]) {
-							this.display![l]![n] = parent.display![l]![n]
-						}
-					})
-				}
-			})
-			this.flattened = true
+		if (!this.parent) {
+			return
 		}
+		const parent = this.getParent(accessor)
+		if (!parent) {
+			console.warn(`parent ${this.parent} does not exist!`)
+			this.parent = undefined
+			return
+		}
+		parent.flatten(accessor)
+		if (!this.elements) {
+			this.elements = parent.elements
+		}
+		if (!this.textures) {
+			this.textures = {}
+		}
+		Object.keys(parent.textures ?? {}).forEach(t => {
+			if (!this.textures![t]) {
+				this.textures![t] = parent.textures![t]
+			}
+		})
+		if (!this.display) {
+			this.display = {}
+		}
+		Object.keys(parent.display ?? {}).forEach(k => {
+			const l = k as Display
+			if (!this.display![l]) {
+				this.display![l] = parent.display![l]
+			} else {
+				Object.keys(parent.display![l] ?? {}).forEach(m => {
+					const n = m as 'rotation' | 'translation' | 'scale'
+					if (!this.display![l]![n]) {
+						this.display![l]![n] = parent.display![l]![n]
+					}
+				})
+			}
+		})
+		if (!this.guiLight) {
+			this.guiLight = parent.guiLight
+		}
+
+		this.parent = undefined
+	}
+
+	private getParent(accessor: BlockModelProvider) {
+		if (!this.parent) return null
+		if (this.parent.equals(BlockModel.BUILTIN_GENERATED)) {
+			return new BlockModel(BlockModel.BUILTIN_GENERATED, undefined, undefined, [{
+				from: [0, 0, 0],
+				to: [16, 16, 0],
+				faces: { south: { texture: '#layer0', tintindex: 0 }},
+			}])
+		}
+		return accessor.getBlockModel(this.parent)
 	}
 
 	public static fromJson(id: string, data: any) {
