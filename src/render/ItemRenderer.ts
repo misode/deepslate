@@ -45,7 +45,6 @@ export class ItemRenderer extends Renderer {
 			tint = BlockColors[this.item.path]?.({})
 		}
 		const buffers = model.getDisplayBuffers('gui', this.resources, 0, tint)
-		console.log(buffers)
 
 		return {
 			position: this.createBuffer(this.gl.ARRAY_BUFFER, buffers.position),
