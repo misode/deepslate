@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { BlockState, Identifier } from '../../src/core/index.js'
-import type { NamedNbtTag } from '../../src/nbt/index.js'
+import { NbtCompound, NbtString } from '../../src/nbt/index.js'
 
 describe('BlockState', () => {
 	it('constructor', () => {
@@ -46,9 +46,8 @@ describe('BlockState', () => {
 	})
 
 	it('fromNbt (no properties)', () => {
-		const nbt: NamedNbtTag = { name: '', value: {
-			Name: { type: 'string', value: 'minecraft:stone' },
-		} }
+		const nbt = new NbtCompound()
+			.set('Name', new NbtString('minecraft:stone'))
 		const stateA = BlockState.fromNbt(nbt)
 		const stateB = new BlockState('stone')
 
@@ -56,13 +55,11 @@ describe('BlockState', () => {
 	})
 
 	it('fromNbt (properties)', () => {
-		const nbt: NamedNbtTag = { name: '', value: {
-			Name: { type: 'string', value: 'minecraft:piston' },
-			Properties: { type: 'compound', value: {
-				extended: { type: 'string', value: 'false' },
-				facing: { type: 'string', value: 'up' },
-			} },
-		} }
+		const nbt = new NbtCompound()
+			.set('Name', new NbtString('minecraft:piston'))
+			.set('Properties', new NbtCompound()
+				.set('extended', new NbtString('false'))
+				.set('facing', new NbtString('up')))
 		const stateA = BlockState.fromNbt(nbt)
 		const stateB = new BlockState('piston', { extended: 'false', facing: 'up' })
 

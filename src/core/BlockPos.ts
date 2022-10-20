@@ -1,3 +1,4 @@
+import type { NbtList } from '../nbt/index.js'
 import { Direction } from './Direction.js'
 
 export type BlockPos = [number, number, number]
@@ -24,5 +25,9 @@ export namespace BlockPos {
 
 	export function magnitude(pos: BlockPos) {
 		return pos[0] * pos[0] + pos[1] * pos[1] + pos[2] * pos[2]
+	}
+
+	export function fromNbt(nbt: NbtList) {
+		return nbt.getAsTuple(3, e => e?.isInt() ? e.getAsNumber() : 0)
 	}
 }
