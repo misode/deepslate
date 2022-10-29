@@ -110,7 +110,7 @@ export class StringReader {
 			return ''
 		}
 		const c = this.peek()
-		if (StringReader.isQuotedStringStart(c)) {
+		if (!StringReader.isQuotedStringStart(c)) {
 			throw new Error('Expected quote to start a string')
 		}
 		this.skip()

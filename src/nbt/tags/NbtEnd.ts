@@ -36,10 +36,6 @@ export class NbtEnd extends NbtTag {
 		return NbtEnd.INSTANCE
 	}
 
-	public static getName() {
-		return 'TAG_End'
-	}
-
 	public static fromJson() {
 		return NbtEnd.INSTANCE
 	}

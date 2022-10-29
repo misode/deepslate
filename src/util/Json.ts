@@ -17,16 +17,16 @@ export namespace Json {
 		return typeof obj === 'boolean' ? obj : undefined
 	}
 
-	export function readObject(obj: JsonValue | undefined): { [x: string]: JsonValue | undefined }
-	export function readObject(obj: unknown): { [x: string]: unknown }
+	export function readObject(obj: JsonValue | undefined): { [x: string]: JsonValue | undefined } | undefined
+	export function readObject(obj: unknown): { [x: string]: unknown } | undefined
 	export function readObject(obj: unknown) {
 		return typeof obj === 'object' && obj !== null && !Array.isArray(obj)
 			? obj as { [key: string]: unknown }
 			: undefined
 	}
 
-	export function readArray<T>(obj: JsonValue | undefined, parser: (obj: JsonValue) => T): T[] | undefined
-	export function readArray<T>(obj: JsonValue | undefined): JsonValue[] | undefined
+	export function readArray<T>(obj: JsonValue | undefined, parser: (obj?: JsonValue) => T): T[] | undefined
+	export function readArray<T>(obj: JsonValue | undefined): (JsonValue | undefined)[] | undefined
 	export function readArray<T>(obj: unknown, parser: (obj: unknown) => T): T[] | undefined
 	export function readArray<T>(obj: unknown, parser?: (obj: any) => T) {
 		if (!Array.isArray(obj)) return undefined
@@ -39,7 +39,7 @@ export namespace Json {
 		return [0, 1].map((i => parser(obj[i]))) as [T, T]
 	}
 
-	export function readMap<T>(obj: JsonValue | undefined, parser: (obj: JsonValue) => T): { [x: string]: T }
+	export function readMap<T>(obj: JsonValue | undefined, parser: (obj?: JsonValue) => T): { [x: string]: T }
 	export function readMap<T>(obj: unknown, parser: (obj: unknown) => T): { [x: string]: T }
 	export function readMap<T>(obj: unknown, parser: (obj: any) => T) {
 		const root = readObject(obj) ?? {}

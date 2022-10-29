@@ -104,7 +104,7 @@ export class NbtFile {
 	}
 
 	public static fromJson(value: JsonValue): NbtFile {
-		const obj = Json.readObject(value)
+		const obj = Json.readObject(value) ?? {}
 		const name = Json.readString(obj.name) ?? ''
 		const root = NbtCompound.fromJson(obj.root ?? {})
 		const compression = (Json.readString(obj.compression) ?? 'none') as NbtCompressionMode

@@ -75,7 +75,7 @@ export class Structure implements StructureProvider {
 			const pos = BlockPos.fromNbt(tag.getList('pos'))
 			const state = tag.getNumber('state')
 			const nbt = tag.getCompound('nbt')
-			return { pos, state, nbt }
+			return { pos, state, nbt: nbt.size > 0 ? nbt : undefined }
 		})
 		return new Structure(size, palette, blocks)
 	}

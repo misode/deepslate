@@ -7,8 +7,8 @@ import { NbtTag } from './NbtTag.js'
 import { NbtType } from './NbtType.js'
 
 export class NbtIntArray extends NbtAbstractList<NbtInt> {
-	constructor(items: ArrayLike<number | NbtInt>) {
-		super(Array.from(items, e => typeof e === 'number' ? new NbtInt(e) : e))
+	constructor(items?: ArrayLike<number | NbtInt>) {
+		super(Array.from(items ?? [], e => typeof e === 'number' ? new NbtInt(e) : e))
 	}
 
 	public override getId() {
@@ -48,11 +48,7 @@ export class NbtIntArray extends NbtAbstractList<NbtInt> {
 	}
 
 	public static create() {
-		return new NbtIntArray([])
-	}
-
-	public static getName() {
-		return 'TAG_Int_Array'
+		return new NbtIntArray()
 	}
 	
 	public static fromJson(value: JsonValue) {

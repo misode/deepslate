@@ -85,8 +85,8 @@ export abstract class NbtAbstractList<T extends NbtTag> extends NbtTag {
 export class NbtList<T extends NbtTag = NbtTag> extends NbtAbstractList<T> {
 	private type: number
 
-	constructor(items: T[], type?: number) {
-		super(items)
+	constructor(items?: T[], type?: number) {
+		super(items ?? [])
 		this.type = this.items.length === 0 ? NbtType.End : (type ?? this.items[0].getId()) 
 	}
 
@@ -163,7 +163,7 @@ export class NbtList<T extends NbtTag = NbtTag> extends NbtAbstractList<T> {
 		} else if (this.type === NbtType.End) {
 			this.type = tag.getId()
 		} else if (this.type !== tag.getId()) {
-			throw new Error(`Trying to add tag of type ${NbtTag.getName(tag.getId())} to list of ${NbtTag.getName(this.type)}`)
+			throw new Error(`Trying to add tag of type ${NbtType[tag.getId()]} to list of ${NbtType[this.type]}`)
 		}
 	}
 
@@ -210,18 +210,15 @@ export class NbtList<T extends NbtTag = NbtTag> extends NbtAbstractList<T> {
 	}
 
 	public static create() {
-		return new NbtList([])
-	}
-
-	public static getName() {
-		return 'TAG_List'
+		return new NbtList()
 	}
 
 	public static fromJson(value: JsonValue) {
-		const obj = Json.readObject(value)
-		const id = Json.readNumber(obj.id)
-		const items = Json.readArray(obj.tag ?? [], v => NbtTag.fromJson(v, id)) ?? []
-		return new NbtList(items, id)
+		const obj = Json.readObject(value) ?? {}
+		const id = Json.readNumber(obj.id) ?? NbtType.Compound
+		const items = Json.readArray(obj.tag) ?? []
+		const items2 = items.flatMap(v => v !== undefined ? [NbtTag.fromJson(v, id)] : [])
+		return new NbtList(items2, id)
 	}
 
 	public static fromBytes(input: DataInput) {

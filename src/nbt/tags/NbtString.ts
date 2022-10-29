@@ -44,10 +44,6 @@ export class NbtString extends NbtTag {
 		return NbtString.EMPTY
 	}
 
-	public static getName() {
-		return 'TAG_String'
-	}
-
 	public static fromJson(value: JsonValue) {
 		return new NbtString(typeof value === 'string' ? value : '')
 	}

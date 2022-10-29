@@ -44,10 +44,6 @@ export class NbtFloat extends NbtTag {
 		return new NbtFloat(0)
 	}
 
-	public static getName() {
-		return 'TAG_Float'
-	}
-
 	public static fromJson(value: JsonValue) {
 		return new NbtFloat(Json.readNumber(value) ?? 0)
 	}

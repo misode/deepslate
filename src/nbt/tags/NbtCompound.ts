@@ -19,9 +19,9 @@ import { NbtType } from './NbtType.js'
 export class NbtCompound extends NbtTag {
 	private readonly properties: Map<string, NbtTag>
 
-	constructor(properties: Map<string, NbtTag>) {
+	constructor(properties?: Map<string, NbtTag>) {
 		super()
-		this.properties = properties
+		this.properties = properties ?? new Map()
 	}
 
 	public override getId() {
@@ -189,11 +189,7 @@ export class NbtCompound extends NbtTag {
 	}
 
 	public static create() {
-		return new NbtCompound(new Map())
-	}
-
-	public static getName() {
-		return 'TAG_Compound'
+		return new NbtCompound()
 	}
 
 	public static fromString(reader: StringReader): NbtTag {
@@ -202,7 +198,7 @@ export class NbtCompound extends NbtTag {
 
 	public static fromJson(value: JsonValue): NbtCompound {
 		const properties = Json.readMap(value, e => {
-			const { type, value } = Json.readObject(e)
+			const { type, value } = Json.readObject(e) ?? {}
 			const id = Json.readNumber(type)
 			const tag = NbtTag.fromJson(value ?? {}, id)
 			return tag

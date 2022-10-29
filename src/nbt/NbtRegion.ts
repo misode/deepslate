@@ -2,13 +2,12 @@ import type { JsonValue } from '../util/index.js'
 import { Json } from '../util/index.js'
 import type { NbtChunkResolver } from './NbtChunk.js'
 import { NbtChunk } from './NbtChunk.js'
-import type { NbtCompressionMode } from './NbtFile.js'
 
 abstract class NbtAbstractRegion<T extends { x: number, z: number }> {
-	protected readonly chunks: T[]
+	protected readonly chunks: (T | null)[]
 
 	constructor(chunks: T[]) {
-		this.chunks = Array(NbtRegion.REGION_SIZE * NbtRegion.REGION_SIZE).fill(null)
+		this.chunks = Array(32 * 32).fill(null)
 		for (const chunk of chunks) {
 			const index = NbtRegion.getIndex(chunk.x, chunk.z)
 			this.chunks[index] = chunk
@@ -16,11 +15,11 @@ abstract class NbtAbstractRegion<T extends { x: number, z: number }> {
 	}
 
 	public getChunkPositions(): [number, number][] {
-		return this.chunks.map(c => [c.x, c.z])
+		return this.chunks.flatMap(c => c ? [[c.x, c.z]] : [])
 	}
 
 	public getChunk(index: number) {
-		if (index < 0 || index >= NbtRegion.REGION_SIZE * NbtRegion.REGION_SIZE) {
+		if (index < 0 || index >= 32 * 32) {
 			return undefined
 		}
 		return this.chunks[index]
@@ -35,18 +34,15 @@ abstract class NbtAbstractRegion<T extends { x: number, z: number }> {
 	}
 
 	public filter(predicate: (chunk: T) => boolean) {
-		return this.chunks.filter(predicate)
+		return this.chunks.filter(c => c && predicate(c))
 	}
 
 	public map<U>(mapper: (chunk: T) => U) {
-		return this.chunks.map(mapper)
+		return this.chunks.map(c => c ? mapper(c) : null)
 	}
 }
 
 export class NbtRegion extends NbtAbstractRegion<NbtChunk> {
-	public static readonly REGION_SIZE = 32
-	private static readonly REGION_SIZE_MASK = NbtRegion.REGION_SIZE - 1
-
 	constructor(chunks: NbtChunk[]) {
 		super(chunks)
 	}
@@ -54,6 +50,7 @@ export class NbtRegion extends NbtAbstractRegion<NbtChunk> {
 	public write() {
 		let totalSectors = 0
 		for (const chunk of this.chunks) {
+			if (chunk === null) continue
 			totalSectors += Math.ceil(chunk.getRaw().length / 4096)
 		}
 		const array = new Uint8Array(8192 + totalSectors * 4096)
@@ -61,8 +58,9 @@ export class NbtRegion extends NbtAbstractRegion<NbtChunk> {
 
 		let offset = 2
 		for (const chunk of this.chunks) {
+			if (chunk === null) continue
 			const chunkData = chunk.getRaw()
-			const i = 4 * ((chunk.x & NbtRegion.REGION_SIZE_MASK) + (chunk.z & NbtRegion.REGION_SIZE_MASK) * NbtRegion.REGION_SIZE)
+			const i = 4 * ((chunk.x & 31) + (chunk.z & 31) * 32)
 			const sectors = Math.ceil(chunkData.length / 4096)
 			dataView.setInt8(i, offset >> 16)
 			dataView.setInt16(i + 1, offset & 0xffff)
@@ -71,7 +69,7 @@ export class NbtRegion extends NbtAbstractRegion<NbtChunk> {
 	
 			const j = offset * 4096
 			dataView.setInt32(j, chunkData.length + 1)
-			dataView.setInt8(j + 4, NbtRegion.writeCompression(chunk.compression))
+			dataView.setInt8(j + 4, chunk.compression)
 			array.set(chunkData, j + 5)
 	
 			offset += sectors
@@ -81,9 +79,9 @@ export class NbtRegion extends NbtAbstractRegion<NbtChunk> {
 
 	public static read(array: Uint8Array) {
 		const chunks: NbtChunk[] = []
-		for (let x = 0; x < NbtRegion.REGION_SIZE; x += 1) {
-			for (let z = 0; z < NbtRegion.REGION_SIZE; z += 1) {
-				const i = 4 * ((x & NbtRegion.REGION_SIZE_MASK) + (z & NbtRegion.REGION_SIZE_MASK) * NbtRegion.REGION_SIZE)
+		for (let x = 0; x < 32; x += 1) {
+			for (let z = 0; z < 32; z += 1) {
+				const i = 4 * ((x & 31) + (z & 31) * 32)
 				const sectors = array[i + 3]
 				if (sectors === 0) continue
 
@@ -95,28 +93,10 @@ export class NbtRegion extends NbtAbstractRegion<NbtChunk> {
 				const compression = array[j + 4]
 				const data = array.slice(j + 5, j + 4 + length)
 
-				chunks.push(new NbtChunk(x, z, this.readCompression(compression), timestamp, data))
+				chunks.push(new NbtChunk(x, z, compression, timestamp, data))
 			}
 		}
 		return new NbtRegion(chunks)
-	}
-
-	private static readCompression(value: number): NbtCompressionMode {
-		switch (value) {
-			case 1: return 'gzip'
-			case 2: return 'zlib'
-			case 3: return 'none'
-			default: throw new Error(`Invalid compression mode ${value}`)
-		}
-	}
-
-	private static writeCompression(value: NbtCompressionMode): number {
-		switch (value) {
-			case 'gzip': return 1
-			case 'zlib': return 2
-			case 'none': return 3
-			default: throw new Error(`Invalid compression mode ${value}`)
-		}
 	}
 
 	public static getIndex(x: number, z: number) {
@@ -125,14 +105,15 @@ export class NbtRegion extends NbtAbstractRegion<NbtChunk> {
 
 	public toJson(): JsonValue {
 		return {
-			chunks: this.chunks.map(c => c.toJson()),
+			chunks: this.chunks.flatMap(c => c ? [c.toJson()] : []),
 		}
 	}
 
 	public static fromJson(value: JsonValue, chunkResolver: NbtChunkResolver): NbtRegion.Ref {
-		const obj = Json.readObject(value)
-		const chunks = Json.readArray(obj.chunks, c => NbtChunk.fromJson(c, chunkResolver)) ?? []
-		return new NbtRegion.Ref(chunks)
+		const obj = Json.readObject(value) ?? {}
+		const chunks = Json.readArray(obj.chunks) ?? []
+		const chunks2 = chunks.flatMap(c => c ? [NbtChunk.fromJson(c, chunkResolver)] : [])
+		return new NbtRegion.Ref(chunks2)
 	}
 }
 

@@ -44,10 +44,6 @@ export class NbtInt extends NbtTag {
 		return new NbtInt(0)
 	}
 
-	public static getName() {
-		return 'TAG_Int'
-	}
-
 	public static fromJson(value: JsonValue) {
 		return new NbtInt(Json.readInt(value) ?? 0)
 	}

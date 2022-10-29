@@ -46,10 +46,6 @@ export class NbtByte extends NbtTag {
 		return NbtByte.ZERO
 	}
 
-	public static getName() {
-		return 'TAG_Byte'
-	}
-
 	public static fromJson(value: JsonValue) {
 		return new NbtByte(Json.readInt(value) ?? 0)
 	}

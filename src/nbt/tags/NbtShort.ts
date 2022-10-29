@@ -42,10 +42,6 @@ export class NbtShort extends NbtTag {
 	public static create() {
 		return new NbtShort(0)
 	}
-
-	public static getName() {
-		return 'TAG_Short'
-	}
 	
 	public static fromJson(value: JsonValue) {
 		return new NbtShort(typeof value === 'number' ? Math.floor(value) : 0)

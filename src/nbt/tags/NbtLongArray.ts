@@ -8,8 +8,8 @@ import { NbtTag } from './NbtTag.js'
 import { NbtType } from './NbtType.js'
 
 export class NbtLongArray extends NbtAbstractList<NbtLong> {
-	constructor(items: ArrayLike<NbtLongPair | bigint | NbtLong>) {
-		super(Array.from(items, e => typeof e === 'bigint' || Array.isArray(e) ? new NbtLong(e) : e))
+	constructor(items?: ArrayLike<NbtLongPair | bigint | NbtLong>) {
+		super(Array.from(items ?? [], e => typeof e === 'bigint' || Array.isArray(e) ? new NbtLong(e) : e))
 	}
 
 	public override getId() {
@@ -51,11 +51,7 @@ export class NbtLongArray extends NbtAbstractList<NbtLong> {
 	}
 
 	public static create() {
-		return new NbtLongArray([])
-	}
-
-	public static getName() {
-		return 'TAG_Long_Array'
+		return new NbtLongArray()
 	}
 	
 	public static fromJson(value: JsonValue) {

@@ -16,19 +16,18 @@ import type { NbtShort } from './NbtShort.js'
 import type { NbtString } from './NbtString.js'
 import { NbtType } from './NbtType.js'
 
-interface NbtTypeTag {
+interface NbtFactory {
 	create(): NbtTag,
-	getName(): string,
 	fromString(reader: StringReader): NbtTag
 	fromJson(value: JsonValue): NbtTag,
 	fromBytes(input: DataInput): NbtTag,
 }
 
 export abstract class NbtTag {
-	private static readonly TYPES = new Map<NbtType, NbtTypeTag>()
+	private static readonly FACTORIES = new Map<NbtType, NbtFactory>()
 
-	public static register(type: NbtType, typeTag: NbtTypeTag) {
-		NbtTag.TYPES.set(type, typeTag)
+	public static register(type: NbtType, factory: NbtFactory) {
+		NbtTag.FACTORIES.set(type, factory)
 	}
 
 	public isEnd(): this is NbtEnd {
@@ -105,12 +104,12 @@ export abstract class NbtTag {
 
 	public toJsonWithId(): JsonValue {
 		return {
-			id: this.getId(),
-			tag: this.toJson(),
+			type: this.getId(),
+			value: this.toJson(),
 		}
 	}
 
-	public abstract getId(): number
+	public abstract getId(): NbtType
 
 	public abstract toString(): string
 
@@ -122,38 +121,34 @@ export abstract class NbtTag {
 
 	public abstract toBytes(output: DataOutput): void
 
-	private static getType(id: NbtType) {
-		const type = this.TYPES.get(id)
-		if (!type) {
+	private static getFactory(id: NbtType) {
+		const factory = this.FACTORIES.get(id)
+		if (!factory) {
 			throw new Error(`Invalid tag id ${id}`)
 		}
-		return type
+		return factory
 	}
 
 	public static create(id: NbtType) {
-		return this.getType(id).create()
-	}
-
-	public static getName(id: NbtType) {
-		return this.getType(id).getName()
+		return this.getFactory(id).create()
 	}
 
 	public static fromString(input: string | StringReader) {
 		const reader = typeof input === 'string' ? new StringReader(input) : input
-		return this.getType(NbtType.Compound).fromString(reader)
+		return this.getFactory(NbtType.Compound).fromString(reader)
 	}
 
 	public static fromJson(value: JsonValue, id: NbtType = NbtType.Compound) {
-		return this.getType(id).fromJson(value)
+		return this.getFactory(id).fromJson(value)
 	}
 
 	public static fromJsonWithId(value: JsonValue) {
-		const obj = Json.readObject(value)
-		const id = Json.readInt(obj.id) ?? 0
+		const obj = Json.readObject(value) ?? {}
+		const id = Json.readInt(obj.type) ?? 0
 		return NbtTag.fromJson(obj.value ?? {}, id)
 	}
 
 	public static fromBytes(input: DataInput, id: NbtType = NbtType.Compound) {
-		return this.getType(id).fromBytes(input)
+		return this.getFactory(id).fromBytes(input)
 	}
 }

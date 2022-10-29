@@ -13,16 +13,36 @@ export class NbtChunk {
 	constructor(
 		public readonly x: number,
 		public readonly z: number,
-		public compression: NbtCompressionMode,
+		public compression: number,
 		public timestamp: number,
 		private raw: Uint8Array,
 	) {
 		this.dirty = false
 	}
 
+	public getCompression(): NbtCompressionMode {
+		switch (this.compression) {
+			case 1: return 'gzip'
+			case 2: return 'zlib'
+			case 3: return 'none'
+			default: throw new Error(`Invalid compression mode ${this.compression}`)
+		}
+	}
+
+	public setCompression(compression: NbtCompressionMode) {
+		switch (compression) {
+			case 'gzip': this.compression = 1; break
+			case 'zlib': this.compression = 2; break
+			case 'none': this.compression = 3; break
+			default: throw new Error(`Invalid compression mode ${compression}`)
+		}
+	}
+
 	public getFile() {
 		if (this.file === undefined) {
-			this.file = NbtFile.read(this.raw, { compression: this.compression })
+			this.file = NbtFile.read(this.raw, {
+				compression: this.getCompression(),
+			})
 		}
 		return this.file
 	}
@@ -33,7 +53,9 @@ export class NbtChunk {
 
 	public setRoot(root: NbtCompound) {
 		if (this.file === undefined) {
-			this.file = NbtFile.create({ compression: this.compression })
+			this.file = NbtFile.create({
+				compression: this.getCompression(),
+			})
 		}
 		this.file.root = root
 		this.markDirty()
@@ -47,7 +69,7 @@ export class NbtChunk {
 		if (this.file === undefined || this.dirty === false) {
 			return this.raw
 		}
-		this.file.compression = this.compression
+		this.file.compression = this.getCompression()
 		const array = this.file.write()
 		this.raw = array
 		this.dirty = false
@@ -65,10 +87,10 @@ export class NbtChunk {
 	}
 
 	public static fromJson(value: JsonValue, resolver: NbtChunkResolver) {
-		const obj = Json.readObject(value)
+		const obj = Json.readObject(value) ?? {}
 		const x = Json.readInt(obj.x) ?? 0
 		const z = Json.readInt(obj.z) ?? 0
-		const compression = (Json.readString(obj.compression) ?? 'none') as NbtCompressionMode
+		const compression = Json.readNumber(obj.compression) ?? 2
 		const timestamp = Json.readInt(obj.timestamp) ?? 0
 		const size = Json.readInt(obj.size) ?? 0
 		return new NbtChunk.Ref(x, z, compression, timestamp, size, resolver)
@@ -81,13 +103,13 @@ export class NbtChunk {
 
 export namespace NbtChunk {
 	export class Ref {
-		private file?: Promise<NbtFile>
+		private file?: Promise<NbtFile> | NbtFile
 		private resolved: boolean = false
 
 		constructor(
 			public readonly x: number,
 			public readonly z: number,
-			public readonly compression: NbtCompressionMode,
+			public readonly compression: number,
 			public readonly timestamp: number,
 			public readonly size: number,
 			public readonly resolver: NbtChunkResolver,
@@ -105,7 +127,7 @@ export namespace NbtChunk {
 				return this.file
 			}
 			this.file = (async () => {
-				const file = this.resolver(this.x, this.z)
+				const file = await this.resolver(this.x, this.z)
 				this.file = file
 				this.resolved = true
 				return file

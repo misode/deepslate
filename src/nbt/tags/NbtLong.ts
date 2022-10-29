@@ -78,10 +78,6 @@ export class NbtLong extends NbtTag {
 		return new NbtLong([0, 0])
 	}
 
-	public static getName() {
-		return 'TAG_Long'
-	}
-
 	public static fromJson(value: JsonValue) {
 		return new NbtLong(Array.isArray(value) && value.length === 2
 			? value.map(e => typeof e === 'number' ? e : 0) as NbtLongPair

@@ -1,5 +1,3 @@
-import './NbtTag.js'
-
 export * from './NbtByte.js'
 export * from './NbtByteArray.js'
 export * from './NbtCompound.js'

@@ -44,10 +44,6 @@ export class NbtDouble extends NbtTag {
 		return new NbtDouble(0)
 	}
 
-	public static getName() {
-		return 'TAG_Double'
-	}
-
 	public static fromJson(value: JsonValue) {
 		return new NbtDouble(Json.readNumber(value) ?? 0)
 	}
