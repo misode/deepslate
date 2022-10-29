@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { BlockState, Identifier, Structure } from '../../src/core/index.js'
-import type { NamedNbtTag } from '../../src/nbt/index.js'
+import { NbtCompound, NbtInt, NbtList, NbtString } from '../../src/nbt/index.js'
 
 describe('Structure', () => {
 	it('getSize', () => {
@@ -52,41 +52,32 @@ describe('Structure', () => {
 	})
 
 	it('fromNbt (empty)', () => {
-		const nbt: NamedNbtTag = { name: '', value: {
-			size: { type: 'list', value: { type: 'int', value: [0, 0, 0] } },
-			palette: { type: 'list', value: { type: 'compound', value: [] } },
-			entities: { type: 'list', value: { type: 'compound', value: [] } },
-			blocks: { type: 'list', value: { type: 'compound', value: [] } },
-		} }
-		const structureA = Structure.fromNbt(nbt)
-		const structureB = new Structure([0, 0, 0])
-
-		expect(structureA).toEqual(structureB)
+		const nbt = new NbtCompound()
+			.set('size', new NbtList([new NbtInt(0), new NbtInt(0), new NbtInt(0)]))
+			.set('palette', new NbtList())
+			.set('entities', new NbtList())
+			.set('blocks', new NbtList())
+		const structure = Structure.fromNbt(nbt)
+		expect(structure).toEqual(new Structure([0, 0, 0]))
 	})
 
 	it('fromNbt (simple)', () => {
-		const nbt: NamedNbtTag = { name: '', value: {
-			size: { type: 'list', value: { type: 'int', value: [1, 2, 1] } },
-			palette: { type: 'list', value: { type: 'compound', value: [
-				{
-					Name: { type: 'string', value: 'jigsaw' },
-					Properties: { type: 'compound', value: {
-						orientation: { type: 'string', value: 'east_up' },
-					} },
-				},
-			] } },
-			entities: { type: 'list', value: { type: 'compound', value: [] } },
-			blocks: { type: 'list', value: { type: 'compound', value: [
-				{
-					pos: { type: 'list', value: { type: 'int', value: [0, 0, 0] } },
-					state: { type: 'int', value: 0 },
-				},
-			] } },
-		} }
+		const nbt = new NbtCompound()
+			.set('size', new NbtList([new NbtInt(1), new NbtInt(2), new NbtInt(1)]))
+			.set('palette', new NbtList([
+				new NbtCompound()
+					.set('Name', new NbtString('jigsaw'))
+					.set('Properties', new NbtCompound().set('orientation', new NbtString('east_up'))),
+			]))
+			.set('entities', new NbtList())
+			.set('blocks', new NbtList([
+				new NbtCompound()
+					.set('pos', new NbtList([new NbtInt(0), new NbtInt(0), new NbtInt(0)]))
+					.set('state', new NbtInt(0)),
+			]))
 		const structureA = Structure.fromNbt(nbt)
 		const structureB = new Structure([1, 2, 1])
 			.addBlock([0, 0, 0], 'jigsaw', { orientation: 'east_up' })
-
 		expect(structureA).toEqual(structureB)
 	})
 })

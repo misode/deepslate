@@ -6,7 +6,7 @@ describe('NbtCompound', () => {
 		const compound = NbtCompound.create()
 			.set('foo', new NbtString('Hello!'))
 		const json = compound.toJson()
-		expect(json).toStrictEqual({ foo: { type: 8, value: 'Hello!' } })
+		expect(json).toEqual({ foo: { type: 8, value: 'Hello!' } })
 	})
 
 	it('fromJson', () => {
@@ -14,7 +14,7 @@ describe('NbtCompound', () => {
 		const compound = NbtCompound.fromJson(json)
 		expect(compound.isCompound()).toBeTruthy()
 		expect(compound.size).toBe(1)
-		expect(compound.get('foo')).toStrictEqual(new NbtString('Hello!'))
+		expect(compound.get('foo')).toEqual(new NbtString('Hello!'))
 	})
 
 	it('fromBytes', () => {
@@ -22,6 +22,6 @@ describe('NbtCompound', () => {
 		const compound = NbtCompound.fromBytes(input)
 		expect(compound.isCompound()).toBeTruthy()
 		expect(compound.size).toBe(1)
-		expect(compound.get('foo')).toStrictEqual(new NbtString('Hello!'))
+		expect(compound.get('foo')).toEqual(new NbtString('Hello!'))
 	})
 })
