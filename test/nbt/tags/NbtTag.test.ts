@@ -8,7 +8,7 @@ describe('NbtTag', () => {
 		const nbt = NbtTag.fromBytes(input)
 		expect(nbt.isCompound()).toBeTruthy()
 		if (nbt.isCompound()) {
-			expect(nbt.size).toBe(1)
+			expect(nbt.size).toEqual(1)
 			expect(nbt.get('foo')).toEqual(new NbtString('Hello!'))
 		}
 	})

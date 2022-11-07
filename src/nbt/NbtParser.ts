@@ -1,4 +1,5 @@
 import { StringReader } from '../util/index.js'
+import { NbtDouble } from './index.js'
 import { NbtByte } from './tags/NbtByte.js'
 import { NbtByteArray } from './tags/NbtByteArray.js'
 import { NbtCompound } from './tags/NbtCompound.js'
@@ -17,13 +18,13 @@ import { NbtType } from './tags/NbtType.js'
  * SNBT Parser
  */
 export namespace NbtParser {
-	const DOUBLE_PATTERN_NOSUFFIX = new RegExp('[-+]?(?:[0-9]+[.]|[0-9]*[.][0-9]+)(?:e[-+]?[0-9]+)?')
-	const DOUBLE_PATTERN = new RegExp('[-+]?(?:[0-9]+[.]?|[0-9]*[.][0-9]+)(?:e[-+]?[0-9]+)?d')
-	const FLOAT_PATTERN = new RegExp('[-+]?(?:[0-9]+[.]?|[0-9]*[.][0-9]+)(?:e[-+]?[0-9]+)?f')
-	const BYTE_PATTERN = new RegExp('[-+]?(?:0|[1-9][0-9]*)b')
-	const LONG_PATTERN = new RegExp('[-+]?(?:0|[1-9][0-9]*)l')
-	const SHORT_PATTERN = new RegExp('[-+]?(?:0|[1-9][0-9]*)s')
-	const INT_PATTERN = new RegExp('[-+]?(?:0|[1-9][0-9]*)')
+	const DOUBLE_PATTERN_NOSUFFIX = new RegExp('^[-+]?(?:[0-9]+[.]|[0-9]*[.][0-9]+)(?:e[-+]?[0-9]+)?$', 'i')
+	const DOUBLE_PATTERN = new RegExp('^[-+]?(?:[0-9]+[.]?|[0-9]*[.][0-9]+)(?:e[-+]?[0-9]+)?d$', 'i')
+	const FLOAT_PATTERN = new RegExp('^[-+]?(?:[0-9]+[.]?|[0-9]*[.][0-9]+)(?:e[-+]?[0-9]+)?f$', 'i')
+	const BYTE_PATTERN = new RegExp('^[-+]?(?:0|[1-9][0-9]*)b$', 'i')
+	const LONG_PATTERN = new RegExp('^[-+]?(?:0|[1-9][0-9]*)l$', 'i')
+	const SHORT_PATTERN = new RegExp('^[-+]?(?:0|[1-9][0-9]*)s$', 'i')
+	const INT_PATTERN = new RegExp('^[-+]?(?:0|[1-9][0-9]*)$', 'i')
 
 	export function readTag(reader: StringReader): NbtTag {
 		reader.skipWhitespace()
@@ -38,6 +39,8 @@ export namespace NbtParser {
 				reader.expect('[', true)
 				const start = reader.cursor
 				const d = reader.read()
+				reader.skip()
+				reader.skipWhitespace()
 				if (!reader.canRead()) {
 					throw new Error('Expected value')
 				} else if (d === 'B') {
@@ -62,7 +65,7 @@ export namespace NbtParser {
 				const value = reader.readUnquotedString()
 				if (value.length === 0) {
 					reader.cursor = start
-					throw new Error('Expected value')
+					throw new Error(`Expected value at ${reader.source.slice(start, 10)}`)
 				}
 				try {
 					if (FLOAT_PATTERN.test(value)) {
@@ -82,10 +85,10 @@ export namespace NbtParser {
 						return new NbtInt(Math.floor(number))
 					} else if (DOUBLE_PATTERN.test(value)) {
 						const number = Number(value.substring(0, value.length - 1))
-						return new NbtFloat(number)
+						return new NbtDouble(number)
 					} else if (DOUBLE_PATTERN_NOSUFFIX.test(value)) {
 						const number = Number(value)
-						return new NbtFloat(number)
+						return new NbtDouble(number)
 					} else if (value.toLowerCase() === 'true') {
 						return NbtByte.ONE
 					} else if (value.toLowerCase() === 'false') {

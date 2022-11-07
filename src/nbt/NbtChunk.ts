@@ -86,6 +86,16 @@ export class NbtChunk {
 		}
 	}
 
+	public toRef(resolver: NbtChunkResolver) {
+		return new NbtChunk.Ref(this.x, this.z, this.compression, this.timestamp, this.raw.byteLength, resolver)
+	}
+
+	public static create(x: number, z: number, file: NbtFile, timestamp?: number) {
+		const chunk = new NbtChunk(x, z, 0, timestamp ?? 0, file.write())
+		chunk.setCompression(file.compression)
+		return chunk
+	}
+
 	public static fromJson(value: JsonValue, resolver: NbtChunkResolver) {
 		const obj = Json.readObject(value) ?? {}
 		const x = Json.readInt(obj.x) ?? 0
@@ -94,10 +104,6 @@ export class NbtChunk {
 		const timestamp = Json.readInt(obj.timestamp) ?? 0
 		const size = Json.readInt(obj.size) ?? 0
 		return new NbtChunk.Ref(x, z, compression, timestamp, size, resolver)
-	}
-
-	public toRef(resolver: NbtChunkResolver) {
-		return new NbtChunk.Ref(this.x, this.z, this.compression, this.timestamp, this.raw.byteLength, resolver)
 	}
 }
 
