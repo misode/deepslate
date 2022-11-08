@@ -191,8 +191,8 @@ export class NbtList<T extends NbtTag = NbtTag> extends NbtAbstractList<T> {
 
 	public override toJson() {
 		return {
-			id: this.type,
-			tag: this.items.map(e => e.toJson()),
+			type: this.type,
+			items: this.items.map(e => e.toJson()),
 		}
 	}
 
@@ -215,10 +215,10 @@ export class NbtList<T extends NbtTag = NbtTag> extends NbtAbstractList<T> {
 
 	public static fromJson(value: JsonValue) {
 		const obj = Json.readObject(value) ?? {}
-		const id = Json.readNumber(obj.id) ?? NbtType.Compound
-		const items = Json.readArray(obj.tag) ?? []
-		const items2 = items.flatMap(v => v !== undefined ? [NbtTag.fromJson(v, id)] : [])
-		return new NbtList(items2, id)
+		const type = Json.readNumber(obj.type) ?? NbtType.Compound
+		const items = (Json.readArray(obj.items) ?? [])
+			.flatMap(v => v !== undefined ? [NbtTag.fromJson(v, type)] : [])
+		return new NbtList(items, type)
 	}
 
 	public static fromBytes(input: DataInput) {
