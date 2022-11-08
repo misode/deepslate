@@ -1,19 +1,19 @@
-import type { NamedNbtTag } from '../nbt/index.js'
-import { getListTag, getOptional, getTag } from '../nbt/index.js'
-import type { BlockPos } from './BlockPos.js'
+import type { NbtCompound } from '../nbt/index.js'
+import { NbtType } from '../nbt/index.js'
+import { BlockPos } from './BlockPos.js'
 import { BlockState } from './BlockState.js'
 import type { Identifier } from './Identifier.js'
-import type { BlockNbt, StructureProvider } from './StructureProvider.js'
+import type { StructureProvider } from './StructureProvider.js'
 
-export type PlacedBlock = { pos: BlockPos, state: BlockState, nbt: BlockNbt | undefined }
+export type PlacedBlock = { pos: BlockPos, state: BlockState, nbt?: NbtCompound }
 
 export class Structure implements StructureProvider {
-	private blocksMap: { pos: BlockPos, state: number, nbt?: BlockNbt }[] = []
+	private blocksMap: { pos: BlockPos, state: number, nbt?: NbtCompound }[] = []
 
 	constructor(
 		private readonly size: BlockPos,
 		private readonly palette: BlockState[] = [],
-		private readonly blocks: { pos: BlockPos, state: number, nbt?: BlockNbt }[] = []
+		private readonly blocks: { pos: BlockPos, state: number, nbt?: NbtCompound }[] = []
 	) {
 		blocks.forEach(block => {
 			if (!this.isInside(block.pos)) {
@@ -27,7 +27,7 @@ export class Structure implements StructureProvider {
 		return this.size
 	}
 
-	public addBlock(pos: BlockPos, name: Identifier | string, properties?: { [key: string]: string }, nbt?: BlockNbt) {
+	public addBlock(pos: BlockPos, name: Identifier | string, properties?: { [key: string]: string }, nbt?: NbtCompound) {
 		if (!this.isInside(pos)) {
 			throw new Error(`Cannot add block at ${pos} outside the structure bounds ${this.size}`)
 		}
@@ -68,17 +68,15 @@ export class Structure implements StructureProvider {
 			&& pos[2] >= 0 && pos[2] < this.size[2]
 	}
 
-	public static fromNbt(nbt: NamedNbtTag) {
-		const size = getListTag(nbt.value, 'size', 'int', 3) as BlockPos
-		const palette = getListTag(nbt.value, 'palette', 'compound')
-			.map(tags => BlockState.fromNbt({name: '', value: tags}))
-		const blocks = getListTag(nbt.value, 'blocks', 'compound')
-			.map(tags => {
-				const pos = getListTag(tags, 'pos', 'int', 3) as BlockPos
-				const state = getTag(tags, 'state', 'int')
-				const nbt = getOptional(() => getTag(tags, 'nbt', 'compound'), undefined)
-				return { pos, state, nbt }
-			})
+	public static fromNbt(nbt: NbtCompound) {
+		const size = BlockPos.fromNbt(nbt.getList('size'))
+		const palette = nbt.getList('palette', NbtType.Compound).map(tag => BlockState.fromNbt(tag))
+		const blocks = nbt.getList('blocks', NbtType.Compound).map(tag => {
+			const pos = BlockPos.fromNbt(tag.getList('pos'))
+			const state = tag.getNumber('state')
+			const nbt = tag.getCompound('nbt')
+			return { pos, state, nbt: nbt.size > 0 ? nbt : undefined }
+		})
 		return new Structure(size, palette, blocks)
 	}
 }

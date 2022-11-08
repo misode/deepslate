@@ -43,7 +43,7 @@ export function encodeUTF8(str: string) {
 	return array
 }
 
-export function decodeUTF8(array: Uint8Array) {
+export function decodeUTF8(array: ArrayLike<number>) {
 	var codepoints = [], i
 	for (i = 0; i < array.length; i++) {
 		if ((array[i] & 0x80) === 0) {

@@ -1,5 +1,4 @@
-import type { NamedNbtTag } from '../nbt/index.js'
-import { getOptional, getTag } from '../nbt/index.js'
+import type { NbtCompound } from '../nbt/index.js'
 import { Json } from '../util/index.js'
 import { Identifier } from './Identifier.js'
 
@@ -53,11 +52,10 @@ export class BlockState {
 		return `${this.name.toString()}[${Object.entries(this.properties).map(([k, v]) => k + '=' + v).join(',')}]`
 	}
 
-	public static fromNbt(nbt: NamedNbtTag) {
-		const name = Identifier.parse(getTag(nbt.value, 'Name', 'string'))
-		const propsTag = getOptional(() => getTag(nbt.value, 'Properties', 'compound'), {})
-		const properties = Object.keys(propsTag)
-			.reduce((acc, k) => ({...acc, [k]: getTag(propsTag, k, 'string')}), {})
+	public static fromNbt(nbt: NbtCompound) {
+		const name = Identifier.parse(nbt.getString('Name'))
+		const properties = nbt.getCompound('Properties')
+			.map((key, value) => [key, value.getAsString()])
 		return new BlockState(name, properties)
 	}
 
