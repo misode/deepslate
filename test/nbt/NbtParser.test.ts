@@ -38,21 +38,23 @@ describe('NbtParser', () => {
 		})
 	})
 
-	const invalidSuites: string[] = [
-		'{hello:',
-		'"1abc',
-		'[what, ,]',
-		'[}]',
-		'[E; 5]',
-		'{foo:: bah}',
-		'{WhA*s: bah}',
+	const invalidSuites: [string, string][] = [
+		['{hello:', 'Expected value at position 7: {hello:<--[HERE]'],
+		['"1abc', 'Unclosed quoted string at position 5: "1abc<--[HERE]'],
+		['[what, ,]', 'Expected value at position 7: [what, <--[HERE]'],
+		['[}]', 'Expected value at position 1: [<--[HERE]'],
+		['[E; 5]', 'Invalid array type \'E\' at position 1: [<--[HERE]'],
+		['{: bah}', 'Expected key at position 1: {<--[HERE]'],
+		['{WhA*s: bah}', 'Expected \':\' at position 4: {WhA<--[HERE]'],
+		['{thisisaverylongkey: 1', 'Expected \'}\' at position 22: ...longkey: 1<--[HERE]'],
+		['[1, 4b]', 'Can\'t insert Byte into list of Int at position 4: [1, <--[HERE]'],
 	]
 
-	invalidSuites.forEach((source) => {
+	invalidSuites.forEach(([source, error]) => {
 		it(source, () => {
 			expect(() => {
 				NbtParser.readTag(new StringReader(source))
-			}).toThrow()
+			}).toThrow(error)
 		})
 	})
 })

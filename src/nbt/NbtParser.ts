@@ -29,7 +29,7 @@ export namespace NbtParser {
 	export function readTag(reader: StringReader): NbtTag {
 		reader.skipWhitespace()
 		if (!reader.canRead()) {
-			throw new Error('Expected value')
+			throw reader.createError('Expected value')
 		}
 		const c = reader.peek()
 		if (c === '{') {
@@ -42,7 +42,7 @@ export namespace NbtParser {
 				reader.skip()
 				reader.skipWhitespace()
 				if (!reader.canRead()) {
-					throw new Error('Expected value')
+					throw reader.createError('Expected value')
 				} else if (d === 'B') {
 					return readArray(reader, NbtByteArray, NbtType.ByteArray, NbtType.Byte)
 				} else if (d === 'L') {
@@ -51,7 +51,7 @@ export namespace NbtParser {
 					return readArray(reader, NbtIntArray, NbtType.IntArray, NbtType.Int)
 				} else {
 					reader.cursor = start
-					throw new Error(`Invalid array type '${d}'`)
+					throw reader.createError(`Invalid array type '${d}'`)
 				}
 			} else {
 				return readList(reader)
@@ -65,7 +65,7 @@ export namespace NbtParser {
 				const value = reader.readUnquotedString()
 				if (value.length === 0) {
 					reader.cursor = start
-					throw new Error(`Expected value at ${reader.source.slice(start, 10)}`)
+					throw reader.createError('Expected value')
 				}
 				try {
 					if (FLOAT_PATTERN.test(value)) {
@@ -108,12 +108,12 @@ export namespace NbtParser {
 			const start = reader.cursor
 			reader.skipWhitespace()
 			if (!reader.canRead()) {
-				throw new Error('Expected key')
+				throw reader.createError('Expected key')
 			}
 			const key = reader.readString()
 			if (key.length === 0) {
 				reader.cursor = start
-				throw new Error('Expected key')
+				throw reader.createError('Expected key')
 			}
 			reader.expect(':', true)
 			const value = readTag(reader)
@@ -122,7 +122,7 @@ export namespace NbtParser {
 				break
 			}
 			if (!reader.canRead()) {
-				throw new Error('Expected key')
+				throw reader.createError('Expected key')
 			}
 		}
 		reader.expect('}', true)
@@ -133,7 +133,7 @@ export namespace NbtParser {
 		reader.expect('[', true)
 		reader.skipWhitespace()
 		if (!reader.canRead()) {
-			throw new Error('Expected value')
+			throw reader.createError('Expected value')
 		}
 		const items: NbtTag[] = []
 		let type = NbtType.End
@@ -145,14 +145,14 @@ export namespace NbtParser {
 				type = valueId
 			} else if (valueId !== type) {
 				reader.cursor = start
-				throw new Error(`Can't insert ${NbtType[valueId]} into list of ${NbtType[type]}`)
+				throw reader.createError(`Can't insert ${NbtType[valueId]} into list of ${NbtType[type]}`)
 			}
 			items.push(value)
 			if (!hasElementSeparator(reader)) {
 				break
 			}
 			if (!reader.canRead()) {
-				throw new Error('Expected value')
+				throw reader.createError('Expected value')
 			}
 		}
 		reader.expect(']', true)
@@ -164,14 +164,14 @@ export namespace NbtParser {
 		while (reader.peek() !== ']') {
 			const entry = readTag(reader)
 			if (entry.getId() !== childId) {
-				throw new Error(`Can't insert ${NbtType[entry.getId()]} into ${NbtType[arrayId]}`)
+				throw reader.createError(`Can't insert ${NbtType[entry.getId()]} into ${NbtType[arrayId]}`)
 			}
 			data.push((entry.isLong() ? entry.getAsPair() : entry.getAsNumber()) as unknown as D)
 			if (!hasElementSeparator(reader)) {
 				break
 			}
 			if (!reader.canRead()) {
-				throw new Error('Expected value')
+				throw reader.createError('Expected value')
 			}
 		}
 		reader.expect(']')

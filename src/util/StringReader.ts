@@ -50,7 +50,7 @@ export class StringReader {
 			this.skipWhitespace()
 		}
 		if (!this.canRead() || this.peek() !== c) {
-			throw new Error(`Expected '${c}'`)
+			throw this.createError(`Expected '${c}'`)
 		}
 		this.skip()
 	}
@@ -62,7 +62,7 @@ export class StringReader {
 		}
 		const number = this.getRead(start)
 		if (number.length === 0) {
-			throw new Error('Expected integer')
+			throw this.createError('Expected integer')
 		}
 		try {
 			const value = Number(number)
@@ -72,7 +72,7 @@ export class StringReader {
 			return value
 		} catch (e) {
 			this.cursor = start
-			throw new Error(`Invalid integer '${number}'`)
+			throw this.createError(`Invalid integer '${number}'`)
 		}
 	}
 
@@ -83,7 +83,7 @@ export class StringReader {
 		}
 		const number = this.getRead(start)
 		if (number.length === 0) {
-			throw new Error('Expected float')
+			throw this.createError('Expected float')
 		}
 		try {
 			const value = Number(number)
@@ -93,7 +93,7 @@ export class StringReader {
 			return value
 		} catch (e) {
 			this.cursor = start
-			throw new Error(`Invalid float '${number}'`)
+			throw this.createError(`Invalid float '${number}'`)
 		}
 	}
 
@@ -111,7 +111,7 @@ export class StringReader {
 		}
 		const c = this.peek()
 		if (!StringReader.isQuotedStringStart(c)) {
-			throw new Error('Expected quote to start a string')
+			throw this.createError('Expected quote to start a string')
 		}
 		this.skip()
 		return this.readStringUntil(c)
@@ -140,7 +140,7 @@ export class StringReader {
 					escaped = false
 				} else {
 					this.cursor -= 1
-					throw new Error(`Invalid escape sequence '${c}' in quoted string`)
+					throw this.createError(`Invalid escape sequence '${c}' in quoted string`)
 				}
 			} else if (c === '\\') {
 				escaped = true
@@ -150,14 +150,14 @@ export class StringReader {
 				result.push(c)
 			}
 		}
-		throw new Error('Unclosed quoted string')
+		throw this.createError('Unclosed quoted string')
 	}
 
 	public readBoolean() {
 		const start = this.cursor
 		const value = this.readUnquotedString()
 		if (value.length === 0) {
-			throw new Error('Expected bool')
+			throw this.createError('Expected bool')
 		}
 		if (value === 'true') {
 			return true
@@ -165,7 +165,7 @@ export class StringReader {
 			return false
 		} else {
 			this.cursor = start
-			throw new Error(`Invalid bool, expected true or false but found '${value}'`)
+			throw this.createError(`Invalid bool, expected true or false but found '${value}'`)
 		}
 	}
 
@@ -189,5 +189,11 @@ export class StringReader {
 
 	public static isWhitespace(c: string) {
 		return c === ' ' || c === '\t' || c === '\n' || c === '\r'
+	}
+
+	public createError(message: string) {
+		const cursor = Math.min(this.source.length, this.cursor)
+		const context = (cursor > 10 ? '...' : '') + this.source.substring(Math.max(0, cursor - 10), cursor)
+		return new Error(`${message} at position ${this.cursor}: ${context}<--[HERE]`)
 	}
 }
