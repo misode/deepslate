@@ -1,5 +1,5 @@
-import type { JsonValue, StringReader } from '../../util/index.js'
-import { Json } from '../../util/index.js'
+import type { JsonValue } from '../../util/index.js'
+import { Json, StringReader } from '../../util/index.js'
 import type { DataInput, DataOutput } from '../io/index.js'
 import { NbtParser } from '../NbtParser.js'
 import type { NbtByte } from './NbtByte.js'
@@ -153,7 +153,8 @@ export class NbtCompound extends NbtTag {
 	public override toString(): string {
 		const pairs = []
 		for (const [key, tag] of this.properties.entries()) {
-			pairs.push(key + ':' + tag.toString())
+			const needsQuotes = key.split('').some(c => !StringReader.isAllowedInUnquotedString(c))
+			pairs.push((needsQuotes ? JSON.stringify(key) : key) + ':' + tag.toString())
 		}
 		return '{' + pairs.join(',') + '}'
 	}

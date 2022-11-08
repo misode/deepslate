@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { NbtCompound, NbtString, RawDataInput, RawDataOutput } from '../../../src/nbt/index.js'
+import { NbtByte, NbtCompound, NbtString, NbtTag, RawDataInput, RawDataOutput } from '../../../src/nbt/index.js'
 
 describe('NbtCompound', () => {
 	it('toJson', () => {
@@ -38,5 +38,42 @@ describe('NbtCompound', () => {
 		const output = new RawDataOutput()
 		compound.toBytes(output)
 		expect(output.getData()).toEqual(new Uint8Array([0]))
+	})
+
+	it('fromString', () => {
+		const string = '{hello: 4b, foo :"world!" }'
+		const tag = NbtTag.fromString(string)
+		expect(tag).toEqual(new NbtCompound()
+			.set('hello', new NbtByte(4))
+			.set('foo', new NbtString('world!')))
+	})
+
+	it('fromString (quoted key)', () => {
+		const string = '{"hello world": 4b}'
+		const tag = NbtTag.fromString(string)
+		expect(tag).toEqual(new NbtCompound()
+			.set('hello world', new NbtByte(4)))
+	})
+
+	it('toString', () => {
+		const compound = new NbtCompound()
+			.set('hello', new NbtByte(4))
+			.set('foo', new NbtString('world!'))
+		const string = compound.toString()
+		expect(string).toEqual('{hello:4b,foo:"world!"}')
+	})
+
+	it('toString (quoted key)', () => {
+		const compound = new NbtCompound()
+			.set('hello world', new NbtByte(4))
+		const string = compound.toString()
+		expect(string).toEqual('{"hello world":4b}')
+	})
+
+	it('toString (key escaping)', () => {
+		const compound = new NbtCompound()
+			.set('hello "world"', new NbtByte(4))
+		const string = compound.toString()
+		expect(string).toEqual('{"hello \\"world\\"":4b}')
 	})
 })

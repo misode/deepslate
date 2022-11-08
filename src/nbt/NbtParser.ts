@@ -75,8 +75,8 @@ export namespace NbtParser {
 						const number = Number(value.substring(0, value.length - 1))
 						return new NbtByte(Math.floor(number))
 					} else if (LONG_PATTERN.test(value)) {
-						const number = Number(value.substring(0, value.length - 1))
-						return new NbtLong([0, Math.floor(number)]) // FIXME
+						const number = BigInt(value.substring(0, value.length - 1))
+						return new NbtLong(number)
 					} else if (SHORT_PATTERN.test(value)) {
 						const number = Number(value.substring(0, value.length - 1))
 						return new NbtShort(Math.floor(number))

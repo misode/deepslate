@@ -90,6 +90,10 @@ export class NbtList<T extends NbtTag = NbtTag> extends NbtAbstractList<T> {
 		this.type = this.items.length === 0 ? NbtType.End : (type ?? this.items[0].getId()) 
 	}
 
+	public static make<U extends NbtTag, V>(factory: { new(v: V): U }, items: V[]) {
+		return new NbtList(items.map(v => new factory(v)))
+	}
+
 	public override getId() {
 		return NbtType.List
 	}

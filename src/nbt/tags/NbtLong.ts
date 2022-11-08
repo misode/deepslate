@@ -30,11 +30,11 @@ export class NbtLong extends NbtTag {
 	}
 
 	public static pairToString(value: NbtLongPair): string {
-		return value[1].toFixed() // FIXME
+		return NbtLong.pairToBigint(value).toString()
 	}
 
 	public static pairToNumber(value: NbtLongPair): number {
-		return value[1] // FIXME
+		return Number(NbtLong.pairToBigint(value))
 	}
 
 	public override getId() {
