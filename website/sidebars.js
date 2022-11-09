@@ -40,6 +40,8 @@ const sidebars = {
 						'nbt/type/longarray',
 					],
 				},
+				'nbt/datainput',
+				'nbt/dataoutput',
 			],
 		},
 	],
