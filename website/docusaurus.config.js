@@ -23,6 +23,7 @@ const darkCodeTheme = require('prism-react-renderer/themes/dracula');
 				docs: {
 					editUrl: 'https://github.com/misode/deepslate/edit/main/website/',
 					routeBasePath: '/',
+					sidebarPath: 'sidebars.js',
 				},
 				blog: false,
 				theme: {
@@ -56,7 +57,7 @@ const darkCodeTheme = require('prism-react-renderer/themes/dracula');
     		items: [
     			{
     				type: 'doc',
-    				docId: 'intro',
+    				docId: 'introduction',
     				position: 'left',
     				label: 'Docs',
     			},

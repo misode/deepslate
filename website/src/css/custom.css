@@ -13,24 +13,6 @@ canvas {
 	background-color: black;
 }
 
-canvas.full {
-	width: 100vw;
-	height: 100vh;
-	background: none;
-	margin: 0;
-}
-
-.collection {
-	display: flex;
-	flex-wrap: wrap;
-}
-
-.collection hr {
-	flex-grow: 1;
-	width: 100%;
-	border: none;
-}
-
 .plot {
 	display: inline-block;
 	margin: 8px;
