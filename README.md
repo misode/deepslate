@@ -9,18 +9,19 @@ npm install deepslate
 <script src="https://unpkg.com/deepslate@0.14.0"></script>
 ```
 
-## Examples
+## Quick Examples
 
 ### Reading and writing binary NBT files
 ```ts
-import { readNbt, writeNbt } from 'deepslate'
+import { NbtFile, NbtString } from 'deepslate'
 
 fetch('./example.nbt')
 	.then(res => res.arrayBuffer())
 	.then(data => {
-		const { value, name, compression } = readNbt(new Uint8Array(data))
-
-		const newData = writeNbt(value, { name, compression })
+		const file = NbtFile.read(new Uint8Array(data))
+		file.root.set('Hello', new NbtString('World!'))
+		const newData = file.write()
+		console.log(newData)
 	})
 ```
 
@@ -36,7 +37,7 @@ structure.addBlock([0, 1, 3], "minecraft:cactus", { "age": "1" })
 // Obtain the WebGL context of a canvas element
 const gl = canvas.getContext('webgl')
 
-// See the example on how to create a resources object
+// See the demo on how to create a resources object
 const renderer = new StructureRenderer(gl, structure, resources)
 
 const view = mat4.create()
@@ -45,7 +46,7 @@ mat4.translate(view, view, [0, 0, -5])
 renderer.drawStructure(view)
 ```
 
-## [Docs](https://misode.github.io/deepslate/docs/)
+## [Docs](https://misode.github.io/deepslate/)
 A collection of examples showcasing the use cases of deepslate.
 
 #### [Render](https://misode.github.io/deepslate/examples/structurerenderer/)
@@ -62,9 +63,6 @@ Includes mouse controls and loading of an arbitrary resource pack.
 
 #### [MultiNoise](https://misode.github.io/deepslate/examples/multinoise/) 
 ![image](https://user-images.githubusercontent.com/17352009/132134430-f21970b6-aaa8-4a95-9aa3-a52ea60bc0b0.png)
-
-#### [Noise Sampler](https://misode.github.io/deepslate/examples/noisesampler/)
-![image](https://user-images.githubusercontent.com/17352009/132598802-417d7934-a389-4733-a191-748794db63bf.png)
 
 #### [Chunk Generator](https://misode.github.io/deepslate/examples/chunkgenerator/)
 ![image](https://user-images.githubusercontent.com/17352009/132598866-d2d61f8a-0d82-447d-a74b-97401f1a2425.png)

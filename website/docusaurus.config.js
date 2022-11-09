@@ -21,7 +21,7 @@ const darkCodeTheme = require('prism-react-renderer/themes/dracula');
 			/** @type {import('@docusaurus/preset-classic').Options} */
 			({
 				docs: {
-					editUrl: 'https://github.com/misode/deepslate/edit/main/website/docs/',
+					editUrl: 'https://github.com/misode/deepslate/edit/main/website/',
 					routeBasePath: '/',
 				},
 				blog: false,
