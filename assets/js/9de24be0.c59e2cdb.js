@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkwebsite=self.webpackChunkwebsite||[]).push([[306],{4788:e=>{e.exports=JSON.parse('{"title":"NBT","slug":"/category/nbt","permalink":"/deepslate/category/nbt","navigation":{"previous":{"title":"Introduction","permalink":"/deepslate/"},"next":{"title":"NbtFile","permalink":"/deepslate/nbt/file"}}}')}}]);
