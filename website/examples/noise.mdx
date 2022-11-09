@@ -1,12 +1,7 @@
 ---
 title: Noise
 ---
-import { BlendedNoise, ImprovedNoise, NormalNoise, PerlinNoise, PerlinSimplexNoise, LegacyRandom, SimplexNoise } from 'deepslate'
-import Plot from '@site/src/components/Plot'
-
-export const SIZE = 240
-export const SEED = BigInt(6203)
-export const gray = (min, max) => value => (value - min) / (max - min) * 256
+import { ImprovedNoiseExample, PerlinNoiseExample, NormalNoiseExample, BlendedNoiseExample, SimplexNoiseExample, PerlinSimplexNoiseExample } from '@site/src/components/examples/Noise'
 
 ## ImprovedNoise
 
@@ -15,10 +10,7 @@ const noise = new ImprovedNoise(new LegacyRandom(BigInt(6203)))
 const value = noise.sample(x / 32, y / 32, 0)
 ```
 
-<Plot name="Improved" width={SIZE} colorizer={gray(-1, 1)}
-	initializer={() => new ImprovedNoise(new LegacyRandom(SEED))}
-	sampler={noise => (x, y) => noise.sample(x / 32, y / 32, 0)}
-/>
+<ImprovedNoiseExample />
 
 ## PerlinNoise
 
@@ -27,25 +19,7 @@ const noise = new PerlinNoise(new LegacyRandom(BigInt(6203)), -6, [1, 1])
 const value = noise.sample(x, y, 0)
 ```
 
-<Plot name="Perlin -6, [1, 1]" width={SIZE} colorizer={gray(-1, 1)}
-	initializer={() => new PerlinNoise(new LegacyRandom(SEED), -6, [1, 1])}
-	sampler={noise => (x, y) => noise.sample(x / 2, y / 2, 0)}
-/>
-
-<Plot name="Perlin -5, [1, 1, 1, 1]" width={SIZE} colorizer={gray(-1, 1)}
-	initializer={() => new PerlinNoise(new LegacyRandom(SEED), -5, [1, 1, 1, 1])}
-	sampler={noise => (x, y) => noise.sample(x / 2, y / 2, 0)}
-/>
-
-<Plot name="Perlin -5, [1, 0, 2, 3]" width={SIZE} colorizer={gray(-1, 1)}
-	initializer={() => new PerlinNoise(new LegacyRandom(SEED), -5, [1, 0, 2, 3])}
-	sampler={noise => (x, y) => noise.sample(x / 2, y / 2, 0)}
-/>
-
-<Plot name="Perlin -4, [1, 1]" width={SIZE} colorizer={gray(-1, 1)}
-	initializer={() => new PerlinNoise(new LegacyRandom(SEED), -4, [1, 1])}
-	sampler={noise => (x, y) => noise.sample(x / 2, y / 2, 0)}
-/>
+<PerlinNoiseExample />
 
 ## NormalNoise
 
@@ -55,43 +29,21 @@ const noise = new NormalNoise(new LegacyRandom(BigInt(6203)), params)
 const value = noise.sample(x, y, 0)
 ```
 
-<Plot name="Normal -6, [1, 1]" width={SIZE} colorizer={gray(-1, 1)}
-	initializer={() => new NormalNoise(new LegacyRandom(SEED), { firstOctave: -6, amplitudes: [1, 1] })}
-	sampler={noise => (x, y) => noise.sample(x / 2, y / 2, 0)}
-/>
-
-<Plot name="Normal -6, [1, 1]" width={SIZE} colorizer={gray(-1, 1)}
-	initializer={() => new NormalNoise(new LegacyRandom(SEED), { firstOctave: -6, amplitudes: [1, 1] })}
-	sampler={noise => (x, y) => noise.sample(x / 2, y / 2, 0)}
-/>
-
-<Plot name="Normal -5, [1, 1, 1, 1]" width={SIZE} colorizer={gray(-1, 1)}
-	initializer={() => new NormalNoise(new LegacyRandom(SEED), { firstOctave: -5, amplitudes: [1, 1, 1, 1] })}
-	sampler={noise => (x, y) => noise.sample(x / 2, y / 2, 0)}
-/>
+<NormalNoiseExample />
 
 ## BlendedNoise
 
 ```ts
-const sampling = { xzScale: 1, yScale: 1, xzFactor: 80, yFactor: 160 }
-const noise = new BlendedNoise(new LegacyRandom(BigInt(6203)), sampling, 4, 4)
+const noise = new BlendedNoise(new LegacyRandom(BigInt(6203)), 1, 1, 80, 160, 4)
 const value = noise.sample(x, y, 0)
 ```
-<Plot name="Blended" width={SIZE} colorizer={gray(-1, 1)}
-	initializer={() => new BlendedNoise(new LegacyRandom(SEED), { xzScale: 1, yScale: 1, xzFactor: 80, yFactor: 160 }, 4, 4)}
-	sampler={noise => (x, y) => noise.sample(x, y, 0)}
-/>
+
+<BlendedNoiseExample />
 
 ## SimplexNoise
 
-<Plot name="Simplex" width={SIZE} colorizer={gray(-1, 1)}
-	initializer={() => new SimplexNoise(new LegacyRandom(SEED))}
-	sampler={noise => (x, y) => noise.sample(x / 32, y / 32, 0)}
-/>
+<SimplexNoiseExample />
 
 ## PerlinSimplexNoise
 
-<Plot name="PerlinSimplex [-3, -2, -1]" width={SIZE} colorizer={gray(-1, 1)}
-	initializer={() => new PerlinSimplexNoise(new LegacyRandom(SEED), [-3, -2, -1])}
-	sampler={noise => (x, y) => noise.sample(x / 32, y / 32, false)}
-/>
+<PerlinSimplexNoiseExample />

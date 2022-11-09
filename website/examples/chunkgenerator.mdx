@@ -1,71 +1,29 @@
 ---
 title: Chunk Generator
 ---
-import { BlockState, Chunk, ChunkPos, FixedBiome, NoiseChunkGenerator, NoiseSampler, TerrainShaper } from 'deepslate'
-import Plot from '@site/src/components/Plot'
-import { overworldSettings as overworldNoiseSettings, overworldOctaves, netherSettings as netherNoiseSettings, netherOctaves } from './noisesampler.mdx'
+import { Examples } from '@site/src/components/examples/ChunkGenerator'
 
-export const colors = {
-	'minecraft:air': [150, 160, 170],
-	'minecraft:water': [20, 80, 170],
-	'minecraft:lava': [200, 100, 0],
-	'minecraft:stone': [50, 50, 50],
-	'minecraft:netherrack': [100, 40, 40],
-}
-
-export const overworldSettings = {
-	defaultBlock: new BlockState('minecraft:stone'),
-	defaultFluid: new BlockState('minecraft:water', { level: '0' }),
-	bedrockRoofPosition: -2147483648,
-	bedrockFloorPosition: 0,
+```ts
+const fooNoise = WorldgenRegistries.NOISE.register(Identifier.parse('test:foo'),
+	{ firstOctave: -5, amplitudes: [1, 1] })
+const noiseSettings = NoiseSettings.create({ minY: 0, height: 256 })
+const settings = NoiseGeneratorSettings.create({
+	defaultBlock: BlockState.STONE,
+	defaultFluid: BlockState.WATER,
 	seaLevel: 63,
-	noise: { ...overworldNoiseSettings },
-	octaves: overworldOctaves,
-}
+	noise: noiseSettings,
+	noiseRouter: NoiseRouter.create({
+		finalDensity: new DensityFunction.Ap2('add',
+			new DensityFunction.YClampedGradient(0, 256, 1, -1),
+			new DensityFunction.Noise(1, 1, fooNoise)
+		),
+	}),
+})
 
-export const netherSettings = {
-	defaultBlock: new BlockState('minecraft:netherrack'),
-	defaultFluid: new BlockState('minecraft:lava', { level: '0' }),
-	bedrockRoofPosition: 0,
-	bedrockFloorPosition: 0,
-	seaLevel: 32,
-	noise: netherNoiseSettings,
-	octaves: netherOctaves,
-}
+const randomState = new RandomState(settings, BigInt(125))
+const generator = new NoiseChunkGenerator(null, settings)
+const chunk = new Chunk(noiseSettings.minY, noiseSettings.height, ChunkPos.create(0, 0))
+generator.fill(randomState, chunk)
+```
 
-export function GeneratorPlot({ name, z, width, height, scale, settings, shape }) {
-	const terrainShaper = shape === undefined
-		? TerrainShaper.overworld()
-		: new TerrainShaper(() => shape.offset, () => shape.factor, () => shape.jaggedness)
-	settings = { ...settings, noise: { ...settings.noise, terrainShaper } }
-	return <Plot name={name} width={width} height={height} scale={scale ?? undefined}
-		initializer={() => {
-			const generator = new NoiseChunkGenerator(BigInt(125), null, settings)
-			const chunks = Array(Math.ceil(width / 16)).fill(0).map((_, i) => new Chunk(0, height, ChunkPos.create(i, z >> 4)))
-			chunks.forEach(chunk => generator.fill(chunk))
-			return chunks
-		}}
-		sampler={chunks => (x, y) => chunks[x >> 4].getBlockState([x & 0xF, height - y - 1, z & 0xF])}
-		colorizer={state => colors[state.getName()] ?? [0, 0, 0]}
-	/>
-}
-
-<GeneratorPlot name="Overworld" z={37} width={384} height={256}
-	settings={overworldSettings}
-	shape={{ offset: -0.22, factor: 6.25, jaggedness: 0 }} />
-
-<GeneratorPlot name="Overworld (ocean)" z={37} width={384} height={256}
-	settings={overworldSettings}
-	shape={{ offset: 0.06, factor: 4.6875, jaggedness: 0 }} />
-
-<GeneratorPlot name="Overworld (peaks)" z={37} width={384} height={256}
-	settings={overworldSettings}
-	shape={{ offset: 0.27, factor: 4.6875, jaggedness: 0.7 }} />
-
-<GeneratorPlot name="Nether" z={150} width={196} height={128} scale={2}
-	settings={netherSettings}
-	shape={{ offset: 0.51875, factor: 1, jaggedness: 0 }} />
-
-<GeneratorPlot name="Overworld (wide)" z={4000} width={2400} height={256} scale={0.25}
-	settings={overworldSettings}
-/>
+<Examples />

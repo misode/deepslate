@@ -1,4 +1,4 @@
-import type { Spline } from 'deepslate'
+import type { CubicSpline } from 'deepslate'
 import React, { useEffect, useRef, useState } from 'react'
 
 type PlotProps<State, Result> = {
@@ -56,7 +56,7 @@ type SplinePlotProps = {
 	height?: number,
 	scale?: number,
 	range: [number, number],
-	spline: Spline<number> | ((x: number) => number),
+	spline: CubicSpline<number> | ((x: number) => number),
 }
 export function SplinePlot({ name, width, height, scale, range, spline }: SplinePlotProps) {
 	height = height ?? width
@@ -66,7 +66,7 @@ export function SplinePlot({ name, width, height, scale, range, spline }: Spline
 	useEffect(() => {
 		const ctx = canvas.current.getContext('2d')!
 
-		const fn = typeof spline === 'function' ? spline : (x: number) => spline.apply(x)
+		const fn = typeof spline === 'function' ? spline : (x: number) => spline.compute(x)
 
 		const data = []
 		for (let x = minX; x < maxX; x += (maxX - minX) / width) {

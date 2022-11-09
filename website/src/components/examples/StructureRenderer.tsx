@@ -1,7 +1,7 @@
-import { read as readNbt, Structure, StructureRenderer } from 'deepslate'
+import { NbtFile, Structure, StructureRenderer } from 'deepslate'
 import { mat4 } from 'gl-matrix'
 import React, { useEffect, useRef } from 'react'
-import { ResourceManager } from './resources'
+import { ResourceManager } from '../resources'
 
 export default function Renderer() {
 	const canvas = useRef<HTMLCanvasElement>()
@@ -14,8 +14,8 @@ export default function Renderer() {
 		(async () => {
 			const exampleRes = await fetch('/deepslate/example.nbt')
 			const exampleData = await exampleRes.arrayBuffer()
-			const exampleNbt = readNbt(new Uint8Array(exampleData))
-			const structure = Structure.fromNbt(exampleNbt.result)
+			const exampleNbt = NbtFile.read(new Uint8Array(exampleData))
+			const structure = Structure.fromNbt(exampleNbt.root)
 
 			const resources = new ResourceManager()
 			await Promise.all([
@@ -26,10 +26,10 @@ export default function Renderer() {
 			const renderer = new StructureRenderer(gl, structure, resources)
 
 			const viewMatrix = mat4.create()
-			mat4.translate(viewMatrix, viewMatrix, [0, 0, -3])
+			mat4.translate(viewMatrix, viewMatrix, [0, 0, -3.5])
 			mat4.rotate(viewMatrix, viewMatrix, 0.8, [1, 0, 0])
 			mat4.rotate(viewMatrix, viewMatrix, 0.5, [0, 1, 0])
-			mat4.translate(viewMatrix, viewMatrix, [-1.5, -1, -1.5])
+			mat4.translate(viewMatrix, viewMatrix, [-1.5, -0.5, -1.5])
 			renderer.drawStructure(viewMatrix)
 		})()
 	}, [])
