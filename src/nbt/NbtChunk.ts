@@ -110,7 +110,6 @@ export class NbtChunk {
 export namespace NbtChunk {
 	export class Ref {
 		private file?: Promise<NbtFile> | NbtFile
-		private resolved: boolean = false
 
 		constructor(
 			public readonly x: number,
@@ -123,7 +122,14 @@ export namespace NbtChunk {
 
 		public getFile() {
 			if (this.file instanceof NbtFile) {
-				return this.file as NbtFile
+				return this.file
+			}
+			return undefined
+		}
+
+		public getRoot() {
+			if (this.file instanceof NbtFile) {
+				return this.file.root
 			}
 			return undefined
 		}
@@ -135,19 +141,18 @@ export namespace NbtChunk {
 			this.file = (async () => {
 				const file = await this.resolver(this.x, this.z)
 				this.file = file
-				this.resolved = true
 				return file
 			})()
 			return this.file
 		}
 
-		public async getRoot() {
+		public async getRootAsync() {
 			const file = await this.getFileAsync()
 			return file.root
 		}
 
 		public isResolved() {
-			return this.resolved
+			return this.file instanceof NbtFile
 		}
 	}
 }

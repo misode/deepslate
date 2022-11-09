@@ -4,10 +4,10 @@ import type { NbtChunkResolver } from './NbtChunk.js'
 import { NbtChunk } from './NbtChunk.js'
 
 abstract class NbtAbstractRegion<T extends { x: number, z: number }> {
-	protected readonly chunks: (T | null)[]
+	protected readonly chunks: (T | undefined)[]
 
 	constructor(chunks: T[]) {
-		this.chunks = Array(32 * 32).fill(null)
+		this.chunks = Array(32 * 32).fill(undefined)
 		for (const chunk of chunks) {
 			const index = NbtRegion.getIndex(chunk.x, chunk.z)
 			this.chunks[index] = chunk
@@ -30,15 +30,15 @@ abstract class NbtAbstractRegion<T extends { x: number, z: number }> {
 	}
 
 	public getFirstChunk() {
-		return this.getChunk(0)
+		return this.chunks.filter(c => c !== undefined)[0]
 	}
 
 	public filter(predicate: (chunk: T) => boolean) {
-		return this.chunks.filter(c => c && predicate(c))
+		return this.chunks.filter((c): c is T => c !== undefined && predicate(c))
 	}
 
 	public map<U>(mapper: (chunk: T) => U) {
-		return this.chunks.map(c => c ? mapper(c) : null)
+		return this.chunks.map(c => c ? mapper(c) : undefined)
 	}
 }
 
@@ -50,7 +50,7 @@ export class NbtRegion extends NbtAbstractRegion<NbtChunk> {
 	public write() {
 		let totalSectors = 0
 		for (const chunk of this.chunks) {
-			if (chunk === null) continue
+			if (chunk === undefined) continue
 			totalSectors += Math.ceil(chunk.getRaw().length / 4096)
 		}
 		const array = new Uint8Array(8192 + totalSectors * 4096)
@@ -58,7 +58,7 @@ export class NbtRegion extends NbtAbstractRegion<NbtChunk> {
 
 		let offset = 2
 		for (const chunk of this.chunks) {
-			if (chunk === null) continue
+			if (chunk === undefined) continue
 			const chunkData = chunk.getRaw()
 			const i = 4 * ((chunk.x & 31) + (chunk.z & 31) * 32)
 			const sectors = Math.ceil(chunkData.length / 4096)
