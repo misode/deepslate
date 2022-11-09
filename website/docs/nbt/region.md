@@ -35,7 +35,7 @@ const chunks = region.filter(chunk => chunk.x === 0)
 ```
 
 ### `map(mapper)` {#map}
-Returns a mapped list of [`NbtChunk`](../chunk) using a mapper function. Chunks that are `undefined` are not mapped and remain `undefined`.
+Returns a mapped list of [`NbtChunk`](../chunk) using a mapper function.  Chunks that are `undefined` are not mapped and are filtered out.
 
 ```ts
 const compressions = new Set(region.map(chunk => chunk.compression))

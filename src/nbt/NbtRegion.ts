@@ -38,7 +38,7 @@ abstract class NbtAbstractRegion<T extends { x: number, z: number }> {
 	}
 
 	public map<U>(mapper: (chunk: T) => U) {
-		return this.chunks.map(c => c ? mapper(c) : undefined)
+		return this.chunks.flatMap(c => c !== undefined ? [mapper(c)] : [])
 	}
 }
 
@@ -105,14 +105,14 @@ export class NbtRegion extends NbtAbstractRegion<NbtChunk> {
 
 	public toJson(): JsonValue {
 		return {
-			chunks: this.chunks.flatMap(c => c ? [c.toJson()] : []),
+			chunks: this.map(c => c.toJson()),
 		}
 	}
 
 	public static fromJson(value: JsonValue, chunkResolver: NbtChunkResolver): NbtRegion.Ref {
 		const obj = Json.readObject(value) ?? {}
 		const chunks = Json.readArray(obj.chunks) ?? []
-		const chunks2 = chunks.flatMap(c => c ? [NbtChunk.fromJson(c, chunkResolver)] : [])
+		const chunks2 = chunks.flatMap(c => c !== undefined ? [NbtChunk.fromJson(c, chunkResolver)] : [])
 		return new NbtRegion.Ref(chunks2)
 	}
 }
