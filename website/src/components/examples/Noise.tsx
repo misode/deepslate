@@ -43,8 +43,8 @@ export function NormalNoiseExample() {
 			initializer={() => new NormalNoise(new LegacyRandom(SEED), { firstOctave: -6, amplitudes: [1, 1] })}
 			sampler={noise => (x, y) => noise.sample(x / 2, y / 2, 0)}
 		/>
-		<Plot name="Normal -6, [1, 1]" width={SIZE} colorizer={gray(-1, 1)}
-			initializer={() => new NormalNoise(new LegacyRandom(SEED), { firstOctave: -6, amplitudes: [1, 1] })}
+		<Plot name="Normal -5, [1, 1]" width={SIZE} colorizer={gray(-1, 1)}
+			initializer={() => new NormalNoise(new LegacyRandom(SEED), { firstOctave: -5, amplitudes: [1, 1] })}
 			sampler={noise => (x, y) => noise.sample(x / 2, y / 2, 0)}
 		/>
 		<Plot name="Normal -5, [1, 1, 1, 1]" width={SIZE} colorizer={gray(-1, 1)}
