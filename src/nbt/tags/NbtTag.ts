@@ -27,6 +27,10 @@ export abstract class NbtTag {
 	private static readonly FACTORIES = new Map<NbtType, NbtFactory>()
 
 	public static register(type: NbtType, factory: NbtFactory) {
+		const factoryType = factory.create().getId() 
+		if (factoryType !== type) {
+			throw new Error(`Registered factory ${NbtType[factoryType]} does not match type ${NbtType[type]}`)
+		}
 		NbtTag.FACTORIES.set(type, factory)
 	}
 

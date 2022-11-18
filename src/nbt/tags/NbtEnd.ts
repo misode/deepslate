@@ -45,4 +45,4 @@ export class NbtEnd extends NbtTag {
 	}
 }
 
-NbtTag.register(NbtType.Double, NbtEnd)
+NbtTag.register(NbtType.End, NbtEnd)

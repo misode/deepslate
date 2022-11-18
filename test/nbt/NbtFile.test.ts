@@ -1,3 +1,6 @@
+import fs from 'fs'
+import path from 'path'
+import { fileURLToPath } from 'url'
 import { describe, expect, it } from 'vitest'
 import { NbtFile, NbtString } from '../../src/nbt/index.js'
 
@@ -14,5 +17,14 @@ describe('NbtFile', () => {
 		expect(file.name).toEqual('')
 		expect(file.root.size).toEqual(1)
 		expect(file.root.get('foo')).toEqual(new NbtString('Hello!'))
+	})
+
+	it('read (actual file)', () => {
+		const uri = path.resolve(fileURLToPath(import.meta.url), '../taiga_armorer_2.nbt')
+		const array = new Uint8Array(fs.readFileSync(uri))
+		const file = NbtFile.read(array)
+		expect(file.name).toEqual('')
+		expect(file.root.getNumber('DataVersion')).toEqual(3210)
+		expect(file.root.getList('entities').length).toEqual(2)
 	})
 })
