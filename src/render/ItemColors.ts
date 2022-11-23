@@ -285,6 +285,5 @@ register([
 	const color = intToRGB(display.hasNumber('MapColor')
 		? (0xFF000000 | display.getNumber('MapColor') & 16777215)
 		: -12173266)
-	console.log('Filled map', display, color)
 	return (index: number) => index === 0 ? [1, 1, 1] : color
 })

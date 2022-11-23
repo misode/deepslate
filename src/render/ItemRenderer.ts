@@ -47,7 +47,6 @@ export class ItemRenderer extends Renderer {
 		if (!tint && this.item.id.namespace === Identifier.DEFAULT_NAMESPACE) {
 			tint = getItemColor(this.item)
 		}
-		console.log(model)
 		const buffers = model.getDisplayBuffers('gui', this.resources, 0, tint)
 
 		return {
