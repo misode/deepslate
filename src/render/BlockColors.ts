@@ -1,19 +1,13 @@
 import { clamp } from '../math/index.js'
+import { intToRGB } from './Util.js'
 
-const toRGB = (c: number) => {
-	const r = (c >> 16) & 255
-	const g = (c >> 8) & 255
-	const b = c & 255
-	return [r / 256, g / 256, b / 256]
-}
-
-const grass = [124 / 256, 189 / 256, 107 / 256]
-const spruce = toRGB(6396257)
-const birch = toRGB(8431445)
-const foliage = toRGB(4764952)
-const water = toRGB(4159204)
-const attached_stem = toRGB(8431445)
-const lily_pad = toRGB(2129968)
+const grass = [124 / 255, 189 / 255, 107 / 255]
+const spruce = intToRGB(6396257)
+const birch = intToRGB(8431445)
+const foliage = intToRGB(4764952)
+const water = intToRGB(4159204)
+const attached_stem = intToRGB(8431445)
+const lily_pad = intToRGB(2129968)
 
 const redstone = (power: number) => {
 	const a = power / 15
@@ -43,9 +37,11 @@ export const BlockColors: {
 	acacia_leaves: () => foliage,
 	dark_oak_leaves: () => foliage,
 	vine: () => foliage,
+	mangrove_leaves: () => foliage,
 	water: () => water,
 	bubble_column: () => water,
-	cauldron: () => water,
+	cauldron: () => water, // this is removed in versions since 20w45a
+	water_cauldron: () => water,
 	redstone_wire: (props) => redstone(parseInt(props['power'] ?? '0')),
 	sugar_cane: () => grass,
 	attached_melon_stem: () => attached_stem,

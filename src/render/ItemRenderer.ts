@@ -1,7 +1,8 @@
 import { mat4 } from 'gl-matrix'
 import { Identifier } from '../core/index.js'
-import { BlockColors } from './BlockColors.js'
+import { ItemStack } from '../core/ItemStack.js'
 import type { BlockModelProvider } from './BlockModel.js'
+import { getItemColor } from './ItemColors.js'
 import type { RenderBuffers } from './Renderer.js'
 import { Renderer } from './Renderer.js'
 import type { TextureAtlasProvider } from './TextureAtlas.js'
@@ -14,36 +15,39 @@ interface ModelRendererOptions {
 interface ItemRendererResources extends BlockModelProvider, TextureAtlasProvider {}
 
 export class ItemRenderer extends Renderer {
+	private item: ItemStack
 	private buffers: RenderBuffers
-	private readonly tint: number[] | undefined
+	private readonly tint: number[] | ((index: number) => number[]) | undefined
 	private readonly atlasTexture: WebGLTexture
 
 	constructor(
 		gl: WebGLRenderingContext,
-		private item: Identifier,
+		item: Identifier | ItemStack,
 		private readonly resources: ItemRendererResources,
 		options?: ModelRendererOptions,
 	) {
 		super(gl)
+		this.item = item instanceof ItemStack ? item : new ItemStack(item, 1)
 		this.buffers = this.getItemBuffers()
 		this.tint = options?.tint
 		this.atlasTexture = this.createAtlasTexture(this.resources.getTextureAtlas())
 	}
 
-	public setItem(item: Identifier) {
-		this.item = item
+	public setItem(item: Identifier | ItemStack) {
+		this.item = item instanceof ItemStack ? item : new ItemStack(item, 1)
 		this.buffers = this.getItemBuffers()
 	}
 
 	private getItemBuffers() {
-		const model = this.resources.getBlockModel(this.item.withPrefix('item/'))
+		const model = this.resources.getBlockModel(this.item.id.withPrefix('item/'))
 		if (!model) {
 			throw new Error(`Item model for ${this.item.toString()} does not exist`)
 		}
 		let tint = this.tint
-		if (!tint && this.item.namespace === Identifier.DEFAULT_NAMESPACE) {
-			tint = BlockColors[this.item.path]?.({})
+		if (!tint && this.item.id.namespace === Identifier.DEFAULT_NAMESPACE) {
+			tint = getItemColor(this.item)
 		}
+		console.log(model)
 		const buffers = model.getDisplayBuffers('gui', this.resources, 0, tint)
 
 		return {

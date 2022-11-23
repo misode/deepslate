@@ -1,6 +1,6 @@
 import { mat4 } from 'gl-matrix'
-import type { Resources } from '../src/index.js'
-import { BlockDefinition, BlockModel, Identifier, ItemRenderer, Structure, StructureRenderer, TextureAtlas, upperPowerOfTwo } from '../src/index.js'
+import type { NbtCompound, Resources } from '../src/index.js'
+import { BlockDefinition, BlockModel, Identifier, ItemRenderer, ItemStack, NbtTag, Structure, StructureRenderer, TextureAtlas, upperPowerOfTwo } from '../src/index.js'
 
 const MCMETA = 'https://raw.githubusercontent.com/misode/mcmeta/'
 
@@ -70,10 +70,21 @@ Promise.all([
 	const itemInput = document.getElementById('item-input') as HTMLInputElement
 	itemInput.addEventListener('keyup', () => {
 		try {
-			itemRenderer.setItem(Identifier.parse(itemInput.value))
+			const str = itemInput.value
+			const nbtIndex = str.indexOf('{')
+			let id: string
+			let nbt: NbtCompound | undefined
+			if (nbtIndex !== -1) {
+				id = str.slice(0, nbtIndex)
+				nbt = NbtTag.fromString(str.slice(nbtIndex)) as NbtCompound
+			} else {
+				id = str
+			}
+			itemRenderer.setItem(new ItemStack(Identifier.parse(id), 1, nbt))
 			itemRenderer.drawItem()
 			itemInput.classList.remove('invalid')
 		} catch (e) {
+			console.error(e)
 			itemInput.classList.add('invalid')
 		}
 	})

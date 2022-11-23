@@ -64,6 +64,10 @@ export class NbtCompound extends NbtTag {
 		return this.get(key)?.getAsNumber() ?? 0
 	}
 
+	public getBoolean(key: string) {
+		return this.getNumber(key) !== 0
+	}
+
 	public getList(key: string): NbtList
 	public getList(key: string, type: 1): NbtList<NbtByte>
 	public getList(key: string, type: 2): NbtList<NbtShort>

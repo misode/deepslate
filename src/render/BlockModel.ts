@@ -69,6 +69,8 @@ export interface BlockModelProvider {
 
 export class BlockModel {
 	private static readonly BUILTIN_GENERATED = Identifier.create('builtin/generated')
+	private static readonly GENERATED_LAYERS = ['layer0', 'layer1', 'layer2', 'layer3', 'layer4']
+	private generationMarker = false
 
 	constructor(
 		private readonly id: Identifier,
@@ -79,7 +81,7 @@ export class BlockModel {
 		private guiLight?: BlockModelGuiLight | undefined,
 	) {}
 
-	public getDisplayBuffers(display: Display, uvProvider: TextureAtlasProvider, offset: number, tint?: number[]) {
+	public getDisplayBuffers(display: Display, uvProvider: TextureAtlasProvider, offset: number, tint?: number[] | ((index: number) => number[])) {
 		const buffers = this.getBuffers(uvProvider, offset, Cull.none(), tint)
 		
 		const transform = this.display?.[display]
@@ -118,7 +120,7 @@ export class BlockModel {
 		}
 	}
 
-	public getBuffers(uvProvider: TextureAtlasProvider, offset: number, cull: Cull, tint?: number[]) {
+	public getBuffers(uvProvider: TextureAtlasProvider, offset: number, cull: Cull, tint?: number[] | ((index: number) => number[])) {
 		const position: Float32Array[] = []
 		const texCoord: number[] = []
 		const tintColor: number[] = []
@@ -141,7 +143,7 @@ export class BlockModel {
 		}
 	}
 
-	private getElementBuffers(e: BlockModelElement, i: number, uvProvider: TextureAtlasProvider, cull: {[key in Direction]?: boolean}, tint?: number[]) {
+	private getElementBuffers(e: BlockModelElement, i: number, uvProvider: TextureAtlasProvider, cull: {[key in Direction]?: boolean}, tint?: number[] | ((index: number) => number[])) {
 		const x0 = e.from[0]
 		const y0 = e.from[1]
 		const z0 = e.from[2]
@@ -153,6 +155,13 @@ export class BlockModel {
 		const texCoords: number[] = []
 		const tintColors: number[] = []
 		const indices: number[] = []
+
+		const getTint = (index?: number) => {
+			if (tint === undefined) return [1, 1, 1]
+			if (index === undefined || index < 0) return [1, 1, 1]
+			if (typeof tint === 'function') return tint(index)
+			return tint
+		}
 
 		const addFace = (face: BlockModelFace, uv: UV, pos: number[]) => {
 			const [u0, v0, u1, v1] = uvProvider.getTextureUV(this.getTexture(face.texture))
@@ -171,7 +180,7 @@ export class BlockModel {
 				u0 + uv[r[2]], v0 + uv[r[3]],
 				u0 + uv[r[4]], v0 + uv[r[5]],
 				u0 + uv[r[6]], v0 + uv[r[7]])
-			const t = (face.tintindex ?? -1) >= 0 ? (tint ?? [1, 1, 1]) : [1, 1, 1]
+			const t = getTint(face.tintindex)
 			tintColors.push(...t, ...t, ...t, ...t)
 			positions.push(...pos)
 			indices.push(i, i+1, i+2,  i, i+2, i+3)
@@ -238,6 +247,10 @@ export class BlockModel {
 		if (!this.parent) {
 			return
 		}
+		if (this.parent.equals(BlockModel.BUILTIN_GENERATED)) {
+			this.generationMarker = true
+			return
+		}
 		const parent = this.getParent(accessor)
 		if (!parent) {
 			console.warn(`parent ${this.parent} does not exist!`)
@@ -275,19 +288,32 @@ export class BlockModel {
 		if (!this.guiLight) {
 			this.guiLight = parent.guiLight
 		}
+		if (parent.generationMarker) {
+			this.generationMarker = true
+		}
+
+		if (this.generationMarker && (this.elements?.length ?? 0) === 0) {
+			for (let i = 0; i < BlockModel.GENERATED_LAYERS.length; i += 1) {
+				const layer = BlockModel.GENERATED_LAYERS[i]
+				if (!Object.hasOwn(this.textures, layer)) {
+					break
+				}
+				if (!this.elements) {
+					this.elements = []
+				}
+				this.elements.push({
+					from: [0, 0, 0],
+					to: [16, 16, 0],
+					faces: { south: { texture: `#${layer}`, tintindex: i }},
+				})
+			}
+		}
 
 		this.parent = undefined
 	}
 
 	private getParent(accessor: BlockModelProvider) {
 		if (!this.parent) return null
-		if (this.parent.equals(BlockModel.BUILTIN_GENERATED)) {
-			return new BlockModel(BlockModel.BUILTIN_GENERATED, undefined, undefined, [{
-				from: [0, 0, 0],
-				to: [16, 16, 0],
-				faces: { south: { texture: '#layer0', tintindex: 0 }},
-			}])
-		}
 		return accessor.getBlockModel(this.parent)
 	}
 
