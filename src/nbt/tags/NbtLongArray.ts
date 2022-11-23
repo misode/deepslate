@@ -1,7 +1,7 @@
 import type { JsonValue } from '../../util/index.js'
 import { Json } from '../../util/index.js'
 import type { DataInput, DataOutput } from '../io/index.js'
-import { NbtAbstractList } from './NbtList.js'
+import { NbtAbstractList } from './NbtAbstractList.js'
 import type { NbtLongPair } from './NbtLong.js'
 import { NbtLong } from './NbtLong.js'
 import { NbtTag } from './NbtTag.js'
