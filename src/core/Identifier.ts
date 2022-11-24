@@ -14,9 +14,12 @@ export class Identifier {
 		}
 	}
 
-	public equals(other: Identifier) {
+	public equals(other: unknown) {
 		if (this === other) {
 			return true
+		}
+		if (!(other instanceof Identifier)) {
+			return false
 		}
 		return this.namespace === other.namespace && this.path === other.path
 	}

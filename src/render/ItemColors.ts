@@ -110,6 +110,9 @@ function getPotionColor(tag: NbtCompound) {
 	const effects: { id: string, amplifier: number }[] = []
 	let id = tag.getString('Potion')
 	let strong = false
+	if (id.startsWith('minecraft:')) {
+		id = id.slice('minecraft:'.length)
+	}
 	if (id.startsWith('long_')) {
 		id = id.slice('long_'.length)
 	} else if (id.startsWith('strong_')) {
