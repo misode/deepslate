@@ -114,21 +114,6 @@ export class Renderer {
 		this.gl.bindTexture(this.gl.TEXTURE_2D, texture)
 	}
 
-	protected createBuffer(type: number, array: ArrayBuffer) {
-		const buffer = this.gl.createBuffer()
-		if (buffer === null) {
-			throw new Error('Renderer Error: Cannot create new buffer')
-		}
-		this.gl.bindBuffer(type, buffer)
-		this.gl.bufferData(type, array, this.gl.DYNAMIC_DRAW)
-		return buffer
-	}
-
-	protected updateBuffer(buffer: WebGLBuffer, type: number, array: ArrayBuffer) {
-		this.gl.bindBuffer(type, buffer)
-		this.gl.bufferData(type, array, this.gl.STATIC_DRAW)
-	}
-
 	protected createAtlasTexture(image: ImageData) {
 		const texture = this.gl.createTexture()!
 		this.gl.bindTexture(this.gl.TEXTURE_2D, texture)
