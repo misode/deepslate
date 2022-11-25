@@ -27,10 +27,3 @@ export function transformVectors(array: Float32Array, transformation: mat4) {
 		array[i+2] = a[2]
 	}
 }
-
-export function intToRGB(c: number) {
-	const r = (c >> 16) & 255
-	const g = (c >> 8) & 255
-	const b = c & 255
-	return [r / 255, g / 255, b / 255]
-}

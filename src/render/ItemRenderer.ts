@@ -1,6 +1,7 @@
 import { mat4 } from 'gl-matrix'
 import { Identifier } from '../core/index.js'
 import { ItemStack } from '../core/ItemStack.js'
+import type { Color } from '../index.js'
 import type { BlockModelProvider } from './BlockModel.js'
 import { getItemColor } from './ItemColors.js'
 import type { RenderBuffers } from './Renderer.js'
@@ -9,7 +10,7 @@ import type { TextureAtlasProvider } from './TextureAtlas.js'
 
 interface ModelRendererOptions {
 	/** Force the tint index of the item */
-	tint?: number[],
+	tint?: Color,
 }
 
 interface ItemRendererResources extends BlockModelProvider, TextureAtlasProvider {}
@@ -17,7 +18,7 @@ interface ItemRendererResources extends BlockModelProvider, TextureAtlasProvider
 export class ItemRenderer extends Renderer {
 	private item: ItemStack
 	private buffers: RenderBuffers
-	private readonly tint: number[] | ((index: number) => number[]) | undefined
+	private readonly tint: Color | ((index: number) => Color) | undefined
 	private readonly atlasTexture: WebGLTexture
 
 	constructor(
