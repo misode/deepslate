@@ -1,15 +1,16 @@
 import { clamp } from '../math/index.js'
-import { intToRGB } from './Util.js'
+import type { Color } from '../util/index.js'
+import { intToRgb } from '../util/index.js'
 
-const grass = [124 / 255, 189 / 255, 107 / 255]
-const spruce = intToRGB(6396257)
-const birch = intToRGB(8431445)
-const foliage = intToRGB(4764952)
-const water = intToRGB(4159204)
-const attached_stem = intToRGB(8431445)
-const lily_pad = intToRGB(2129968)
+const grass: Color = [124 / 255, 189 / 255, 107 / 255]
+const spruce = intToRgb(6396257)
+const birch = intToRgb(8431445)
+const foliage = intToRgb(4764952)
+const water = intToRgb(4159204)
+const attached_stem = intToRgb(8431445)
+const lily_pad = intToRgb(2129968)
 
-const redstone = (power: number) => {
+const redstone = (power: number): Color => {
 	const a = power / 15
 	const r = a * 0.6 + (a > 0 ? 0.4 : 0.3)
 	const g = clamp(a * a * 0.7 - 0.5, 0, 1)
@@ -17,12 +18,12 @@ const redstone = (power: number) => {
 	return [r, g, b]
 }
 
-const stem = (age: number) => {
+const stem = (age: number): Color => {
 	return [age / 8, 1 - age / 32, age * 64]
 }
 
 export const BlockColors: {
-	[key: string]: (props: { [key: string]: string }) => number[],
+	[key: string]: (props: { [key: string]: string }) => Color,
 } = {
 	large_fern: () => grass,
 	tall_grass: () => grass,

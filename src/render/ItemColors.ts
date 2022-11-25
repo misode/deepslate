@@ -1,11 +1,11 @@
 import type { ItemStack } from '../core/index.js'
 import { Identifier } from '../core/index.js'
-import type { NbtCompound } from '../nbt/index.js'
-import { NbtType } from '../nbt/index.js'
+import { Potion } from '../core/world/Potion.js'
+import type { Color } from '../util/index.js'
+import { intToRgb } from '../util/index.js'
 import { BlockColors } from './BlockColors.js'
-import { intToRGB } from './Util.js'
 
-type Tint = number[] | ((index: number) => number[])
+type Tint = Color | ((index: number) => Color)
 const ItemColors = new Map<string, (item: ItemStack) => Tint>()
 
 export function getItemColor(item: ItemStack): Tint {
@@ -28,11 +28,11 @@ register([
 	'leather_horse_armor',
 ], ({ tag }) => {
 	const display = tag.getCompound('display')
-	const color = intToRGB(display.hasNumber('color') ? display.getNumber('color') : 10511680)
+	const color = intToRgb(display.hasNumber('color') ? display.getNumber('color') : 10511680)
 	return (index: number) => index > 0 ? [1, 1, 1] : color
 })
 
-const grass = [124 / 255, 189 / 255, 107 / 255]
+const grass: Color = [124 / 255, 189 / 255, 107 / 255]
 register([
 	'tall_grass',
 	'large_fern',
@@ -41,14 +41,14 @@ register([
 register([
 	'firework_star',
 ], ({ tag }) => {
-	const color = (() => {
+	const color: Color = (() => {
 		const explosion = tag.getCompound('Explosion')
 		const colors = explosion.get('Colors')
 		if (!colors?.isIntArray() || colors.length === 0) {
-			return intToRGB(9079434)
+			return intToRgb(9079434)
 		}
 		if (colors.length === 1) {
-			return intToRGB(colors.get(0)!.getAsNumber())
+			return intToRgb(colors.get(0)!.getAsNumber())
 		}
 		let [r, g, b] = [0, 0, 0]
 		for (const color of colors.getItems()) {
@@ -64,107 +64,12 @@ register([
 	return (index: number) => index !== 1 ? [1, 1, 1] : color
 })
 
-const MobEffects: [number, string, number][] = [
-	[1, 'speed', 8171462],
-	[2, 'slowness', 5926017],
-	[3, 'haste', 14270531],
-	[4, 'mining_fatigue', 4866583],
-	[5, 'strength', 9643043],
-	[6, 'instant_health', 16262179],
-	[7, 'instant_damage', 4393481],
-	[8, 'jump_boost', 2293580],
-	[9, 'nausea', 5578058],
-	[10, 'regeneration', 13458603],
-	[11, 'resistance', 10044730],
-	[12, 'fire_resistance', 14981690],
-	[13, 'water_breathing', 3035801],
-	[14, 'invisibility', 8356754],
-	[15, 'blindness', 2039587],
-	[16, 'night_vision', 2039713],
-	[17, 'hunger', 5797459],
-	[18, 'weakness', 4738376],
-	[19, 'poison', 5149489],
-	[20, 'wither', 3484199],
-	[21, 'health_boost', 16284963],
-	[22, 'absorption', 2445989],
-	[23, 'saturation', 16262179],
-	[24, 'glowing', 9740385],
-	[25, 'levitation', 13565951],
-	[26, 'luck', 3381504],
-	[27, 'unluck', 12624973],
-	[28, 'slow_falling', 16773073],
-	[29, 'conduit_power', 1950417],
-	[30, 'dolphins_grace', 8954814],
-	[31, 'bad_omen', 745784],
-	[32, 'hero_of_the_village', 4521796],
-	[33, 'darkness', 2696993],
-]
-
-function getPotionColor(tag: NbtCompound) {
-	if (tag.hasNumber('CustomPotionColor')) {
-		return intToRGB(tag.getNumber('CustomPotionColor'))
-	}
-	if (tag.size === 0) {
-		return intToRGB(16253176)
-	}
-	const effects: { id: string, amplifier: number }[] = []
-	let id = tag.getString('Potion')
-	let strong = false
-	if (id.startsWith('minecraft:')) {
-		id = id.slice('minecraft:'.length)
-	}
-	if (id.startsWith('long_')) {
-		id = id.slice('long_'.length)
-	} else if (id.startsWith('strong_')) {
-		id = id.slice('strong_'.length)
-		strong = true
-	}
-	if (id === 'turtle_master') {
-		effects.push(
-			{ id: 'slowness', amplifier: strong ? 5 : 3 },
-			{ id: 'resistance', amplifier: strong ? 3 : 2 },
-		)
-	} else {
-		const amplifier = strong ? (id === 'slowness' ? 3 : 1) : 0
-		effects.push({ id, amplifier })
-	}
-	tag.getList('CustomPotionEffects', NbtType.Compound).forEach(entry => {
-		const numId = entry.getNumber('Id')
-		const id = MobEffects.find(p => p[0] === numId)?.[1]
-		if (id) {
-			const amplifier = entry.getNumber('Amplifier')
-			const visible = !entry.has('ShowParticles') || entry.getBoolean('ShowParticles')
-			if (visible) {
-				effects.push({ id, amplifier })
-			}
-		}
-	})
-	let [r, g, b] = [0, 0, 0]
-	let total = 0
-	for (const effect of effects) {
-		const amplifier = effect.amplifier + 1
-		const color = MobEffects.find(p => p[1] === effect.id)?.[2]
-		if (color === undefined) continue
-		r += (amplifier * (color >> 16 & 0xFF)) / 255
-		g += (amplifier * (color >> 8 & 0xFF)) / 255
-		b += (amplifier * (color >> 0 & 0xFF)) / 255
-		total += amplifier
-	}
-	if (total === 0) {
-		return intToRGB(0)
-	}
-	r = r / total
-	g = g / total
-	b = b / total
-	return [r, g, b]
-}
-
 register([
 	'potion',
 	'splash_potion',
 	'lingering_potion',
 ], ({ tag }) => {
-	const color = getPotionColor(tag)
+	const color = Potion.getColor(tag)
 	return (index: number) => index > 0 ? [1, 1, 1] : color
 })
 
@@ -249,7 +154,7 @@ const SpawnEggs: [string, number, number][] = [
 
 for (const egg of SpawnEggs) {
 	register([`${egg[0]}_spawn_egg`], () => {
-		return (index: number) => intToRGB(index === 0 ? egg[1] : egg[2])
+		return (index: number) => intToRgb(index === 0 ? egg[1] : egg[2])
 	})
 }
 
@@ -272,12 +177,12 @@ for (const id of [
 
 register([
 	'mangrove_leaves',
-], () => intToRGB(9619016))
+], () => intToRgb(9619016))
 
 register([
 	'tipped_arrow',
 ], ({ tag }) => {
-	const color = getPotionColor(tag)
+	const color = Potion.getColor(tag)
 	return (index: number) => index === 0 ? color : [1, 1, 1]
 })
 
@@ -285,7 +190,7 @@ register([
 	'filled_map',
 ], ({ tag }) => {
 	const display = tag.getCompound('display')
-	const color = intToRGB(display.hasNumber('MapColor')
+	const color = intToRgb(display.hasNumber('MapColor')
 		? (0xFF000000 | display.getNumber('MapColor') & 16777215)
 		: -12173266)
 	return (index: number) => index === 0 ? [1, 1, 1] : color

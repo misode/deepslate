@@ -36,11 +36,6 @@ const fsSource = `
 		gl_FragColor = vec4(texColor.xyz * vTintColor * vLighting, texColor.a);
   }
 `
-//vec4 texColor = texture2D(sampler, vTexCoord);
-//if(texColor.a < 0.01) discard;
-//gl_FragColor = vec4(texColor.xyz * vTintColor * vLighting, texColor.a);
-
-//gl_FragColor = vec4(1, 0, 0, 1);
 
 export interface RenderBuffers {
 	position: WebGLBuffer,
