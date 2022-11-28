@@ -1,12 +1,22 @@
 import { NbtCompound } from '../nbt/index.js'
 import { Identifier } from './Identifier.js'
+import { Item } from './world/Item.js'
 
 export class ItemStack {
+	private item: Item | undefined
+
 	constructor(
 		public id: Identifier,
 		public count: number,
 		public tag: NbtCompound = new NbtCompound(),
 	) {}
+
+	public getItem() {
+		if (this.item === undefined) {
+			this.item = Item.get(this.id)
+		}
+		return this.item
+	}
 
 	public clone(): ItemStack {
 		const tag = NbtCompound.fromJson(this.tag.toJson())

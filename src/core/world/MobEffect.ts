@@ -17,15 +17,17 @@ export interface MobEffect {
 	readonly modifiers: Map<Attribute, AttributeModifier>
 }
 
+const registry = new Registry<MobEffect>(Identifier.create('mob_effect'))
+Registry.REGISTRY.register(registry.key, registry)
+const idMap = new Map<number, MobEffect>()
+
 export namespace MobEffect {
+	export const REGISTRY = registry
+
 	export function fromId(n: number) {
 		return idMap.get(n)
 	}
 }
-
-const registry = new Registry<MobEffect>(Identifier.create('mob_effect'))
-Registry.REGISTRY.register(registry.key, registry)
-const idMap = new Map<number, MobEffect>()
 
 function register(n: number, id: string, category: MobEffectCategory, color: Color | number, modifiers: Map<Attribute, AttributeModifier> = new Map()) {
 	const mobEffect: MobEffect = {

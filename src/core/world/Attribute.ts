@@ -11,6 +11,10 @@ export interface Attribute {
 const registry = new Registry<Attribute>(Identifier.create('attribute'))
 Registry.REGISTRY.register(registry.key, registry)
 
+export namespace Attribute {
+	export const REGISTRY = registry
+}
+
 function register(id: string, defaultValue: number, minValue: number, maxValue: number) {
 	const attribute: Attribute = {
 		id: Identifier.create(id),

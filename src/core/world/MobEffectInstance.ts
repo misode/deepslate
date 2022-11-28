@@ -4,15 +4,26 @@ import { intToRgb } from '../../util/index.js'
 import { MobEffect } from './MobEffect.js'
 
 export interface MobEffectInstance {
-	effect: MobEffect
-	duration: number
-	amplifier: number
-	ambient: boolean
-	visible: boolean
-	showIcon: boolean
+	readonly effect: MobEffect
+	readonly duration: number
+	readonly amplifier: number
+	readonly ambient: boolean
+	readonly visible: boolean
+	readonly showIcon: boolean
 }
 
 export namespace MobEffectInstance {
+	export function create(effect: MobEffect, duration = 0, amplifier = 0, ambient = false, visible = true, showIcon?: boolean): MobEffectInstance {
+		return {
+			effect,
+			duration,
+			amplifier,
+			ambient,
+			visible,
+			showIcon: showIcon ?? visible,
+		}
+	}
+
 	export function fromNbt(tag: NbtCompound): MobEffectInstance | undefined {
 		const id = tag.getNumber('Id')
 		const effect = MobEffect.fromId(id)
