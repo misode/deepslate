@@ -28,17 +28,10 @@ export function transformVectors(array: Float32Array, transformation: mat4) {
 	}
 }
 
-export function intToRGB(c: number) {
-	const r = (c >> 16) & 255
-	const g = (c >> 8) & 255
-	const b = c & 255
-	return [r / 255, g / 255, b / 255]
-}
-
 export function createBuffer(gl: WebGLRenderingContext, type: number, array: ArrayBuffer) {
 	const buffer = gl.createBuffer()
 	if (buffer === null) {
-		throw new Error('Renderer Error: Cannot create new buffer')
+		throw new Error('Cannot create new buffer')
 	}
 	gl.bindBuffer(type, buffer)
 	gl.bufferData(type, array, gl.DYNAMIC_DRAW)

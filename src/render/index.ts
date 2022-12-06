@@ -9,4 +9,3 @@ export * from './Renderer.js'
 export * from './ShaderProgram.js'
 export * from './StructureRenderer.js'
 export * from './TextureAtlas.js'
-

@@ -39,9 +39,6 @@ export class ChunkBuilder {
 	}
 
 	public updateStructureBuffers(chunkPositions?: vec3[]): void {
-
-
-
 		if (!chunkPositions) {
 			this.chunks.forEach(x => x.forEach(y => y.forEach(chunk => {
 				this.resetChunk(chunk)
@@ -104,7 +101,7 @@ export class ChunkBuilder {
 		}
 	}
 
-	public getBuffers(): ChunkRenderBuffers[]{
+	public getBuffers(): ChunkRenderBuffers[] {
 		return this.chunks.flatMap(x => x.flatMap(y => y.flatMap(chunk => chunk.buffer ?? [])))
 	}
 

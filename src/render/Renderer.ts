@@ -55,9 +55,7 @@ export class Renderer {
 	constructor(
 		protected readonly gl: WebGLRenderingContext,
 	) {
-
 		this.shaderProgram = new ShaderProgram(gl, vsSource, fsSource).getProgram()
-
 		this.activeShader = this.shaderProgram
 		this.projMatrix = this.getPerspective()
 		this.initialize()
