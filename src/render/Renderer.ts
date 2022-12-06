@@ -55,9 +55,7 @@ export class Renderer {
 	constructor(
 		protected readonly gl: WebGLRenderingContext,
 	) {
-
 		this.shaderProgram = new ShaderProgram(gl, vsSource, fsSource).getProgram()
-
 		this.activeShader = this.shaderProgram
 		this.projMatrix = this.getPerspective()
 		this.initialize()
@@ -107,21 +105,6 @@ export class Renderer {
 	protected setTexture(texture: WebGLTexture) {
 		this.gl.activeTexture(this.gl.TEXTURE0)
 		this.gl.bindTexture(this.gl.TEXTURE_2D, texture)
-	}
-
-	protected createBuffer(type: number, array: ArrayBuffer) {
-		const buffer = this.gl.createBuffer()
-		if (buffer === null) {
-			throw new Error('Renderer Error: Cannot create new buffer')
-		}
-		this.gl.bindBuffer(type, buffer)
-		this.gl.bufferData(type, array, this.gl.DYNAMIC_DRAW)
-		return buffer
-	}
-
-	protected updateBuffer(buffer: WebGLBuffer, type: number, array: ArrayBuffer) {
-		this.gl.bindBuffer(type, buffer)
-		this.gl.bufferData(type, array, this.gl.STATIC_DRAW)
 	}
 
 	protected createAtlasTexture(image: ImageData) {

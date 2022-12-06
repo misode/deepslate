@@ -7,6 +7,7 @@ import { getItemColor } from './ItemColors.js'
 import type { RenderBuffers } from './Renderer.js'
 import { Renderer } from './Renderer.js'
 import type { TextureAtlasProvider } from './TextureAtlas.js'
+import { createBuffer } from './Util.js'
 
 interface ModelRendererOptions {
 	/** Force the tint index of the item */
@@ -51,11 +52,11 @@ export class ItemRenderer extends Renderer {
 		const buffers = model.getDisplayBuffers('gui', this.resources, 0, tint)
 
 		return {
-			position: this.createBuffer(this.gl.ARRAY_BUFFER, buffers.position),
-			texCoord: this.createBuffer(this.gl.ARRAY_BUFFER, new Float32Array(buffers.texCoord)),
-			tintColor: this.createBuffer(this.gl.ARRAY_BUFFER, new Float32Array(buffers.tintColor)),
-			normal: this.createBuffer(this.gl.ARRAY_BUFFER, new Float32Array(buffers.normal)),
-			index: this.createBuffer(this.gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(buffers.index)),
+			position: createBuffer(this.gl, this.gl.ARRAY_BUFFER, buffers.position),
+			texCoord: createBuffer(this.gl, this.gl.ARRAY_BUFFER, new Float32Array(buffers.texCoord)),
+			tintColor: createBuffer(this.gl, this.gl.ARRAY_BUFFER, new Float32Array(buffers.tintColor)),
+			normal: createBuffer(this.gl, this.gl.ARRAY_BUFFER, new Float32Array(buffers.normal)),
+			index: createBuffer(this.gl, this.gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(buffers.index)),
 			length: buffers.index.length,
 		}
 	}
