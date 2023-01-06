@@ -5,15 +5,16 @@ import { BlockState } from './BlockState.js'
 import type { Identifier } from './Identifier.js'
 import type { StructureProvider } from './StructureProvider.js'
 
+type StoredBlock = { pos: BlockPos, state: number, nbt?: NbtCompound }
 export type PlacedBlock = { pos: BlockPos, state: BlockState, nbt?: NbtCompound }
 
 export class Structure implements StructureProvider {
-	private blocksMap: { pos: BlockPos, state: number, nbt?: NbtCompound }[] = []
+	private blocksMap: StoredBlock[] = []
 
 	constructor(
 		private readonly size: BlockPos,
 		private readonly palette: BlockState[] = [],
-		private readonly blocks: { pos: BlockPos, state: number, nbt?: NbtCompound }[] = []
+		private readonly blocks: StoredBlock[] = []
 	) {
 		blocks.forEach(block => {
 			if (!this.isInside(block.pos)) {
@@ -43,23 +44,26 @@ export class Structure implements StructureProvider {
 	}
 
 	public getBlocks(): PlacedBlock[] {
-		return this.blocks.map(b => ({
-			pos: b.pos,
-			state: this.palette[b.state],
-			nbt: b.nbt,
-		}))
+		return this.blocks.map(b => this.toPlacedBlock(b))
 	}
 
 	public getBlock(pos: BlockPos): PlacedBlock | null {
 		if (!this.isInside(pos)) return null
 		const block = this.blocksMap[pos[0] * this.size[1] * this.size[2] + pos[1] * this.size[2] + pos[2]]
 		if (!block) return null
-		const placedBlock = {
+		return this.toPlacedBlock(block)
+	}
+
+	private toPlacedBlock(block: StoredBlock): PlacedBlock {
+		const state = this.palette[block.state]
+		if (!state) {
+			throw new Error(`Block at ${block.pos.join(' ')} in structure references invalid palette index ${block.state}`)
+		}
+		return {
 			pos: block.pos,
-			state: this.palette[block.state],
+			state: state,
 			nbt: block.nbt,
 		}
-		return placedBlock
 	}
 
 	public isInside(pos: BlockPos) {
