@@ -1,6 +1,64 @@
 import { mat4 } from 'gl-matrix'
 import type { NbtCompound, Resources } from '../src/index.js'
-import { BlockDefinition, BlockModel, Identifier, ItemRenderer, ItemStack, NbtTag, Structure, StructureRenderer, TextureAtlas, upperPowerOfTwo } from '../src/index.js'
+import { BlockDefinition, BlockModel, Identifier, ItemRenderer, ItemStack, NbtTag, Structure, StructureRenderer, TextureAtlas, upperPowerOfTwo, VoxelRenderer } from '../src/index.js'
+
+
+class InteractiveCanvas {
+	private viewDist = 4
+	private xRotation = 0.8
+	private yRotation = 0.5
+
+	constructor(
+		canvas: HTMLCanvasElement,
+		private readonly onRender: (view: mat4) => void,
+		private readonly center?: [number, number, number]
+	) {
+		let dragPos: null | [number, number] = null
+		canvas.addEventListener('mousedown', evt => {
+			if (evt.button === 0) {
+				dragPos = [evt.clientX, evt.clientY]
+			}
+		})
+		canvas.addEventListener('mousemove', evt => {
+			if (dragPos) {
+				this.yRotation += (evt.clientX - dragPos[0]) / 100
+				this.xRotation += (evt.clientY - dragPos[1]) / 100
+				dragPos = [evt.clientX, evt.clientY]
+				this.redraw()
+			}
+		})
+		canvas.addEventListener('mouseup', () => {
+			dragPos = null
+		})
+		canvas.addEventListener('wheel', evt => {
+			evt.preventDefault()
+			this.viewDist += evt.deltaY / 100
+			this.redraw()
+		})
+
+		this.redraw()
+	}
+
+	public redraw() {
+		requestAnimationFrame(() => this.renderImmediately())
+	}
+
+	private renderImmediately() {
+		this.yRotation = this.yRotation % (Math.PI * 2)
+		this.xRotation = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, this.xRotation))
+		this.viewDist = Math.max(1, Math.min(20, this.viewDist))
+
+		const view = mat4.create()
+		mat4.translate(view, view, [0, 0, -this.viewDist])
+		mat4.rotate(view, view, this.xRotation, [1, 0, 0])
+		mat4.rotate(view, view, this.yRotation, [0, 1, 0])
+		if (this.center) {
+			mat4.translate(view, view, [-this.center[0], -this.center[1], -this.center[2]])
+		}
+
+		this.onRender(view)
+	}
+}
 
 const MCMETA = 'https://raw.githubusercontent.com/misode/mcmeta/'
 
@@ -88,7 +146,7 @@ Promise.all([
 			itemInput.classList.add('invalid')
 		}
 	})
-
+	itemRenderer.drawItem()
 
 	const structure = new Structure([3, 2, 1])
 	const size = structure.getSize()
@@ -100,47 +158,21 @@ Promise.all([
 	const structureCanvas = document.getElementById('structure-display') as HTMLCanvasElement
 	const structureGl = structureCanvas.getContext('webgl')!
 	const structureRenderer = new StructureRenderer(structureGl, structure, resources)
-	
-	let viewDist = 4
-	let xRotation = 0.8
-	let yRotation = 0.5
 
-	function render() {
-		yRotation = yRotation % (Math.PI * 2)
-		xRotation = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, xRotation))
-		viewDist = Math.max(1, Math.min(20, viewDist))
-
-		const view = mat4.create()
-		mat4.translate(view, view, [0, 0, -viewDist])
-		mat4.rotate(view, view, xRotation, [1, 0, 0])
-		mat4.rotate(view, view, yRotation, [0, 1, 0])
-		mat4.translate(view, view, [-size[0] / 2, -size[1] / 2, -size[2] / 2])
-
-		itemRenderer.drawItem()
+	new InteractiveCanvas(structureCanvas, view => {
 		structureRenderer.drawStructure(view)
-	}
-	requestAnimationFrame(render)
+	}, [size[0] / 2, size[1] / 2, size[2] / 2])
+})
 
-	let dragPos: null | [number, number] = null
-	structureCanvas.addEventListener('mousedown', evt => {
-		if (evt.button === 0) {
-			dragPos = [evt.clientX, evt.clientY]
-		}
-	})
-	structureCanvas.addEventListener('mousemove', evt => {
-		if (dragPos) {
-			yRotation += (evt.clientX - dragPos[0]) / 100
-			xRotation += (evt.clientY - dragPos[1]) / 100
-			dragPos = [evt.clientX, evt.clientY]
-			requestAnimationFrame(render)
-		}
-	})
-	structureCanvas.addEventListener('mouseup', () => {
-		dragPos = null
-	})
-	structureCanvas.addEventListener('wheel', evt => {
-		evt.preventDefault()
-		viewDist += evt.deltaY / 100
-		requestAnimationFrame(render)
-	})
+const voxelCanvas = document.getElementById('voxel-display') as HTMLCanvasElement
+const voxelCtx = voxelCanvas.getContext('webgl')!
+const voxelRenderer = new VoxelRenderer(voxelCtx)
+
+voxelRenderer.setVoxels([
+	{ x: 0, y: 0, z: 0, color: [200, 50, 0] },
+	{ x: 0, y: 0, z: 1, color: [200, 200, 200] },
+])
+
+new InteractiveCanvas(voxelCanvas, view => {
+	voxelRenderer.draw(view)
 })
