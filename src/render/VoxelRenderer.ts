@@ -1,5 +1,8 @@
 import type { mat4 } from 'gl-matrix'
+import { Vector } from '../math/index.js'
+import type { Color } from '../util/index.js'
 import { mutateWithDefault } from '../util/index.js'
+import { Quad } from './Quad.js'
 import { Renderer } from './Renderer.js'
 import { ShaderProgram } from './ShaderProgram.js'
 import { createBuffer } from './Util.js'
@@ -13,7 +16,7 @@ interface Voxel {
 	x: number
 	y: number
 	z: number
-	color: Vec3
+	color: Color
 }
 
 interface VoxelFace {
@@ -51,20 +54,6 @@ class VoxelNormal {
 	}
 }
 
-type Vec3 = [number, number, number]
-
-interface Vertex {
-	pos: Vec3
-	color: Vec3
-}
-
-interface Quad {
-	v1: Vertex
-	v2: Vertex
-	v3: Vertex
-	v4: Vertex
-}
-
 interface VoxelBuffers {
 	position: WebGLBuffer,
 	color: WebGLBuffer,
@@ -83,7 +72,7 @@ const vsVoxel = `
 
   void main(void) {
     gl_Position = mProj * mView * vertPos;
-    vColor = vertColor / 256.0;
+    vColor = vertColor;
   }
 `
 
@@ -156,7 +145,7 @@ export class VoxelRenderer extends Renderer {
 				mutateWithDefault(planes, plane, [], faces => faces.push(face))
 			}
 		}
-		console.log(planes)
+
 		const quads: Quad[] = []
 		for (const [plane, faces] of planes.entries()) {
 			const { normal, pos, color } = this.decodePlane(plane)
@@ -167,38 +156,36 @@ export class VoxelRenderer extends Renderer {
 				const j0 = face.j0 - 0.5
 				const i1 = face.i1 + 0.5
 				const j1 = face.j1 + 0.5
-				let p1: Vec3, p2: Vec3, p3: Vec3, p4: Vec3
+				let q: Quad
 				switch (normal.axis) {
 					case 'x':
-						p1 = [k, i0, j0]
-						p2 = [k, i1, j0]
-						p3 = [k, i1, j1]
-						p4 = [k, i0, j1]
+						q = Quad.fromPoints(
+							new Vector(k, i0, j0),
+							new Vector(k, i1, j0),
+							new Vector(k, i1, j1),
+							new Vector(k, i0, j1))
 						break
 					case 'y':
-						p1 = [i0, k, j1]
-						p2 = [i1, k, j1]
-						p3 = [i1, k, j0]
-						p4 = [i0, k, j0]
+						q = Quad.fromPoints(
+							new Vector(i0, k, j1),
+							new Vector(i1, k, j1),
+							new Vector(i1, k, j0),
+							new Vector(i0, k, j0))
 						break
 					case 'z':
-						p1 = [i0, j0, k]
-						p2 = [i1, j0, k]
-						p3 = [i1, j1, k]
-						p4 = [i0, j1, k]
+						q = Quad.fromPoints(
+							new Vector(i0, j0, k),
+							new Vector(i1, j0, k),
+							new Vector(i1, j1, k),
+							new Vector(i0, j1, k))
 				}
 				if (normal.sign < 0) {
-					[p1, p2, p3, p4] = [p4, p3, p2, p1]
+					q.reverse()
 				}
-				quads.push({
-					v1: { pos: p1, color },
-					v2: { pos: p2, color },
-					v3: { pos: p3, color },
-					v4: { pos: p4, color },
-				})
+				q.setColor(color)
+				quads.push(q)
 			}
 		}
-		console.error(quads)
 		return quads
 	}
 
@@ -208,8 +195,18 @@ export class VoxelRenderer extends Renderer {
 		const index: number[] = []
 		let i = 0
 		for (const quad of this.quads) {
-			position.push(...quad.v1.pos, ...quad.v2.pos, ...quad.v3.pos, ...quad.v4.pos)
-			color.push(...quad.v1.color, ...quad.v2.color, ...quad.v3.color, ...quad.v4.color)
+			position.push(
+				quad.v1.pos.x, quad.v1.pos.y, quad.v1.pos.z,
+				quad.v2.pos.x, quad.v2.pos.y, quad.v2.pos.z,
+				quad.v3.pos.x, quad.v3.pos.y, quad.v3.pos.z,
+				quad.v4.pos.x, quad.v4.pos.y, quad.v4.pos.z)
+			const normal = quad.normal()
+			const light = (normal.y * 0.25 + Math.abs(normal.z) * 0.125 + 0.75) / 256
+			color.push(
+				quad.v1.color[0] * light, quad.v1.color[1] * light, quad.v1.color[2] * light,
+				quad.v2.color[0] * light, quad.v2.color[1] * light, quad.v2.color[2] * light,
+				quad.v3.color[0] * light, quad.v3.color[1] * light, quad.v3.color[2] * light,
+				quad.v4.color[0] * light, quad.v4.color[1] * light, quad.v4.color[2] * light)
 			index.push(i, i+1, i+2, i, i+2, i+3)
 			i += 4
 		}
@@ -221,7 +218,7 @@ export class VoxelRenderer extends Renderer {
 		}
 	}
 
-	private encodePlane(normal: VoxelNormal, pos: number, color: Vec3) {
+	private encodePlane(normal: VoxelNormal, pos: number, color: Color) {
 		const plane = (pos << 28)
 			+ (color[0] << 20)
 			+ (color[1] << 12)
@@ -230,7 +227,7 @@ export class VoxelRenderer extends Renderer {
 		return plane
 	}
 
-	private decodePlane(plane: number): { normal: VoxelNormal, pos: number, color: Vec3 } {
+	private decodePlane(plane: number): { normal: VoxelNormal, pos: number, color: Color } {
 		return {
 			normal: VoxelNormal.fromIndex(plane & 0xF),
 			pos: plane >> 28,
