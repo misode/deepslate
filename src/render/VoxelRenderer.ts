@@ -106,84 +106,60 @@ export class VoxelRenderer extends Renderer {
 	}
 
 	private getQuads(): Quad[] {
-		const lookup = new Set<string>()
+		const lookup = new Map<number, Map<number, Set<number>>>()
 		for (const v of this.voxels) {
-			lookup.add(`${v.x},${v.y},${v.z}`)
+			mutateWithDefault(lookup, v.x, new Map<number, Set<number>>(), m => {
+				mutateWithDefault(m, v.y, new Set<number>(), n => {
+					n.add(v.z)
+				})
+			})
 		}
-		const planes = new Map<string, VoxelFace[]>()
+		const quads: Quad[] = []
 		for (const v of this.voxels) {
-			if (!lookup.has(`${v.x + 1},${v.y},${v.z}`)) {
-				const plane = this.encodePlane(VoxelNormal.PosX, v.x, v.color)
-				const face: VoxelFace = { i0: v.y, j0: v.z, i1: v.y, j1: v.z }
-				mutateWithDefault(planes, plane, [], faces => faces.push(face))
+			if (!lookup.get(v.x + 1)?.get(v.y)?.has(v.z)) {
+				quads.push(Quad.fromPoints(
+					new Vector(v.x+1, v.y,   v.z  ),
+					new Vector(v.x+1, v.y+1, v.z  ),
+					new Vector(v.x+1, v.y+1, v.z+1),
+					new Vector(v.x+1, v.y,   v.z+1)).setColor(v.color))
 			}
-			if (!lookup.has(`${v.x - 1},${v.y},${v.z}`)) {
-				const plane = this.encodePlane(VoxelNormal.NegX, v.x, v.color)
-				const face: VoxelFace = { i0: v.y, j0: v.z, i1: v.y, j1: v.z }
-				mutateWithDefault(planes, plane, [], faces => faces.push(face))
+			if (!lookup.get(v.x - 1)?.get(v.y)?.has(v.z)) {
+				quads.push(Quad.fromPoints(
+					new Vector(v.x, v.y,   v.z+1),
+					new Vector(v.x, v.y+1, v.z+1),
+					new Vector(v.x, v.y+1, v.z),
+					new Vector(v.x, v.y,   v.z)).setColor(v.color))
 			}
-			if (!lookup.has(`${v.x},${v.y + 1},${v.z}`)) {
-				const plane = this.encodePlane(VoxelNormal.PosY, v.y, v.color)
-				const face: VoxelFace = { i0: v.x, j0: v.z, i1: v.x, j1: v.z }
-				mutateWithDefault(planes, plane, [], faces => faces.push(face))
+			if (!lookup.get(v.x)?.get(v.y + 1)?.has(v.z)) {
+				quads.push(Quad.fromPoints(
+					new Vector(v.x,   v.y+1, v.z+1),
+					new Vector(v.x+1, v.y+1, v.z+1),
+					new Vector(v.x+1, v.y+1, v.z),
+					new Vector(v.x,   v.y+1, v.z)).setColor(v.color))
 			}
-			if (!lookup.has(`${v.x},${v.y - 1},${v.z}`)) {
-				const plane = this.encodePlane(VoxelNormal.NegY, v.y, v.color)
-				const face: VoxelFace = { i0: v.x, j0: v.z, i1: v.x, j1: v.z }
-				mutateWithDefault(planes, plane, [], faces => faces.push(face))
+			if (!lookup.get(v.x)?.get(v.y - 1)?.has(v.z)) {
+				quads.push(Quad.fromPoints(
+					new Vector(v.x,   v.y, v.z),
+					new Vector(v.x+1, v.y, v.z),
+					new Vector(v.x+1, v.y, v.z+1),
+					new Vector(v.x,   v.y, v.z+1)).setColor(v.color))
 			}
-			if (!lookup.has(`${v.x},${v.y},${v.z + 1}`)) {
-				const plane = this.encodePlane(VoxelNormal.PosZ, v.z, v.color)
-				const face: VoxelFace = { i0: v.x, j0: v.y, i1: v.x, j1: v.y }
-				mutateWithDefault(planes, plane, [], faces => faces.push(face))
+			if (!lookup.get(v.x)?.get(v.y)?.has(v.z + 1)) {
+				quads.push(Quad.fromPoints(
+					new Vector(v.x,   v.y,   v.z+1),
+					new Vector(v.x+1, v.y,   v.z+1),
+					new Vector(v.x+1, v.y+1, v.z+1),
+					new Vector(v.x,   v.y+1, v.z+1)).setColor(v.color))
 			}
-			if (!lookup.has(`${v.x},${v.y},${v.z - 1}`)) {
-				const plane = this.encodePlane(VoxelNormal.NegZ, v.z, v.color)
-				const face: VoxelFace = { i0: v.x, j0: v.y, i1: v.x, j1: v.y }
-				mutateWithDefault(planes, plane, [], faces => faces.push(face))
+			if (!lookup.get(v.x)?.get(v.y)?.has(v.z - 1)) {
+				quads.push(Quad.fromPoints(
+					new Vector(v.x,   v.y+1, v.z),
+					new Vector(v.x+1, v.y+1, v.z),
+					new Vector(v.x+1, v.y,   v.z),
+					new Vector(v.x,   v.y,   v.z)).setColor(v.color))
 			}
 		}
 
-		const quads: Quad[] = []
-		for (const [plane, faces] of planes.entries()) {
-			const { normal, pos, color } = this.decodePlane(plane)
-			const k = pos + normal.sign * 0.5
-			for (let i = 0; i < faces.length; i += 1) {
-				const face = faces[i]
-				const i0 = face.i0 - 0.5
-				const j0 = face.j0 - 0.5
-				const i1 = face.i1 + 0.5
-				const j1 = face.j1 + 0.5
-				let q: Quad
-				switch (normal.axis) {
-					case 'x':
-						q = Quad.fromPoints(
-							new Vector(k, i0, j0),
-							new Vector(k, i1, j0),
-							new Vector(k, i1, j1),
-							new Vector(k, i0, j1))
-						break
-					case 'y':
-						q = Quad.fromPoints(
-							new Vector(i0, k, j1),
-							new Vector(i1, k, j1),
-							new Vector(i1, k, j0),
-							new Vector(i0, k, j0))
-						break
-					case 'z':
-						q = Quad.fromPoints(
-							new Vector(i0, j0, k),
-							new Vector(i1, j0, k),
-							new Vector(i1, j1, k),
-							new Vector(i0, j1, k))
-				}
-				if (normal.sign < 0) {
-					q.reverse()
-				}
-				q.setColor(color)
-				quads.push(q)
-			}
-		}
 		console.debug(`Converted ${this.voxels.length} voxels into ${quads.length} quads!`)
 		return quads
 	}

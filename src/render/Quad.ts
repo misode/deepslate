@@ -18,6 +18,7 @@ export class Quad {
 
 	public reverse() {
 		[this.v1, this.v2, this.v3, this.v4] = [this.v4, this.v3, this.v2, this.v1]
+		return this
 	}
 
 	public setColor(color: Color) {
@@ -25,6 +26,7 @@ export class Quad {
 		this.v2.color = color
 		this.v3.color = color
 		this.v4.color = color
+		return this
 	}
 
 	public toString() {
