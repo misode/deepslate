@@ -184,7 +184,7 @@ export class VoxelRenderer extends Renderer {
 				quads.push(q)
 			}
 		}
-		console.log(`Converted ${this.voxels.length} voxels into ${quads.length} quads!`)
+		console.debug(`Converted ${this.voxels.length} voxels into ${quads.length} quads!`)
 		return quads
 	}
 
@@ -247,9 +247,15 @@ export class VoxelRenderer extends Renderer {
 	}
 
 	public draw(viewMatrix: mat4) {
-		console.log(`Drawing ${this.buffers.length} buffers...`)
+		console.debug(`Drawing ${this.buffers.length} buffers...`)
 		this.setShader(this.voxelShaderProgram)
 		this.prepareDraw(viewMatrix)
+
+		if (this.buffers.length === 0) {
+			this.gl.clearColor(0, 0, 0, 0)
+			this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT)
+			return
+		}
 
 		for (const buffer of this.buffers) {
 			this.setVertexAttr('vertPos', 3, buffer.position)
