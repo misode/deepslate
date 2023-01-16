@@ -1,17 +1,17 @@
 import { mat4 } from 'gl-matrix'
-import type { NbtCompound, Resources } from '../src/index.js'
-import { BlockDefinition, BlockModel, Identifier, ItemRenderer, ItemStack, NbtTag, Structure, StructureRenderer, TextureAtlas, upperPowerOfTwo, VoxelRenderer } from '../src/index.js'
+import type { NbtCompound, Resources, Voxel } from '../src/index.js'
+import { BlockDefinition, BlockModel, Identifier, ItemRenderer, ItemStack, NbtTag, NormalNoise, Structure, StructureRenderer, TextureAtlas, upperPowerOfTwo, VoxelRenderer, XoroshiroRandom } from '../src/index.js'
 
 
 class InteractiveCanvas {
-	private viewDist = 4
 	private xRotation = 0.8
 	private yRotation = 0.5
 
 	constructor(
 		canvas: HTMLCanvasElement,
 		private readonly onRender: (view: mat4) => void,
-		private readonly center?: [number, number, number]
+		private readonly center?: [number, number, number],
+		private viewDist = 4,
 	) {
 		let dragPos: null | [number, number] = null
 		canvas.addEventListener('mousedown', evt => {
@@ -46,7 +46,7 @@ class InteractiveCanvas {
 	private renderImmediately() {
 		this.yRotation = this.yRotation % (Math.PI * 2)
 		this.xRotation = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, this.xRotation))
-		this.viewDist = Math.max(1, Math.min(20, this.viewDist))
+		this.viewDist = Math.max(1, this.viewDist)
 
 		const view = mat4.create()
 		mat4.translate(view, view, [0, 0, -this.viewDist])
@@ -74,6 +74,8 @@ Promise.all([
 		image.src = `${MCMETA}atlas/all/atlas.png`
 	}),
 ]).then(([items, blockstates, models, uvMap, atlas]) => {
+	
+	// === Prepare assets for item and structure rendering ===
 
 	const itemList = document.createElement('datalist')
 	itemList.id = 'item-list'
@@ -121,6 +123,8 @@ Promise.all([
 		getDefaultBlockProperties(id) { return null },
 	}
 
+	// === Item rendering ===
+
 	const itemCanvas = document.getElementById('item-display') as HTMLCanvasElement
 	const itemGl = itemCanvas.getContext('webgl')!
 	const itemRenderer = new ItemRenderer(itemGl, Identifier.parse('stone'), resources)
@@ -148,6 +152,8 @@ Promise.all([
 	})
 	itemRenderer.drawItem()
 
+	// === Structure rendering ===
+
 	const structure = new Structure([3, 2, 1])
 	const size = structure.getSize()
 	structure.addBlock([1, 0, 0], 'minecraft:stone')
@@ -162,17 +168,30 @@ Promise.all([
 	new InteractiveCanvas(structureCanvas, view => {
 		structureRenderer.drawStructure(view)
 	}, [size[0] / 2, size[1] / 2, size[2] / 2])
-})
 
-const voxelCanvas = document.getElementById('voxel-display') as HTMLCanvasElement
-const voxelCtx = voxelCanvas.getContext('webgl')!
-const voxelRenderer = new VoxelRenderer(voxelCtx)
+	// === Voxel rendering ===
 
-voxelRenderer.setVoxels([
-	{ x: 0, y: 0, z: 0, color: [200, 50, 0] },
-	{ x: 0, y: 0, z: 1, color: [200, 200, 200] },
-])
+	const voxelCanvas = document.getElementById('voxel-display') as HTMLCanvasElement
+	const voxelCtx = voxelCanvas.getContext('webgl')!
+	const voxelRenderer = new VoxelRenderer(voxelCtx)
 
-new InteractiveCanvas(voxelCanvas, view => {
-	voxelRenderer.draw(view)
+	const voxels: Voxel[] = []
+	const random = XoroshiroRandom.create(BigInt(123))
+	const noise = new NormalNoise(random, { firstOctave: -5, amplitudes: [1, 1, 1] })
+	const sampleRegion = 50
+	for (let x = -sampleRegion; x <= sampleRegion; x += 1) {
+		for (let y = -sampleRegion; y <= sampleRegion; y += 1) {
+			for (let z = -sampleRegion; z <= sampleRegion; z += 1) {
+				const d = noise.sample(x, y, z)
+				if (d > 0) {
+					voxels.push({ x, y, z, color: [200, 200, 200] })
+				}
+			}
+		}
+	}
+	voxelRenderer.setVoxels(voxels)
+
+	new InteractiveCanvas(voxelCanvas, view => {
+		voxelRenderer.draw(view)
+	}, [0, 0, 0], sampleRegion * 3)
 })

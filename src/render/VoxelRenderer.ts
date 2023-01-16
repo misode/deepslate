@@ -12,7 +12,7 @@ import { createBuffer } from './Util.js'
  * https://github.com/fogleman/fauxgl/blob/master/voxel.go
  */
 
-interface Voxel {
+export interface Voxel {
 	x: number
 	y: number
 	z: number
@@ -89,16 +89,14 @@ export class VoxelRenderer extends Renderer {
 	private readonly voxelShaderProgram: WebGLProgram
 
 	private voxels: Voxel[]
-	private quads: Quad[]
-	private buffers: VoxelBuffers
+	private quads: Quad[] = []
+	private buffers: VoxelBuffers[] = []
 
 	constructor(gl: WebGLRenderingContext) {
 		super(gl)
 		this.voxelShaderProgram = new ShaderProgram(gl, vsVoxel, fsVoxel).getProgram()
 
 		this.voxels = []
-		this.quads = this.getQuads()
-		this.buffers = this.getBuffers()
 	}
 
 	public setVoxels(voxels: Voxel[]) {
@@ -112,7 +110,7 @@ export class VoxelRenderer extends Renderer {
 		for (const v of this.voxels) {
 			lookup.add(`${v.x},${v.y},${v.z}`)
 		}
-		const planes = new Map<number, VoxelFace[]>()
+		const planes = new Map<string, VoxelFace[]>()
 		for (const v of this.voxels) {
 			if (!lookup.has(`${v.x + 1},${v.y},${v.z}`)) {
 				const plane = this.encodePlane(VoxelNormal.PosX, v.x, v.color)
@@ -186,14 +184,30 @@ export class VoxelRenderer extends Renderer {
 				quads.push(q)
 			}
 		}
+		console.log(`Converted ${this.voxels.length} voxels into ${quads.length} quads!`)
 		return quads
 	}
 
-	private getBuffers(): VoxelBuffers {
-		const position: number[] = []
-		const color: number[] = []
-		const index: number[] = []
+	private getBuffers(): VoxelBuffers[] {
+		const buffers: VoxelBuffers[] = []
+		let position: number[] = []
+		let color: number[] = []
+		let index: number[] = []
 		let i = 0
+
+		const pushBuffer = () => {
+			buffers.push({
+				position: createBuffer(this.gl, this.gl.ARRAY_BUFFER, new Float32Array(position)),
+				color: createBuffer(this.gl, this.gl.ARRAY_BUFFER, new Float32Array(color)),
+				index: createBuffer(this.gl, this.gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(index)),
+				length: index.length,
+			})
+			position = []
+			color = []
+			index = []
+			i = 0
+		}
+
 		for (const quad of this.quads) {
 			position.push(
 				quad.v1.pos.x, quad.v1.pos.y, quad.v1.pos.z,
@@ -209,44 +223,40 @@ export class VoxelRenderer extends Renderer {
 				quad.v4.color[0] * light, quad.v4.color[1] * light, quad.v4.color[2] * light)
 			index.push(i, i+1, i+2, i, i+2, i+3)
 			i += 4
+			if (i > 65_000) {
+				pushBuffer()
+			}
 		}
-		return {
-			position: createBuffer(this.gl, this.gl.ARRAY_BUFFER, new Float32Array(position)),
-			color: createBuffer(this.gl, this.gl.ARRAY_BUFFER, new Float32Array(color)),
-			index: createBuffer(this.gl, this.gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(index)),
-			length: index.length,
+		if (i > 0) {
+			pushBuffer()
 		}
+		return buffers
 	}
 
 	private encodePlane(normal: VoxelNormal, pos: number, color: Color) {
-		const plane = (pos << 28)
-			+ (color[0] << 20)
-			+ (color[1] << 12)
-			+ (color[2] << 4)
-			+ normal.index
-		return plane
+		return `${normal.index},${pos},${color.join(',')}`
 	}
 
-	private decodePlane(plane: number): { normal: VoxelNormal, pos: number, color: Color } {
+	private decodePlane(plane: string): { normal: VoxelNormal, pos: number, color: Color } {
+		const parts = plane.split(',')
 		return {
-			normal: VoxelNormal.fromIndex(plane & 0xF),
-			pos: plane >> 28,
-			color: [
-				(plane >> 20) & 0xFF,
-				(plane >> 12) & 0xFF,
-				(plane >> 4) & 0xFF,
-			],
+			normal: VoxelNormal.fromIndex(parseInt(parts[0]) & 0xF),
+			pos: parseInt(parts[1]),
+			color: [parseInt(parts[2]), parseInt(parts[3]), parseInt(parts[4])],
 		}
 	}
 
 	public draw(viewMatrix: mat4) {
+		console.log(`Drawing ${this.buffers.length} buffers...`)
 		this.setShader(this.voxelShaderProgram)
 		this.prepareDraw(viewMatrix)
 
-		this.setVertexAttr('vertPos', 3, this.buffers.position)
-		this.setVertexAttr('vertColor', 3, this.buffers.color)
-		this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.buffers.index)
+		for (const buffer of this.buffers) {
+			this.setVertexAttr('vertPos', 3, buffer.position)
+			this.setVertexAttr('vertColor', 3, buffer.color)
+			this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, buffer.index)
 
-		this.gl.drawElements(this.gl.TRIANGLES, this.buffers.length, this.gl.UNSIGNED_SHORT, 0)
+			this.gl.drawElements(this.gl.TRIANGLES, buffer.length, this.gl.UNSIGNED_SHORT, 0)
+		}
 	}
 }
