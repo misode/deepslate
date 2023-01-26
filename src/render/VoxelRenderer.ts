@@ -209,19 +209,6 @@ export class VoxelRenderer extends Renderer {
 		return buffers
 	}
 
-	private encodePlane(normal: VoxelNormal, pos: number, color: Color) {
-		return `${normal.index},${pos},${color.join(',')}`
-	}
-
-	private decodePlane(plane: string): { normal: VoxelNormal, pos: number, color: Color } {
-		const parts = plane.split(',')
-		return {
-			normal: VoxelNormal.fromIndex(parseInt(parts[0]) & 0xF),
-			pos: parseInt(parts[1]),
-			color: [parseInt(parts[2]), parseInt(parts[3]), parseInt(parts[4])],
-		}
-	}
-
 	public draw(viewMatrix: mat4) {
 		console.debug(`Drawing ${this.buffers.length} buffers...`)
 		this.setShader(this.voxelShaderProgram)
