@@ -11,7 +11,7 @@
   "type": "module",
   "main": "./lib/index.js",
   "module": "./lib/index.js",
-  "unpkg": "./dist/deepslate.umd.js",
+  "unpkg": "./dist/deepslate.umd.cjs",
   "types": "./lib/index.d.ts",
   "files": [
     "lib/*",
