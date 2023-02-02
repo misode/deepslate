@@ -1,10 +1,11 @@
 import { mat4 } from 'gl-matrix'
+import type { Mesh } from './Mesh.js'
 import { ShaderProgram } from './ShaderProgram.js'
 
 const vsSource = `
   attribute vec4 vertPos;
   attribute vec2 texCoord;
-  attribute vec3 tintColor;
+  attribute vec3 vertColor;
   attribute vec3 normal;
 
   uniform mat4 mView;
@@ -17,7 +18,7 @@ const vsSource = `
   void main(void) {
     gl_Position = mProj * mView * vertPos;
     vTexCoord = texCoord;
-    vTintColor = tintColor;
+    vTintColor = vertColor;
     vLighting = normal.y * 0.2 + abs(normal.z) * 0.1 + 0.8;
   }
 `
@@ -36,15 +37,6 @@ const fsSource = `
 		gl_FragColor = vec4(texColor.xyz * vTintColor * vLighting, texColor.a);
   }
 `
-
-export interface RenderBuffers {
-	position: WebGLBuffer,
-	texCoord: WebGLBuffer,
-	tintColor: WebGLBuffer,
-	normal: WebGLBuffer,
-	index: WebGLBuffer,
-	length: number,
-}
 
 export class Renderer {
 	protected readonly shaderProgram: WebGLProgram
@@ -90,7 +82,8 @@ export class Renderer {
 		this.activeShader = shader
 	}
 
-	protected setVertexAttr(name: string, size: number, buffer: WebGLBuffer | null) {
+	protected setVertexAttr(name: string, size: number, buffer: WebGLBuffer | null | undefined) {
+		if (buffer === undefined) throw new Error(`Expected buffer for ${name}`)
 		const location = this.gl.getAttribLocation(this.activeShader, name)
 		this.gl.bindBuffer(this.gl.ARRAY_BUFFER, buffer)
 		this.gl.vertexAttribPointer(location, size, this.gl.FLOAT, false, 0, 0)
@@ -121,13 +114,18 @@ export class Renderer {
 		this.setUniform('mProj', this.projMatrix)
 	}
 
-	protected drawBuffers(buffers: RenderBuffers) {
-		this.setVertexAttr('vertPos', 3, buffers.position)
-		this.setVertexAttr('texCoord', 2, buffers.texCoord)
-		this.setVertexAttr('tintColor', 3, buffers.tintColor)
-		this.setVertexAttr('normal', 3, buffers.normal)
-		this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, buffers.index)
+	protected drawMesh(mesh: Mesh, options: { pos?: boolean, color?: boolean, texture?: boolean, normal?: boolean, blockPos?: boolean }) {
+		if (mesh.isEmpty()) return
 
-		this.gl.drawElements(this.gl.TRIANGLES, buffers.length, this.gl.UNSIGNED_SHORT, 0)
+		if (options.pos) this.setVertexAttr('vertPos', 3, mesh.posBuffer)
+		if (options.color) this.setVertexAttr('vertColor', 3, mesh.colorBuffer)
+		if (options.texture) this.setVertexAttr('texCoord', 2, mesh.textureBuffer)
+		if (options.normal) this.setVertexAttr('normal', 3, mesh.normalBuffer)
+		if (options.blockPos) this.setVertexAttr('blockPos', 3, mesh.blockPosBuffer)
+
+		if (!mesh.indexBuffer) throw new Error('Expected index buffer')
+		this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, mesh.indexBuffer)
+
+		this.gl.drawElements(this.gl.TRIANGLES, mesh.indices(), this.gl.UNSIGNED_SHORT, 0)
 	}
 }

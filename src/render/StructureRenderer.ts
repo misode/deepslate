@@ -260,8 +260,8 @@ export class StructureRenderer extends Renderer {
 		this.setTexture(this.atlasTexture)
 		this.prepareDraw(viewMatrix)
 
-		this.chunkBuilder.getBuffers().forEach(buffer => {
-			this.drawBuffers(buffer)
+		this.chunkBuilder.getMeshes().forEach(mesh => {
+			this.drawMesh(mesh, { pos: true, color: true, texture: true, normal: true })
 		})
 	}
 
@@ -269,12 +269,8 @@ export class StructureRenderer extends Renderer {
 		this.setShader(this.colorShaderProgram)
 		this.prepareDraw(viewMatrix)
 
-		this.chunkBuilder.getBuffers().forEach(buffer => {
-			this.setVertexAttr('vertPos', 3, buffer.position)
-			this.setVertexAttr('blockPos', 3, buffer.blockPos)
-			this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, buffer.index)
-
-			this.gl.drawElements(this.gl.TRIANGLES, buffer.length, this.gl.UNSIGNED_SHORT, 0)
+		this.chunkBuilder.getMeshes().forEach(mesh => {
+			this.drawMesh(mesh, { pos: true, color: true })
 		})
 	}
 

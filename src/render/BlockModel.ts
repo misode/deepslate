@@ -2,9 +2,12 @@ import type { ReadonlyVec3 } from 'gl-matrix'
 import { glMatrix, mat4, vec3 } from 'gl-matrix'
 import type { Direction } from '../core/index.js'
 import { Identifier } from '../core/index.js'
+import { Vector } from '../math/index.js'
+import type { Color } from '../util/index.js'
 import { Cull } from './Cull.js'
+import { Mesh } from './Mesh.js'
+import { Quad } from './Quad.js'
 import type { TextureAtlasProvider, UV } from './TextureAtlas.js'
-import { mergeFloat32Arrays, transformVectors } from './Util.js'
 
 type Axis = 'x' | 'y' | 'z'
 
@@ -81,8 +84,8 @@ export class BlockModel {
 		private guiLight?: BlockModelGuiLight | undefined,
 	) {}
 
-	public getDisplayBuffers(display: Display, uvProvider: TextureAtlasProvider, offset: number, tint?: number[] | ((index: number) => number[])) {
-		const buffers = this.getBuffers(uvProvider, offset, Cull.none(), tint)
+	public getDisplayMesh(display: Display, uvProvider: TextureAtlasProvider, tint?: Color | ((index: number) => Color)) {
+		const mesh = this.getMesh(uvProvider, Cull.none(), tint)
 		
 		const transform = this.display?.[display]
 		const t = mat4.create()
@@ -100,74 +103,43 @@ export class BlockModel {
 			mat4.scale(t, t, transform.scale)
 		}
 		mat4.translate(t, t, [-8, -8, -8])
-		transformVectors(buffers.position, t)
+		mesh.transform(t)
 
-		const normals = []
-		for (let i = 0; i < buffers.position.length; i += 12) {
-			const a = vec3.fromValues(buffers.position[i], buffers.position[i + 1], buffers.position[i + 2])
-			const b = vec3.fromValues(buffers.position[i + 3], buffers.position[i + 4], buffers.position[i + 5])
-			const c = vec3.fromValues(buffers.position[i + 6], buffers.position[i + 7], buffers.position[i + 8])
-			vec3.subtract(b, b, a)
-			vec3.subtract(c, c, a)
-			vec3.cross(b, b, c)
-			vec3.normalize(b, b)
-			normals.push(...b, ...b, ...b, ...b)
-		}
-
-		return {
-			...buffers,
-			normal: normals,
-		}
+		return mesh
 	}
 
-	public getBuffers(uvProvider: TextureAtlasProvider, offset: number, cull: Cull, tint?: number[] | ((index: number) => number[])) {
-		const position: Float32Array[] = []
-		const texCoord: number[] = []
-		const tintColor: number[] = []
-		const index: number[] = []
-
-		for (const element of this.elements ?? []) {
-			const buffers = this.getElementBuffers(element, offset, uvProvider, cull, tint)
-			position.push(buffers.position)
-			texCoord.push(...buffers.texCoord)
-			tintColor.push(...buffers.tintColor)
-			index.push(...buffers.index)
-			offset += buffers.texCoord.length / 2
-		}
-
-		return {
-			position: mergeFloat32Arrays(...position),
-			texCoord,
-			tintColor,
-			index,
-		}
-	}
-
-	private getElementBuffers(e: BlockModelElement, i: number, uvProvider: TextureAtlasProvider, cull: {[key in Direction]?: boolean}, tint?: number[] | ((index: number) => number[])) {
-		const x0 = e.from[0]
-		const y0 = e.from[1]
-		const z0 = e.from[2]
-		const x1 = e.to[0]
-		const y1 = e.to[1]
-		const z1 = e.to[2]
-
-		const positions: number[] = []
-		const texCoords: number[] = []
-		const tintColors: number[] = []
-		const indices: number[] = []
-
-		const getTint = (index?: number) => {
+	public getMesh(uvProvider: TextureAtlasProvider, cull: Cull, tint?: Color | ((index: number) => Color)) {
+		const mesh = new Mesh()
+		const getTint = (index?: number): Color => {
 			if (tint === undefined) return [1, 1, 1]
 			if (index === undefined || index < 0) return [1, 1, 1]
 			if (typeof tint === 'function') return tint(index)
 			return tint
 		}
+		for (const e of this.elements ?? []) {
+			mesh.merge(this.getElementMesh(e, uvProvider, cull, getTint))
+		}
+		return mesh
+	}
+
+	public getElementMesh(e: BlockModelElement, uvProvider: TextureAtlasProvider, cull: Cull, getTint: (index?: number) => Color) {
+		const mesh = new Mesh()
+		const [x0, y0, z0] = e.from
+		const [x1, y1, z1] = e.to
 
 		const addFace = (face: BlockModelFace, uv: UV, pos: number[]) => {
+			const quad = Quad.fromPoints(
+				new Vector(pos[0], pos[1], pos[2]),
+				new Vector(pos[3], pos[4], pos[5]),
+				new Vector(pos[6], pos[7], pos[8]),
+				new Vector(pos[9], pos[10], pos[11]))
+
+			const tint = getTint(face.tintindex)
+			quad.setColor(tint)
+
 			const [u0, v0, u1, v1] = uvProvider.getTextureUV(this.getTexture(face.texture))
 			const du = (u1 - u0) / 16
 			const dv = (v1 - v0) / 16
-			// Hack to remove stiching lines
 			const duu = du / 16
 			const dvv = dv / 16
 			uv[0] = (face.uv?.[0] ?? uv[0]) * du + duu
@@ -175,18 +147,14 @@ export class BlockModel {
 			uv[2] = (face.uv?.[2] ?? uv[2]) * du - duu
 			uv[3] = (face.uv?.[3] ?? uv[3]) * dv - dvv
 			const r = faceRotations[face.rotation ?? 0]
-			texCoords.push(
+			quad.setTexture([
 				u0 + uv[r[0]], v0 + uv[r[1]],
 				u0 + uv[r[2]], v0 + uv[r[3]],
 				u0 + uv[r[4]], v0 + uv[r[5]],
-				u0 + uv[r[6]], v0 + uv[r[7]])
-			const t = getTint(face.tintindex)
-			tintColors.push(...t, ...t, ...t, ...t)
-			positions.push(...pos)
-			indices.push(i, i+1, i+2,  i, i+2, i+3)
-			i += 4
+				u0 + uv[r[6]], v0 + uv[r[7]]])
+			mesh.quads.push(quad)
 		}
-
+	
 		if (e.faces?.up?.texture && (!e.faces.up.cullface || !cull[e.faces.up.cullface])) {
 			addFace(e.faces.up, [x0, 16 - z1, x1, 16 - z0],
 				[x0, y1, z1,  x1, y1, z1,  x1, y1, z0,  x0, y1, z0])
@@ -211,7 +179,7 @@ export class BlockModel {
 			addFace(e.faces.west, [z0, 16 - y1, z1, 16 - y0], 
 				[x0, y0, z0,  x0, y0, z1,  x0, y1, z1,  x0, y1, z0])
 		}
-
+	
 		const t = mat4.create()
 		mat4.identity(t)
 		if (e.rotation) {
@@ -224,16 +192,7 @@ export class BlockModel {
 			vec3.negate(origin, origin)
 			mat4.translate(t, t, origin)
 		}
-
-		const posArray = new Float32Array(positions)
-		transformVectors(posArray, t)
-
-		return {
-			position: posArray,
-			texCoord: texCoords,
-			tintColor: tintColors,
-			index: indices,
-		}
+		return mesh.transform(t)
 	}
 
 	private getTexture(textureRef: string) {

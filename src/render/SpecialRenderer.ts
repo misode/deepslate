@@ -4,17 +4,17 @@ import { BlockModel } from './BlockModel.js'
 import type { Cull } from './Cull.js'
 import type { TextureAtlasProvider } from './TextureAtlas.js'
 
-function dummy(id: Identifier, uvProvider: TextureAtlasProvider, offset: number, cull: Cull, model: BlockModel) {
+function dummy(id: Identifier, uvProvider: TextureAtlasProvider, cull: Cull, model: BlockModel) {
 	const definition = new BlockDefinition(id, {'': { model: 'dummy' } }, undefined)
 	const modelProvider = { getBlockModel: () => model }
 	model.flatten(modelProvider)
-	return definition.getBuffers(id, {}, uvProvider, modelProvider, offset, cull)
+	return definition.getMesh(id, {}, uvProvider, modelProvider, cull)
 }
 
-function liquidRenderer(type: string, index: number, level: number, uvProvider: TextureAtlasProvider, cull: Cull, tintindex?: number) {
+function liquidRenderer(type: string, level: number, uvProvider: TextureAtlasProvider, cull: Cull, tintindex?: number) {
 	const y = cull['up'] ? 16 : [14.2, 12.5, 10.5, 9, 7, 5.3, 3.7, 1.9, 16, 16, 16, 16, 16, 16, 16, 16][level]
 	const id = Identifier.create(type)
-	return dummy(id, uvProvider, index, cull, new BlockModel(id, undefined, {
+	return dummy(id, uvProvider, cull, new BlockModel(id, undefined, {
 		still: `block/${type}_still`,
 		flow: `block/${type}_flow`,
 	}, [{
@@ -31,9 +31,9 @@ function liquidRenderer(type: string, index: number, level: number, uvProvider: 
 	}]))
 }
 
-function chestRenderer(index: number, facing: string, type: string, uvProvider: TextureAtlasProvider) {
+function chestRenderer(facing: string, type: string, uvProvider: TextureAtlasProvider) {
 	const id = Identifier.create('chest')
-	return dummy(id, uvProvider, index, {}, new BlockModel(id, undefined, {
+	return dummy(id, uvProvider, {}, new BlockModel(id, undefined, {
 		0: 'block/chest',
 	}, [{
 		from: [1, 0, 1],
@@ -50,14 +50,14 @@ function chestRenderer(index: number, facing: string, type: string, uvProvider: 
 }
 
 export const SpecialRenderer: {
-	[key: string]: (index: number, props: { [key: string]: string }, uvProvider: TextureAtlasProvider, cull: Cull) => any,
+	[key: string]: (props: { [key: string]: string }, uvProvider: TextureAtlasProvider, cull: Cull) => any,
 } = {
-	'minecraft:water': (index, props, uvProvider, cull) =>
-		liquidRenderer('water', index, parseInt(props.level), uvProvider, cull, 0),
-	'minecraft:lava': (index, props, uvProvider, cull) =>
-		liquidRenderer('lava', index, parseInt(props.level), uvProvider, cull),
-	'minecraft:chest': (index, props, uvProvider) =>
-		chestRenderer(index, props.facing || 'south', props.type || 'single', uvProvider),
+	'minecraft:water': (props, uvProvider, cull) =>
+		liquidRenderer('water', parseInt(props.level), uvProvider, cull, 0),
+	'minecraft:lava': (props, uvProvider, cull) =>
+		liquidRenderer('lava', parseInt(props.level), uvProvider, cull),
+	'minecraft:chest': (props, uvProvider) =>
+		chestRenderer(props.facing || 'south', props.type || 'single', uvProvider),
 }
 
 export const SpecialRenderers = new Set(Object.keys(SpecialRenderer))

@@ -4,10 +4,9 @@ import { ItemStack } from '../core/ItemStack.js'
 import type { Color } from '../index.js'
 import type { BlockModelProvider } from './BlockModel.js'
 import { getItemColor } from './ItemColors.js'
-import type { RenderBuffers } from './Renderer.js'
+import type { Mesh } from './Mesh.js'
 import { Renderer } from './Renderer.js'
 import type { TextureAtlasProvider } from './TextureAtlas.js'
-import { createBuffer } from './Util.js'
 
 interface ModelRendererOptions {
 	/** Force the tint index of the item */
@@ -18,7 +17,7 @@ interface ItemRendererResources extends BlockModelProvider, TextureAtlasProvider
 
 export class ItemRenderer extends Renderer {
 	private item: ItemStack
-	private buffers: RenderBuffers
+	private mesh: Mesh
 	private readonly tint: Color | ((index: number) => Color) | undefined
 	private readonly atlasTexture: WebGLTexture
 
@@ -30,17 +29,17 @@ export class ItemRenderer extends Renderer {
 	) {
 		super(gl)
 		this.item = item instanceof ItemStack ? item : new ItemStack(item, 1)
-		this.buffers = this.getItemBuffers()
+		this.mesh = this.getItemMesh()
 		this.tint = options?.tint
 		this.atlasTexture = this.createAtlasTexture(this.resources.getTextureAtlas())
 	}
 
 	public setItem(item: Identifier | ItemStack) {
 		this.item = item instanceof ItemStack ? item : new ItemStack(item, 1)
-		this.buffers = this.getItemBuffers()
+		this.mesh = this.getItemMesh()
 	}
 
-	private getItemBuffers() {
+	private getItemMesh() {
 		const model = this.resources.getBlockModel(this.item.id.withPrefix('item/'))
 		if (!model) {
 			throw new Error(`Item model for ${this.item.toString()} does not exist`)
@@ -49,16 +48,13 @@ export class ItemRenderer extends Renderer {
 		if (!tint && this.item.id.namespace === Identifier.DEFAULT_NAMESPACE) {
 			tint = getItemColor(this.item)
 		}
-		const buffers = model.getDisplayBuffers('gui', this.resources, 0, tint)
-
-		return {
-			position: createBuffer(this.gl, this.gl.ARRAY_BUFFER, buffers.position),
-			texCoord: createBuffer(this.gl, this.gl.ARRAY_BUFFER, new Float32Array(buffers.texCoord)),
-			tintColor: createBuffer(this.gl, this.gl.ARRAY_BUFFER, new Float32Array(buffers.tintColor)),
-			normal: createBuffer(this.gl, this.gl.ARRAY_BUFFER, new Float32Array(buffers.normal)),
-			index: createBuffer(this.gl, this.gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(buffers.index)),
-			length: buffers.index.length,
-		}
+		const mesh = model.getDisplayMesh('gui', this.resources, tint)
+		mesh.quads.forEach(q => {
+			const normal = q.normal()
+			q.forEach(v => v.normal = normal)
+		})
+		mesh.rebuild(this.gl, { pos: true, color: true, texture: true, normal: true })
+		return mesh
 	}
 
 	protected override getPerspective() {
@@ -74,6 +70,6 @@ export class ItemRenderer extends Renderer {
 		this.setShader(this.shaderProgram)
 		this.setTexture(this.atlasTexture)
 		this.prepareDraw(view)
-		this.drawBuffers(this.buffers)
+		this.drawMesh(this.mesh, { pos: true, color: true, texture: true, normal: true })
 	}
 }

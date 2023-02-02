@@ -3,8 +3,8 @@ import { Identifier } from '../core/index.js'
 import { BlockColors } from './BlockColors.js'
 import type { BlockModelProvider } from './BlockModel.js'
 import { Cull } from './Cull.js'
+import { Mesh } from './Mesh.js'
 import type { TextureAtlasProvider } from './TextureAtlas.js'
-import { mergeFloat32Arrays, transformVectors } from './Util.js'
 
 type ModelVariant = {
 	model: string,
@@ -54,13 +54,9 @@ export class BlockDefinition {
 		return []
 	}
 
-	public getBuffers(name: Identifier, props: { [key: string]: string }, textureUVProvider: TextureAtlasProvider, blockModelProvider: BlockModelProvider, offset: number, cull: Cull) {
+	public getMesh(name: Identifier, props: { [key: string]: string }, textureUVProvider: TextureAtlasProvider, blockModelProvider: BlockModelProvider, cull: Cull) {
 		const variants = this.getModelVariants(props)
-
-		const position: Float32Array[] = []
-		const texCoord: number[] = []
-		const tintColor: number[] = []
-		const index: number[] = []
+		const mesh = new Mesh()
 
 		for (const variant of variants) {
 			const newCull = Cull.rotate(cull, variant.x ?? 0, variant.y ?? 0)
@@ -69,7 +65,7 @@ export class BlockDefinition {
 				throw new Error(`Cannot find block model ${variant.model}`)
 			}
 			const tint = BlockColors[name.path]?.(props)
-			const buffers = blockModel.getBuffers(textureUVProvider, offset, newCull, tint)
+			const variantMesh = blockModel.getMesh(textureUVProvider, newCull, tint)
 
 			if (variant.x || variant.y) {
 				const t = mat4.create()
@@ -78,28 +74,15 @@ export class BlockDefinition {
 				mat4.rotateY(t, t, -glMatrix.toRadian(variant.y ?? 0))
 				mat4.rotateX(t, t, -glMatrix.toRadian(variant.x ?? 0))
 				mat4.translate(t, t, [-8, -8, -8])
-				transformVectors(buffers.position, t)
+				variantMesh.transform(t)
 			}
-
-			position.push(buffers.position)
-			texCoord.push(...buffers.texCoord)
-			tintColor.push(...buffers.tintColor)
-			index.push(...buffers.index)
-			offset += buffers.texCoord.length / 2
+			mesh.merge(variantMesh)
 		}
 
 		const t = mat4.create()
 		mat4.identity(t)
 		mat4.scale(t, t, [0.0625, 0.0625, 0.0625])
-		const positions = mergeFloat32Arrays(...position)
-		transformVectors(positions, t)
-
-		return {
-			position: positions,
-			texCoord,
-			tintColor,
-			index,
-		}
+		return mesh.transform(t)
 	}
 
 	private matchesVariant(variant: string, props: { [key: string]: string }): boolean {
