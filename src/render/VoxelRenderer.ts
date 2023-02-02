@@ -125,7 +125,7 @@ export class VoxelRenderer extends Renderer {
 			quad.forEach(v => v.color = [v.color[0] * light, v.color[1] * light, v.color[2] * light])
 			mesh.quads.push(quad)
 
-			if (mesh.vertices() > 65_000) {
+			if (mesh.quadVertices() > 65_000) {
 				meshes.push(mesh)
 				mesh = new Mesh()
 			}

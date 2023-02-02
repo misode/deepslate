@@ -115,17 +115,24 @@ export class Renderer {
 	}
 
 	protected drawMesh(mesh: Mesh, options: { pos?: boolean, color?: boolean, texture?: boolean, normal?: boolean, blockPos?: boolean }) {
-		if (mesh.isEmpty()) return
+		if (mesh.quadVertices() > 0) {
+			if (options.pos) this.setVertexAttr('vertPos', 3, mesh.posBuffer)
+			if (options.color) this.setVertexAttr('vertColor', 3, mesh.colorBuffer)
+			if (options.texture) this.setVertexAttr('texCoord', 2, mesh.textureBuffer)
+			if (options.normal) this.setVertexAttr('normal', 3, mesh.normalBuffer)
+			if (options.blockPos) this.setVertexAttr('blockPos', 3, mesh.blockPosBuffer)
+	
+			if (!mesh.indexBuffer) throw new Error('Expected index buffer')
+			this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, mesh.indexBuffer)
+	
+			this.gl.drawElements(this.gl.TRIANGLES, mesh.quadIndices(), this.gl.UNSIGNED_SHORT, 0)
+		}
 
-		if (options.pos) this.setVertexAttr('vertPos', 3, mesh.posBuffer)
-		if (options.color) this.setVertexAttr('vertColor', 3, mesh.colorBuffer)
-		if (options.texture) this.setVertexAttr('texCoord', 2, mesh.textureBuffer)
-		if (options.normal) this.setVertexAttr('normal', 3, mesh.normalBuffer)
-		if (options.blockPos) this.setVertexAttr('blockPos', 3, mesh.blockPosBuffer)
+		if (mesh.lineVertices() > 0) {
+			if (options.pos) this.setVertexAttr('vertPos', 3, mesh.linePosBuffer)
+			if (options.color) this.setVertexAttr('vertColor', 3, mesh.lineColorBuffer)
 
-		if (!mesh.indexBuffer) throw new Error('Expected index buffer')
-		this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, mesh.indexBuffer)
-
-		this.gl.drawElements(this.gl.TRIANGLES, mesh.indices(), this.gl.UNSIGNED_SHORT, 0)
+			this.gl.drawArrays(this.gl.LINES, 0, mesh.lineVertices())
+		}
 	}
 }

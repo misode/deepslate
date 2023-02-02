@@ -2,13 +2,14 @@ import type { vec3 } from 'gl-matrix'
 import { mat4 } from 'gl-matrix'
 import type { Identifier, StructureProvider } from '../core/index.js'
 import { BlockState } from '../core/index.js'
+import type { Color } from '../index.js'
 import type { BlockDefinitionProvider } from './BlockDefinition.js'
 import type { BlockModelProvider } from './BlockModel.js'
 import { ChunkBuilder } from './ChunkBuilder.js'
+import { Mesh } from './Mesh.js'
 import { Renderer } from './Renderer.js'
 import { ShaderProgram } from './ShaderProgram.js'
 import type { TextureAtlasProvider } from './TextureAtlas.js'
-import { createBuffer } from './Util.js'
 
 const vsColor = `
   attribute vec4 vertPos;
@@ -92,11 +93,11 @@ export class StructureRenderer extends Renderer {
 	private readonly gridShaderProgram: WebGLProgram
 	private readonly colorShaderProgram: WebGLProgram
 
-	private gridBuffers: GridBuffers
-	private readonly outlineBuffers: GridBuffers
-	private invisibleBlockBuffers: GridBuffers | undefined
+	private gridMesh: Mesh = new Mesh()
+	private readonly outlineMesh: Mesh = new Mesh()
+	private invisibleBlocksMesh: Mesh = new Mesh()
 	private readonly atlasTexture: WebGLTexture
-	private readonly useInvisibleBlockBuffer: boolean
+	private readonly useInvisibleBlocks: boolean
 
 	private readonly chunkBuilder: ChunkBuilder
 
@@ -115,80 +116,66 @@ export class StructureRenderer extends Renderer {
 		if (options?.facesPerBuffer){
 			console.warn('[deepslate renderer warning]: facesPerBuffer option has been removed in favor of chunkSize')
 		}
-		this.useInvisibleBlockBuffer = options?.useInvisibleBlockBuffer ?? true
+		this.useInvisibleBlocks = options?.useInvisibleBlockBuffer ?? true
 
 		this.gridShaderProgram = new ShaderProgram(gl, vsGrid, fsGrid).getProgram()
 		this.colorShaderProgram = new ShaderProgram(gl, vsColor, fsColor).getProgram()
 
-		this.gridBuffers = this.getGridBuffers()
-		this.outlineBuffers = this.getOutlineBuffers()
-		this.invisibleBlockBuffers = this.getInvisibleBlockBuffers()
+		this.gridMesh = this.getGridMesh()
+		this.outlineMesh = this.getOutlineMesh()
+		this.invisibleBlocksMesh = this.getInvisibleBlocksMesh()
 		this.atlasTexture = this.createAtlasTexture(this.resources.getTextureAtlas())
 	}
 
 	public setStructure(structure: StructureProvider) {
 		this.structure = structure
 		this.chunkBuilder.setStructure(structure)
-		this.gridBuffers = this.getGridBuffers()
-		this.invisibleBlockBuffers = this.getInvisibleBlockBuffers()
+		this.gridMesh = this.getGridMesh()
+		this.invisibleBlocksMesh = this.getInvisibleBlocksMesh()
 	}
 
 	public updateStructureBuffers(chunkPositions?: vec3[]): void {
 		this.chunkBuilder.updateStructureBuffers(chunkPositions)
 	}
 
-	private getGridBuffers(): GridBuffers {
+	private getGridMesh(): Mesh {
 		const [X, Y, Z] = this.structure.getSize()
-		const position: number[] = []
-		const color: number[] = []
+		const mesh = new Mesh()
 
-		position.push(0, 0, 0, X, 0, 0)
-		color.push(1, 0, 0, 1, 0, 0)
+		mesh.addLine(0, 0, 0, X, 0, 0, [1, 0, 0])
 
-		position.push(0, 0, 0, 0, 0, Z)
-		color.push(0, 0, 1, 0, 0, 1)
+		mesh.addLine(0, 0, 0, 0, 0, Z, [0, 0, 1])
 
-		position.push(0, 0, 0, 0, Y, 0)
-		position.push(X, 0, 0, X, Y, 0)
-		position.push(0, 0, Z, 0, Y, Z)
-		position.push(X, 0, Z, X, Y, Z)
+		const c: Color = [0.8, 0.8, 0.8]
+		mesh.addLine(0, 0, 0, 0, Y, 0, c)
+		mesh.addLine(X, 0, 0, X, Y, 0, c)
+		mesh.addLine(0, 0, Z, 0, Y, Z, c)
+		mesh.addLine(X, 0, Z, X, Y, Z, c)
 
-		position.push(0, Y, 0, 0, Y, Z)
-		position.push(X, Y, 0, X, Y, Z)
-		position.push(0, Y, 0, X, Y, 0)
-		position.push(0, Y, Z, X, Y, Z)
+		mesh.addLine(0, Y, 0, 0, Y, Z, c)
+		mesh.addLine(X, Y, 0, X, Y, Z, c)
+		mesh.addLine(0, Y, 0, X, Y, 0, c)
+		mesh.addLine(0, Y, Z, X, Y, Z, c)
 
-		for (let x = 1; x <= X; x += 1) position.push(x, 0, 0, x, 0, Z)
-		for (let z = 1; z <= Z; z += 1) position.push(0, 0, z, X, 0, z)
-		for (let i = 0; i < 8 + X + Z; i += 1) color.push(0.8, 0.8, 0.8, 0.8, 0.8, 0.8)
+		for (let x = 1; x <= X; x += 1) mesh.addLine(x, 0, 0, x, 0, Z, c)
+		for (let z = 1; z <= Z; z += 1) mesh.addLine(0, 0, z, X, 0, z, c)
 
-		return {
-			position: createBuffer(this.gl, this.gl.ARRAY_BUFFER, new Float32Array(position)),
-			color: createBuffer(this.gl, this.gl.ARRAY_BUFFER, new Float32Array(color)),
-			length: position.length / 3,
-		}
+		return mesh.rebuild(this.gl, { pos: true, color: true })
 	}
 
-	private getOutlineBuffers(): GridBuffers {
-		const position: number[] = []
-		const color: number[] = []
-
-		this.addCube(position, color, [1, 1, 1], [0, 0, 0], [1, 1, 1])
-
-		return {
-			position: createBuffer(this.gl, this.gl.ARRAY_BUFFER, new Float32Array(position)),
-			color: createBuffer(this.gl, this.gl.ARRAY_BUFFER, new Float32Array(color)),
-			length: position.length / 3,
-		}
+	private getOutlineMesh(): Mesh {
+		return new Mesh()
+			.addLineCube(0, 0, 0, 1, 1, 1, [1, 1, 1])
+			.rebuild(this.gl, { pos: true, color: true })
 	}
 
-	private getInvisibleBlockBuffers(): GridBuffers | undefined {
-		if (!this.useInvisibleBlockBuffer)
-			return undefined
+	private getInvisibleBlocksMesh(): Mesh {
+		const mesh = new Mesh()
+		if (!this.useInvisibleBlocks) {
+			return mesh
+		}
 
 		const size = this.structure.getSize()
-		const position: number[] = []
-		const color: number[] = []
 
 		for (let x = 0; x < size[0]; x += 1) {
 			for (let y = 0; y < size[1]; y += 1) {
@@ -197,62 +184,34 @@ export class StructureRenderer extends Renderer {
 					if (block === undefined)
 						continue
 					if (block === null) {
-						this.addCube(position, color, [1, 0.25, 0.25], [x + 0.4375, y + 0.4375, z + 0.4375], [x + 0.5625, y + 0.5625, z + 0.5625])
+						mesh.addLineCube(x + 0.4375, y + 0.4375, z + 0.4375, x + 0.5625, y + 0.5625, z + 0.5625, [1, 0.25, 0.25])
 					} else if (block.state.is(BlockState.AIR)) {
-						this.addCube(position, color, [0.5, 0.5, 1], [x + 0.375, y + 0.375, z + 0.375], [x + 0.625, y + 0.625, z + 0.625])
+						mesh.addLineCube(x + 0.375, y + 0.375, z + 0.375, x + 0.625, y + 0.625, z + 0.625, [0.5, 0.5, 1])
 					} else if (block.state.is(new BlockState('cave_air'))) {
-						this.addCube(position, color, [0.5, 1, 0.5], [x + 0.375, y + 0.375, z + 0.375], [x + 0.625, y + 0.625, z + 0.625])
+						mesh.addLineCube(x + 0.375, y + 0.375, z + 0.375, x + 0.625, y + 0.625, z + 0.625, [0.5, 1, 0.5])
 					} 
 				}
 			}
 		}
 
-		return {
-			position: createBuffer(this.gl, this.gl.ARRAY_BUFFER, new Float32Array(position)),
-			color: createBuffer(this.gl, this.gl.ARRAY_BUFFER, new Float32Array(color)),
-			length: position.length / 3,
-		}
-	}
-
-	private addCube(positions: number[], colors: number[], color: number[], a: number[], b: number[]) {
-		positions.push(a[0], a[1], a[2], a[0], a[1], b[2])
-		positions.push(b[0], a[1], a[2], b[0], a[1], b[2])
-		positions.push(a[0], a[1], a[2], b[0], a[1], a[2])
-		positions.push(a[0], a[1], b[2], b[0], a[1], b[2])
-
-		positions.push(a[0], a[1], a[2], a[0], b[1], a[2])
-		positions.push(b[0], a[1], a[2], b[0], b[1], a[2])
-		positions.push(a[0], a[1], b[2], a[0], b[1], b[2])
-		positions.push(b[0], a[1], b[2], b[0], b[1], b[2])
-
-		positions.push(a[0], b[1], a[2], a[0], b[1], b[2])
-		positions.push(b[0], b[1], a[2], b[0], b[1], b[2])
-		positions.push(a[0], b[1], a[2], b[0], b[1], a[2])
-		positions.push(a[0], b[1], b[2], b[0], b[1], b[2])
-
-		for (let i = 0; i < 24; i += 1) colors.push(...color)
+		return mesh.rebuild(this.gl, { pos: true, color: true })
 	}
 
 	public drawGrid(viewMatrix: mat4) {
 		this.setShader(this.gridShaderProgram)
 		this.prepareDraw(viewMatrix)
 
-		this.setVertexAttr('vertPos', 3, this.gridBuffers.position)
-		this.setVertexAttr('vertColor', 3, this.gridBuffers.color)
-
-		this.gl.drawArrays(this.gl.LINES, 0, this.gridBuffers.length)
+		this.drawMesh(this.gridMesh, { pos: true, color: true })
 	}
 
 	public drawInvisibleBlocks(viewMatrix: mat4) {
-		if (!this.useInvisibleBlockBuffer)
+		if (!this.useInvisibleBlocks) {
 			return
+		}
 		this.setShader(this.gridShaderProgram)
 		this.prepareDraw(viewMatrix)
 
-		this.setVertexAttr('vertPos', 3, this.invisibleBlockBuffers!.position)
-		this.setVertexAttr('vertColor', 3, this.invisibleBlockBuffers!.color)
-
-		this.gl.drawArrays(this.gl.LINES, 0, this.invisibleBlockBuffers!.length)
+		this.drawMesh(this.invisibleBlocksMesh, { pos: true, color: true })
 	}
 
 	public drawStructure(viewMatrix: mat4) {
@@ -270,7 +229,7 @@ export class StructureRenderer extends Renderer {
 		this.prepareDraw(viewMatrix)
 
 		this.chunkBuilder.getMeshes().forEach(mesh => {
-			this.drawMesh(mesh, { pos: true, color: true })
+			this.drawMesh(mesh, { pos: true, color: true, normal: true, blockPos: true })
 		})
 	}
 
@@ -282,9 +241,6 @@ export class StructureRenderer extends Renderer {
 		mat4.translate(translatedMatrix, translatedMatrix, pos)
 		this.prepareDraw(translatedMatrix)
 
-		this.setVertexAttr('vertPos', 3, this.outlineBuffers.position)
-		this.setVertexAttr('vertColor', 3, this.outlineBuffers.color)
-
-		this.gl.drawArrays(this.gl.LINES, 0, this.outlineBuffers.length)
+		this.drawMesh(this.outlineMesh, { pos: true, color: true })
 	}
 }
