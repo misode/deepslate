@@ -1,0 +1,182 @@
+import type { Random } from '../index.js'
+import { BlockPos, Identifier, Json, LegacyRandom } from '../index.js'
+
+export abstract class StructurePlacement {
+	protected constructor(
+		protected readonly locateOffset: BlockPos,
+		protected readonly frequencyReductionMethod: StructurePlacement.FrequencyReducer,
+		protected readonly frequency: number,
+		protected readonly salt: number,
+		protected readonly exclusionZone: StructurePlacement.ExclusionZone | undefined) {
+
+	}
+
+	protected abstract isPlacementChunk(state: any, chunkX: number, chunkZ: number): boolean
+
+	public isStructureChunk(state: any, chunkX: number, chunkZ: number): boolean {
+		if (!this.isPlacementChunk(state, chunkX, chunkZ)) {
+			return false
+		} else if (this.frequency < 1.0 && !this.frequencyReductionMethod(state.seed, this.salt, chunkX, chunkZ, this.frequency)) {
+			return false
+		} else if (this.exclusionZone && this.exclusionZone.isPlacementForbidden(state, chunkX, chunkZ)) {
+			return false
+		} else {
+			return true
+		}
+	}
+}
+
+export namespace StructurePlacement {
+	export type FrequencyReducer = (seed: bigint, salt: number, chunkX: number, chunkZ: number, frequency: number) => boolean
+
+	export namespace FrequencyReducer {
+		export function fromType(type: string): FrequencyReducer {
+			switch (type) {
+				case 'legacy_type_1': return LegacyPillagerOutpostReducer
+				case 'legacy_type_2': return LegacyArbitrarySaltProbabilityReducer
+				case 'legacy_type_3': return LegacyProbabilityReducerWithDouble
+				case 'default': return ProbabilityReducer
+			}
+			return ProbabilityReducer
+		}
+
+		export function ProbabilityReducer(seed: bigint, salt: number, chunkX: number, chunkZ: number, frequency: number): boolean {
+			const random_seed = BigInt(salt) * BigInt('341873128712') + BigInt(chunkX) * BigInt('132897987541') + seed + BigInt(chunkZ)
+			const random = new LegacyRandom(BigInt(random_seed))
+			return random.nextFloat() < frequency
+		}
+
+		export function LegacyProbabilityReducerWithDouble(seed: bigint, _: number, chunkX: number, chunkZ: number, frequency: number): boolean {
+			const random = new LegacyRandom(BigInt(seed))
+			const a = random.nextLong()
+			const b = random.nextLong()
+			const random_seed = BigInt(chunkX) * a ^ BigInt(chunkZ) * b ^ seed
+			return random.nextDouble() < frequency
+		}
+
+		export function LegacyArbitrarySaltProbabilityReducer(seed: bigint, _: number, chunkX: number, chunkZ: number, frequency: number): boolean {
+			const random_seed = BigInt(chunkX) * BigInt('341873128712') + BigInt(chunkZ) * BigInt('132897987541') + seed + BigInt('10387320')
+			const random = new LegacyRandom(BigInt(random_seed))
+			return random.nextFloat() < frequency
+		}
+
+		export function LegacyPillagerOutpostReducer(seed: bigint, _: number, chunkX: number, chunkZ: number, frequency: number): boolean {
+			const a = chunkX >> 2
+			const b = chunkZ >> 2
+			const random = new LegacyRandom(BigInt(a ^ b << 4) ^ seed)
+			random.nextInt()
+			return random.nextInt(Math.floor(1 / frequency)) === 0
+		}
+	}
+
+	export class ExclusionZone {
+		public isPlacementForbidden(state: any, chunkX: number, chunkZ: number) {
+			return false // todo
+		}
+	}
+
+	export namespace ExclusionZone {
+		export function fromJson(obj: unknown){
+			return new ExclusionZone()
+		}
+	}
+
+	export type SpreadType = 'linear' | 'triangular'
+
+	export namespace SpreadType {
+		export function fromJson(obj: unknown): SpreadType{
+			const string = Json.readString(obj) ?? 'linear'
+			if (string === 'triangular') return 'triangular'
+			return 'linear'
+		}
+	}
+
+	export function fromJson(obj: unknown): StructurePlacement {
+		const root = Json.readObject(obj) ?? {}
+		const type = Json.readString(root.type)?.replace(/^minecraft:/, '')
+
+		const locateOffset = BlockPos.fromJson(root.locate_offset)
+		const frequencyReductionMethod = StructurePlacement.FrequencyReducer.fromType(Json.readString(root.frequency_reduction_method) ?? 'default')
+		const frequency = Json.readNumber(root.frequency) ?? 1
+		const salt = Json.readInt(root.salt) ?? 0
+		const exclusionZone = 'exclusion_zone' in root ? ExclusionZone.fromJson(root.exclusion_zone) : undefined
+
+		switch (type) {
+			case 'random_spread':
+				const spacing = Json.readInt(root.spacing) ?? 1
+				const separation = Json.readInt(root.separation) ?? 1
+				const spreadType = SpreadType.fromJson(root.spread_type)
+
+				return new RandomSpreadStructurePlacement(locateOffset, frequencyReductionMethod, frequency, salt, exclusionZone, spacing, separation, spreadType)
+			case 'concentric_rings':
+				const distance = Json.readInt(root.distance) ?? 1
+				const spread = Json.readInt(root.spread) ?? 1
+				const count = Json.readInt(root.count) ?? 1
+				const preferredBiomes = Identifier.parse(Json.readString(root.preferred_biomes) ?? 'minecraft:empty')
+
+				return new ConcentricRingsStructurePlacement(locateOffset, frequencyReductionMethod, frequency, salt, exclusionZone, distance, spread, count, preferredBiomes)
+		}
+
+		return new RandomSpreadStructurePlacement([0,0,0], FrequencyReducer.ProbabilityReducer, 1, 0, undefined, 1, 1, 'linear')
+	}
+
+	export class RandomSpreadStructurePlacement extends StructurePlacement {
+		constructor(
+			locateOffset: BlockPos,
+			frequencyReductionMethod: StructurePlacement.FrequencyReducer,
+			frequency: number,
+			salt: number,
+			exclusionZone: StructurePlacement.ExclusionZone | undefined,
+			private readonly spacing: number,
+			private readonly separation: number,
+			private readonly spreadType: SpreadType
+		) {
+			super(locateOffset, frequencyReductionMethod, frequency, salt, exclusionZone)
+		}
+
+		private evaluateSpread(random: Random, max: number) {
+			switch (this.spreadType) {
+				case 'linear':
+					return random.nextInt(max)
+				case 'triangular':
+					return Math.floor((random.nextInt(max) + random.nextInt(max)) / 2)
+			}
+		}
+
+		public getPotenticalStructureChunk(seed: bigint, chunkX: number, chunkZ: number) {
+			const x = Math.floor(chunkX / this.spacing)
+			const z = Math.floor(chunkZ / this.spacing)
+			const randomSeed = BigInt(x) * BigInt('341873128712') + BigInt(z) * BigInt('132897987541') + seed + BigInt(this.salt)
+			const random = new LegacyRandom(randomSeed)
+			const maxOffset = this.spacing - this.separation
+			const offsetX = this.evaluateSpread(random, maxOffset)
+			const offsetZ = this.evaluateSpread(random, maxOffset)
+			return [x * this.spacing + offsetX, z * this.spacing + offsetZ]
+		}
+
+		protected isPlacementChunk(state: any, chunkX: number, chunkZ: number): boolean {
+			const [placementX, palcementZ] = this.getPotenticalStructureChunk(state.seed, chunkX, chunkZ)
+			return placementX === chunkX && palcementZ === chunkZ
+		}
+	}
+
+	export class ConcentricRingsStructurePlacement extends StructurePlacement {
+		constructor(
+			locateOffset: BlockPos,
+			frequencyReductionMethod: StructurePlacement.FrequencyReducer,
+			frequency: number,
+			salt: number,
+			exclusionZone: StructurePlacement.ExclusionZone | undefined,
+			private readonly distance: number,
+			private readonly spread: number,
+			private readonly count: number,
+			private readonly preferredBiomes: Identifier // for now: identifier of tag
+		) {
+			super(locateOffset, frequencyReductionMethod, frequency, salt, exclusionZone)
+		}
+
+		protected isPlacementChunk(state: any, chunkX: number, chunkZ: number): boolean {
+			return false // TODO
+		}
+	}
+}

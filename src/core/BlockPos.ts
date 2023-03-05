@@ -1,3 +1,4 @@
+import { Json } from '../index.js'
 import { NbtInt, NbtList } from '../nbt/index.js'
 import { Direction } from './Direction.js'
 
@@ -33,5 +34,10 @@ export namespace BlockPos {
 
 	export function fromNbt(nbt: NbtList) {
 		return nbt.getAsTuple(3, e => e?.isInt() ? e.getAsNumber() : 0)
+	}
+
+	export function fromJson(obj: unknown) {
+		const array = Json.readArray(obj, (e) => Json.readInt(e) ?? 0) ?? [0, 0, 0]
+		return create(array[0], array[1], array[2])
 	}
 }
