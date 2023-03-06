@@ -1,5 +1,5 @@
-import { Json } from '../index.js'
 import { NbtInt, NbtList } from '../nbt/index.js'
+import { Json } from '../util/index.js'
 import { Direction } from './Direction.js'
 
 export type BlockPos = [number, number, number]

@@ -1,5 +1,7 @@
-import type { Registry } from '../index.js'
-import { Holder, Identifier, Json } from '../index.js'
+import { Json } from '../util/index.js'
+import { Holder } from './Holder.js'
+import { Identifier } from './Identifier.js'
+import type { Registry } from './Registry.js'
 
 export type HolderSet<T> = Iterable<Holder<T>>
 

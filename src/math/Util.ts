@@ -1,4 +1,4 @@
-import type { Random } from './index.js'
+import { Random } from "./random/index.js"
 
 export function square(x: number) {
 	return x * x
@@ -106,6 +106,7 @@ export function upperPowerOfTwo(x: number) {
 	x |= x >> 32
 	return x + 1
 }
+
 
 export function randomBetweenInclusive(random: Random, min: number, max: number) {
 	return random.nextInt(max - min + 1) + min

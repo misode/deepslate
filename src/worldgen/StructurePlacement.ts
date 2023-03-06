@@ -1,5 +1,7 @@
-import type { Random } from '../index.js'
-import { BlockPos, Identifier, Json, LegacyRandom } from '../index.js'
+import { BlockPos, Identifier } from '../core/index.js'
+import type { Random } from '../math/index.js'
+import { LegacyRandom } from '../math/index.js'
+import { Json } from '../util/index.js'
 
 export abstract class StructurePlacement {
 	protected constructor(

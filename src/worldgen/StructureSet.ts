@@ -1,5 +1,9 @@
-import type { BiomeSource, Climate } from '../index.js'
-import { Holder, Identifier, Json, LegacyRandom, StructurePlacement, WorldgenRegistries } from '../index.js'
+import { Holder, Identifier } from '../core/index.js'
+import { LegacyRandom } from '../math/index.js'
+import { Json } from '../util/index.js'
+import type { BiomeSource, Climate } from './biome/index.js'
+import { StructurePlacement } from './StructurePlacement.js'
+import { WorldgenRegistries } from './WorldgenRegistries.js'
 import type { WorldgenStructure } from './WorldgenStructure.js'
 
 export class StructureSet {

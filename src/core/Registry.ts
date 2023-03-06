@@ -1,6 +1,6 @@
 import { Holder } from './Holder.js'
+import type { HolderSet } from './HolderSet.js'
 import { Identifier } from './Identifier.js'
-import type { HolderSet } from './index.js'
 
 export class Registry<T> {
 	public static readonly REGISTRY = new Registry<Registry<unknown>>(Identifier.create('root'))

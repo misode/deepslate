@@ -1,6 +1,13 @@
-import type { BiomeSource, Climate, Identifier, Random, WorldgenContext } from '../index.js'
-import { BlockPos, Heightmap, HeightProvider, HolderSet, Json, LegacyRandom, WorldgenRegistries } from '../index.js'
-
+import type { Identifier } from '../core/index.js'
+import { BlockPos, HolderSet } from '../core/index.js'
+import type { Random } from '../math/index.js'
+import { LegacyRandom } from '../math/index.js'
+import { Json } from '../util/Json.js'
+import type { BiomeSource, Climate } from './biome/index.js'
+import { Heightmap } from './Heightmap.js'
+import { HeightProvider } from './HeightProvider.js'
+import type { WorldgenContext } from './VerticalAnchor.js'
+import { WorldgenRegistries } from './WorldgenRegistries.js'
 
 export type SufaceLevelAccessor = (posX: number, posZ: number, heightmap: Heightmap) => number
 
@@ -32,7 +39,6 @@ export abstract class WorldgenStructure {
 }
 
 export namespace WorldgenStructure {
-	const biomeTagParser = HolderSet.parser(WorldgenRegistries.BIOME)
 
 	export class StructureSettings {
 		public readonly validBiomes: Identifier[]
@@ -56,10 +62,12 @@ export namespace WorldgenStructure {
 	}
 
 	export function fromJson(obj: unknown): WorldgenStructure {
+		const BiomeTagParser = HolderSet.parser(WorldgenRegistries.BIOME)
+
 		const root = Json.readObject(obj) ?? {}
 		const type = Json.readString(root.type)?.replace(/^minecraft:/, '')
 
-		const biomes = biomeTagParser(root.biomes)
+		const biomes = BiomeTagParser(root.biomes)
 		const settings = new StructureSettings(biomes.value())
 
 		switch (type) {
