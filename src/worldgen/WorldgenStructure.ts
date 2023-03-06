@@ -20,12 +20,20 @@ export abstract class WorldgenStructure {
 
 	public abstract findGenerationPoint(chunkX: number, chunkZ: number, random: Random, context: WorldgenStructure.GenerationContext): BlockPos | undefined
 
-	protected onTopOfChunkCenter(chunkX: number, chunkZ: number, underwater: boolean = false): BlockPos {
-		return [0, 64, 0] // TODO
+	protected onTopOfChunkCenter(context: WorldgenStructure.GenerationContext, chunkX: number, chunkZ: number, heightmap: Heightmap = 'WORLD_SURFACE_WG'): BlockPos {
+		const posX = chunkX << 4 + 8
+		const posZ = chunkZ << 4 + 8
+
+		return [posX, context.surfaceLevelAccessor(posX, posZ, heightmap) , posZ] // TODO
 	}
 
-	protected getLowestY(x: number, z: number, width: number, depth: number) {
-		return 64 // TODO
+	protected getLowestY(context: WorldgenStructure.GenerationContext, minX: number, minZ: number, width: number, depth: number) {
+		return Math.min(
+			context.surfaceLevelAccessor(minX, minZ, 'WORLD_SURFACE_WG'), 
+			context.surfaceLevelAccessor(minX, minZ + depth, 'WORLD_SURFACE_WG'), 
+			context.surfaceLevelAccessor(minX + width, minZ, 'WORLD_SURFACE_WG'), 
+			context.surfaceLevelAccessor(minX + width, minZ + depth, 'WORLD_SURFACE_WG')
+		)
 	}
 
 	public tryGenerate(seed: bigint, chunkX: number, chunkZ: number, biomeSource: BiomeSource, sampler: Climate.Sampler, context: WorldgenStructure.GenerationContext): boolean {
@@ -134,8 +142,8 @@ export namespace WorldgenStructure {
 	}
 
 	export class BuriedTreasureStructure extends WorldgenStructure {
-		public findGenerationPoint(chunkX: number, chunkZ: number): BlockPos | undefined {
-			return this.onTopOfChunkCenter(chunkX, chunkZ, true)
+		public findGenerationPoint(chunkX: number, chunkZ: number, _: Random, context: WorldgenStructure.GenerationContext): BlockPos | undefined {
+			return this.onTopOfChunkCenter(context, chunkX, chunkZ, 'OCEAN_FLOOR_WG')
 		}
 	}
 
@@ -149,10 +157,10 @@ export namespace WorldgenStructure {
 		}
 
 		public findGenerationPoint(chunkX: number, chunkZ: number, _: Random, context: WorldgenStructure.GenerationContext): BlockPos | undefined {
-			if (this.getLowestY(chunkX, chunkZ, this.width, this.depth) < context.seaLevel) {
+			if (this.getLowestY(context, chunkX << 4, chunkZ << 4, this.width, this.depth) < context.seaLevel) {
 				return undefined
 			} else {
-				return this.onTopOfChunkCenter(chunkX, chunkZ)
+				return this.onTopOfChunkCenter(context, chunkX, chunkZ)
 			}
 		}
 	}
@@ -178,8 +186,8 @@ export namespace WorldgenStructure {
 	}
 
 	export class IglooStructure extends WorldgenStructure {
-		public findGenerationPoint(chunkX: number, chunkZ: number): BlockPos | undefined {
-			return this.onTopOfChunkCenter(chunkX, chunkZ)
+		public findGenerationPoint(chunkX: number, chunkZ: number, _: Random, context: WorldgenStructure.GenerationContext): BlockPos | undefined {
+			return this.onTopOfChunkCenter(context, chunkX, chunkZ)
 		}
 	}
 
@@ -224,8 +232,8 @@ export namespace WorldgenStructure {
 	}
 
 	export class OceanRuinStructure extends WorldgenStructure {
-		public findGenerationPoint(chunkX: number, chunkZ: number): BlockPos | undefined {
-			return this.onTopOfChunkCenter(chunkX, chunkZ, true)
+		public findGenerationPoint(chunkX: number, chunkZ: number, _: Random, context: WorldgenStructure.GenerationContext): BlockPos | undefined {
+			return this.onTopOfChunkCenter(context, chunkX, chunkZ, 'OCEAN_FLOOR_WG')
 		}
 	}
 
@@ -243,8 +251,8 @@ export namespace WorldgenStructure {
 			super(settings)
 		}
 
-		public findGenerationPoint(chunkX: number, chunkZ: number): BlockPos | undefined {
-			return this.onTopOfChunkCenter(chunkX, chunkZ, !this.isBeached)
+		public findGenerationPoint(chunkX: number, chunkZ: number, _: Random, context: WorldgenStructure.GenerationContext): BlockPos | undefined {
+			return this.onTopOfChunkCenter(context, chunkX, chunkZ, this.isBeached ? 'WORLD_SURFACE_WG' : 'OCEAN_FLOOR_WG' )
 		}
 	}
 
@@ -255,8 +263,8 @@ export namespace WorldgenStructure {
 	}
 
 	export class SwampHutStructure extends WorldgenStructure {
-		public findGenerationPoint(chunkX: number, chunkZ: number): BlockPos | undefined {
-			return this.onTopOfChunkCenter(chunkX, chunkZ)
+		public findGenerationPoint(chunkX: number, chunkZ: number, _: Random, context: WorldgenStructure.GenerationContext): BlockPos | undefined {
+			return this.onTopOfChunkCenter(context, chunkX, chunkZ)
 		}
 	}
 
