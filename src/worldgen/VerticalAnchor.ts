@@ -15,15 +15,15 @@ export namespace VerticalAnchor {
 		return () => 0
 	}
 
-	function absolute(value: number): VerticalAnchor {
+	export function absolute(value: number): VerticalAnchor {
 		return () => value
 	}
 
-	function aboveBottom(value: number): VerticalAnchor {
+	export function aboveBottom(value: number): VerticalAnchor {
 		return context => context.minY + value
 	}
 
-	function belowTop(value: number): VerticalAnchor {
+	export function belowTop(value: number): VerticalAnchor {
 		return context => context.maxY - value
 	}
 }
