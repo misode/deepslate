@@ -1,16 +1,18 @@
 import { Holder } from './Holder.js'
 import { Identifier } from './Identifier.js'
+import type { HolderSet } from './index.js'
 
 export class Registry<T> {
 	public static readonly REGISTRY = new Registry<Registry<unknown>>(Identifier.create('root'))
 
 	private readonly storage = new Map<string, T>()
 	private readonly builtin = new Map<string, T>()
+	private tags: Registry<HolderSet<T>> | undefined = undefined
 
 	constructor(
 		public readonly key: Identifier,
 		private readonly parser?: (obj: unknown) => T,
-	) {}
+	) { }
 
 	public register(id: Identifier, value: T, builtin?: boolean): Holder<T> {
 		this.storage.set(id.toString(), value)
@@ -86,4 +88,12 @@ export class Registry<T> {
 			return fn(Identifier.parse(key), value, this)
 		})
 	}
+
+	public getTagRegistry() {
+		if (this.tags === undefined) {
+			this.tags = new Registry<HolderSet<T>>(new Identifier(this.key.namespace, `tags/${this.key.path}`))
+		}
+		return this.tags
+	}
+
 }

@@ -9,7 +9,7 @@ export class LegacyRandom implements Random {
 	private static readonly INCREMENT = BigInt('11')
 	private static readonly FLOAT_MULTIPLIER = 1 / Math.pow(2, 24)
 	private static readonly DOUBLE_MULTIPLIER = 1 / Math.pow(2, 30)
-	
+
 	private seed = BigInt(0)
 
 	constructor(seed: bigint) {
@@ -71,10 +71,26 @@ export class LegacyRandom implements Random {
 	}
 }
 
+export namespace LegacyRandom {
+	export function fromLargeFeatureSeed(worldSeed: bigint, x: number, z: number): LegacyRandom {
+		const random = new LegacyRandom(worldSeed)
+		const a = random.nextLong()
+		const b = random.nextLong()
+		const seed = BigInt(x) * a ^ BigInt(z) * b ^ worldSeed
+		random.setSeed(seed)
+		return random
+	}
+
+	export function fromLargeFeatureWithSalt(worldSeed: bigint, x: number, z: number, salt: number): LegacyRandom {
+		const seed = BigInt(x) * BigInt('341873128712') + BigInt(z) * BigInt('132897987541') + worldSeed + BigInt(salt)
+		return new LegacyRandom(seed)
+	}
+}
+
 export class LegacyPositionalRandom implements PositionalRandom {
 	constructor(
 		private readonly seed: bigint,
-	) {}
+	) { }
 
 	public at(x: number, y: number, z: number) {
 		const seed = getSeed(x, y, z)

@@ -11,14 +11,14 @@ export abstract class StructurePlacement {
 
 	}
 
-	protected abstract isPlacementChunk(state: any, chunkX: number, chunkZ: number): boolean
+	protected abstract isPlacementChunk(seed: bigint, chunkX: number, chunkZ: number): boolean
 
-	public isStructureChunk(state: any, chunkX: number, chunkZ: number): boolean {
-		if (!this.isPlacementChunk(state, chunkX, chunkZ)) {
+	public isStructureChunk(seed: bigint, chunkX: number, chunkZ: number): boolean {
+		if (!this.isPlacementChunk(seed, chunkX, chunkZ)) {
 			return false
-		} else if (this.frequency < 1.0 && !this.frequencyReductionMethod(state.seed, this.salt, chunkX, chunkZ, this.frequency)) {
+		} else if (this.frequency < 1.0 && !this.frequencyReductionMethod(seed, this.salt, chunkX, chunkZ, this.frequency)) {
 			return false
-		} else if (this.exclusionZone && this.exclusionZone.isPlacementForbidden(state, chunkX, chunkZ)) {
+		} else if (this.exclusionZone && this.exclusionZone.isPlacementForbidden(seed, chunkX, chunkZ)) {
 			return false
 		} else {
 			return true
@@ -41,22 +41,17 @@ export namespace StructurePlacement {
 		}
 
 		export function ProbabilityReducer(seed: bigint, salt: number, chunkX: number, chunkZ: number, frequency: number): boolean {
-			const random_seed = BigInt(salt) * BigInt('341873128712') + BigInt(chunkX) * BigInt('132897987541') + seed + BigInt(chunkZ)
-			const random = new LegacyRandom(BigInt(random_seed))
+			const random = LegacyRandom.fromLargeFeatureWithSalt(seed, salt, chunkX, chunkZ) // [sic]
 			return random.nextFloat() < frequency
 		}
 
 		export function LegacyProbabilityReducerWithDouble(seed: bigint, _: number, chunkX: number, chunkZ: number, frequency: number): boolean {
-			const random = new LegacyRandom(BigInt(seed))
-			const a = random.nextLong()
-			const b = random.nextLong()
-			const random_seed = BigInt(chunkX) * a ^ BigInt(chunkZ) * b ^ seed
+			const random = LegacyRandom.fromLargeFeatureSeed(seed, chunkX, chunkZ)
 			return random.nextDouble() < frequency
 		}
 
 		export function LegacyArbitrarySaltProbabilityReducer(seed: bigint, _: number, chunkX: number, chunkZ: number, frequency: number): boolean {
-			const random_seed = BigInt(chunkX) * BigInt('341873128712') + BigInt(chunkZ) * BigInt('132897987541') + seed + BigInt('10387320')
-			const random = new LegacyRandom(BigInt(random_seed))
+			const random = LegacyRandom.fromLargeFeatureWithSalt(seed, chunkX, chunkZ, 10387320)
 			return random.nextFloat() < frequency
 		}
 
@@ -70,13 +65,13 @@ export namespace StructurePlacement {
 	}
 
 	export class ExclusionZone {
-		public isPlacementForbidden(state: any, chunkX: number, chunkZ: number) {
+		public isPlacementForbidden(seed: bigint, chunkX: number, chunkZ: number) {
 			return false // todo
 		}
 	}
 
 	export namespace ExclusionZone {
-		export function fromJson(obj: unknown){
+		export function fromJson(obj: unknown) {
 			return new ExclusionZone()
 		}
 	}
@@ -84,7 +79,7 @@ export namespace StructurePlacement {
 	export type SpreadType = 'linear' | 'triangular'
 
 	export namespace SpreadType {
-		export function fromJson(obj: unknown): SpreadType{
+		export function fromJson(obj: unknown): SpreadType {
 			const string = Json.readString(obj) ?? 'linear'
 			if (string === 'triangular') return 'triangular'
 			return 'linear'
@@ -154,8 +149,8 @@ export namespace StructurePlacement {
 			return [x * this.spacing + offsetX, z * this.spacing + offsetZ]
 		}
 
-		protected isPlacementChunk(state: any, chunkX: number, chunkZ: number): boolean {
-			const [placementX, palcementZ] = this.getPotenticalStructureChunk(state.seed, chunkX, chunkZ)
+		protected isPlacementChunk(seed: bigint, chunkX: number, chunkZ: number): boolean {
+			const [placementX, palcementZ] = this.getPotenticalStructureChunk(seed, chunkX, chunkZ)
 			return placementX === chunkX && palcementZ === chunkZ
 		}
 	}
@@ -175,7 +170,7 @@ export namespace StructurePlacement {
 			super(locateOffset, frequencyReductionMethod, frequency, salt, exclusionZone)
 		}
 
-		protected isPlacementChunk(state: any, chunkX: number, chunkZ: number): boolean {
+		protected isPlacementChunk(seed: bigint, chunkX: number, chunkZ: number): boolean {
 			return false // TODO
 		}
 	}
