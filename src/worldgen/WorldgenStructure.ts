@@ -1,4 +1,3 @@
-import type { Identifier } from '../core/index.js'
 import { BlockPos, HolderSet } from '../core/index.js'
 import type { Random } from '../math/index.js'
 import { LegacyRandom } from '../math/index.js'
@@ -41,20 +40,18 @@ export abstract class WorldgenStructure {
 
 		const pos = this.findGenerationPoint(chunkX, chunkZ, random, context)
 		if (pos === undefined) return false
-		const biome = biomeSource.getBiome(pos[0] << 2, pos[1] << 2, pos[2] << 2, sampler)
-		return this.settings.validBiomes.findIndex((b) => b.equals(biome)) >= 0
+		const biome = biomeSource.getBiome(pos[0]>>2, pos[1], pos[2]>>2, sampler)
+		return [...this.settings.validBiomes.getBiomes()].findIndex((b) => b.key()?.equals(biome)) >= 0
 	}
 }
 
 export namespace WorldgenStructure {
 
 	export class StructureSettings {
-		public readonly validBiomes: Identifier[]
-
 		constructor(
-			validBiomes: HolderSet<unknown>,
+			public readonly validBiomes: HolderSet<unknown>,
 		) {
-			this.validBiomes = [...validBiomes].flatMap(holder => holder.key() ?? [])
+
 		}
 	}
 
@@ -73,12 +70,11 @@ export namespace WorldgenStructure {
 		const BiomeTagParser = HolderSet.parser(WorldgenRegistries.BIOME)
 
 		const root = Json.readObject(obj) ?? {}
-		const type = Json.readString(root.type)?.replace(/^minecraft:/, '')
 
 		const biomes = BiomeTagParser(root.biomes)
 		const settings = new StructureSettings(biomes.value())
 
-		switch (type) {
+		switch (Json.readString(root.type)?.replace(/^minecraft:/, '')) {
 			case 'buried_treasure':
 				return new BuriedTreasureStructure(settings)
 			case 'desert_pyramid':
