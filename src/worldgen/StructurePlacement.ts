@@ -1,3 +1,4 @@
+import type { ChunkPos } from '../core/index.js'
 import { BlockPos, Identifier } from '../core/index.js'
 import type { Random } from '../math/index.js'
 import { LegacyRandom } from '../math/index.js'
@@ -26,6 +27,8 @@ export abstract class StructurePlacement {
 			return true
 		}
 	}
+
+	public abstract getPotentialStructureChunks(seed: bigint, minChunkX: number, minChunkZ: number, maxChunkX: number, maxChunkZ: number): ChunkPos[]
 }
 
 export namespace StructurePlacement {
@@ -140,7 +143,7 @@ export namespace StructurePlacement {
 			}
 		}
 
-		public getPotenticalStructureChunk(seed: bigint, chunkX: number, chunkZ: number) {
+		public getPotenticalStructureChunk(seed: bigint, chunkX: number, chunkZ: number): ChunkPos {
 			const x = Math.floor(chunkX / this.spacing)
 			const z = Math.floor(chunkZ / this.spacing)
 			const randomSeed = BigInt(x) * BigInt('341873128712') + BigInt(z) * BigInt('132897987541') + seed + BigInt(this.salt)
@@ -155,6 +158,17 @@ export namespace StructurePlacement {
 			const [placementX, palcementZ] = this.getPotenticalStructureChunk(seed, chunkX, chunkZ)
 			return placementX === chunkX && palcementZ === chunkZ
 		}
+
+		public getPotentialStructureChunks(seed: bigint, minChunkX: number, minChunkZ: number, maxChunkX: number, maxChunkZ: number): ChunkPos[] {
+			const positions: ChunkPos[] = []
+			for (let chunkX = Math.floor(minChunkX / this.spacing) * this.spacing; chunkX <= maxChunkX; chunkX += this.spacing){
+				for (let chunkZ = Math.floor(minChunkZ / this.spacing) * this.spacing; chunkZ <= maxChunkZ; chunkZ += this.spacing){
+					positions.push(this.getPotenticalStructureChunk(seed, chunkX, chunkZ))
+				}
+			}
+			return positions
+		}
+
 	}
 
 	export class ConcentricRingsStructurePlacement extends StructurePlacement {
@@ -175,5 +189,10 @@ export namespace StructurePlacement {
 		protected isPlacementChunk(seed: bigint, chunkX: number, chunkZ: number): boolean {
 			return false // TODO
 		}
+
+		public getPotentialStructureChunks(seed: bigint, minChunkX: number, minChunkZ: number, maxChunkX: number, maxChunkZ: number): ChunkPos[] {
+			return [] // TODO
+		}
+
 	}
 }

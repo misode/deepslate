@@ -8,8 +8,8 @@ import type { WorldgenStructure } from './WorldgenStructure.js'
 
 export class StructureSet {
 	constructor(
-		private readonly structures: StructureSet.StructureSelectionEntry[],
-		private readonly placement: StructurePlacement
+		public readonly structures: StructureSet.StructureSelectionEntry[],
+		public readonly placement: StructurePlacement
 	) { }
 
 	public getStructureInChunk(seed: bigint, chunkX: number, chunkZ: number, biomeSource: BiomeSource, sampler: Climate.Sampler, context: WorldgenStructure.GenerationContext): Identifier | undefined {
