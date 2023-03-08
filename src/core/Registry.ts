@@ -60,6 +60,10 @@ export class Registry<T> {
 		for (const [key, value] of this.builtin.entries()) {
 			this.storage.set(key, value)
 		}
+
+		if (this.tags){
+			this.tags.clear()
+		}
 		return this
 	}
 

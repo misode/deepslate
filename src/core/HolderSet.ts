@@ -25,17 +25,21 @@ export namespace HolderSet {
 					return Holder.direct(create([Holder.reference(registry, Identifier.parse(obj))]))
 				}
 			} else {
-				const root = Json.readObject(obj) ?? {}
-				const entries = Json.readArray(root.values, (obj: unknown) => {
-					const str = Json.readString(obj) ?? ''
-					if (str.startsWith('#')) {
-						return Holder.reference(registry.getTagRegistry(), Identifier.parse(str.substring(1)))
-					} else {
-						return Holder.reference(registry, Identifier.parse(str))
-					}
-				}) ?? []
-				return Holder.direct(create(entries))
+				return Holder.direct(direct(registry, obj))
 			}
 		}
+	}
+
+	export function direct<T>(registry: Registry<T>, obj: unknown){
+		const root = Json.readObject(obj) ?? {}
+		const entries = Json.readArray(root.values, (obj: unknown) => {
+			const str = Json.readString(obj) ?? ''
+			if (str.startsWith('#')) {
+				return Holder.reference(registry.getTagRegistry(), Identifier.parse(str.substring(1)))
+			} else {
+				return Holder.reference(registry, Identifier.parse(str))
+			}
+		}) ?? []
+		return create(entries)
 	}
 }
