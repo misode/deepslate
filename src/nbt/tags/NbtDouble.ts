@@ -22,9 +22,9 @@ export class NbtDouble extends NbtTag {
 
 	public override toString() {
 		if (Number.isInteger(this.value)) {
-			return this.value.toFixed(1) + 'd'
+			return this.value.toFixed(1)
 		}
-		return this.value.toString() + 'd'
+		return this.value.toString()
 	}
 
 	public override toPrettyString() {
