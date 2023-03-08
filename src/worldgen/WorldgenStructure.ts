@@ -42,7 +42,7 @@ export abstract class WorldgenStructure {
 		const pos = this.findGenerationPoint(chunkX, chunkZ, random, context)
 		if (pos === undefined) return false
 		const biome = biomeSource.getBiome(pos[0] << 2, pos[1] << 2, pos[2] << 2, sampler)
-		return this.settings.validBiomes.includes(biome)
+		return this.settings.validBiomes.findIndex((b) => b.equals(biome)) >= 0
 	}
 }
 
