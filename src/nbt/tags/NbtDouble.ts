@@ -24,11 +24,11 @@ export class NbtDouble extends NbtTag {
 		if (Number.isInteger(this.value)) {
 			return this.value.toFixed(1) + 'd'
 		}
-		return this.value.toString()
+		return this.value.toString() + 'd'
 	}
 
 	public override toPrettyString() {
-		return this.toString() + 'd'
+		return this.toString()
 	}
 
 	public override toSimplifiedJson() {

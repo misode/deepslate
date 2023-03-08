@@ -25,7 +25,7 @@ export class NbtFloat extends NbtTag {
 	}
 
 	public override toPrettyString() {
-		return this.toString() + 'f'
+		return this.toString()
 	}
 
 	public override toSimplifiedJson() {
