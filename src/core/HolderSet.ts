@@ -36,9 +36,8 @@ export namespace HolderSet {
 		}
 	}
 
-	export function direct<T>(registry: Registry<T>, obj: unknown, ignore_values: boolean = false){
-		const root = Json.readObject(obj) ?? {}
-		const entries = Json.readArray(root.values, (obj: unknown) => {
+	export function direct<T>(registry: Registry<T>, obj: unknown, ignore_values: boolean = false, old_tag?: HolderSet<T>){
+		const entries = Json.readArray(obj, (obj: unknown) => {
 			const str = Json.readString(obj) ?? ''
 			if (str.startsWith('#')) {
 				return Holder.reference(registry.getTagRegistry(), Identifier.parse(str.substring(1)))
@@ -53,6 +52,20 @@ export namespace HolderSet {
 				}
 			}
 		}) ?? []
+		if (old_tag) entries.unshift(Holder.direct(old_tag))
+
 		return new HolderSet(entries)
+	}
+
+	export function fromJson<T>(registry: Registry<T>, obj: unknown, id?: Identifier, ignore_values: boolean = false){
+		const root = Json.readObject(obj) ?? {}
+
+		const replace = Json.readBoolean(root.replace) ?? false
+		if (id && !replace && registry.getTagRegistry().has(id)){
+			const old_tag = registry.getTagRegistry().get(id)
+			return direct(registry, root.values, ignore_values, old_tag)
+		}
+
+		return direct(registry, root.values, ignore_values)
 	}
 }
