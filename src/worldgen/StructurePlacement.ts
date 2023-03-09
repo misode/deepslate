@@ -1,8 +1,9 @@
-import type { ChunkPos } from '../core/index.js'
-import { BlockPos, Identifier } from '../core/index.js'
+import type { ChunkPos, Holder } from '../core/index.js'
+import { BlockPos, HolderSet } from '../core/index.js'
 import type { Random } from '../math/index.js'
 import { LegacyRandom } from '../math/index.js'
 import { Json } from '../util/index.js'
+import { WorldgenRegistries } from './WorldgenRegistries.js'
 
 export abstract class StructurePlacement {
 	protected constructor(
@@ -112,7 +113,7 @@ export namespace StructurePlacement {
 				const distance = Json.readInt(root.distance) ?? 1
 				const spread = Json.readInt(root.spread) ?? 1
 				const count = Json.readInt(root.count) ?? 1
-				const preferredBiomes = Identifier.parse(Json.readString(root.preferred_biomes) ?? 'minecraft:empty')
+				const preferredBiomes = HolderSet.parser(WorldgenRegistries.BIOME)(root.preferred_biomes)
 
 				return new ConcentricRingsStructurePlacement(locateOffset, frequencyReductionMethod, frequency, salt, exclusionZone, distance, spread, count, preferredBiomes)
 		}
@@ -181,7 +182,7 @@ export namespace StructurePlacement {
 			private readonly distance: number,
 			private readonly spread: number,
 			private readonly count: number,
-			private readonly preferredBiomes: Identifier // for now: identifier of tag
+			private readonly preferredBiomes: Holder<HolderSet<unknown>>
 		) {
 			super(locateOffset, frequencyReductionMethod, frequency, salt, exclusionZone)
 		}
