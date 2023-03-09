@@ -20,8 +20,8 @@ export abstract class WorldgenStructure {
 	public abstract findGenerationPoint(chunkX: number, chunkZ: number, random: Random, context: WorldgenStructure.GenerationContext): BlockPos | undefined
 
 	protected onTopOfChunkCenter(context: WorldgenStructure.GenerationContext, chunkX: number, chunkZ: number, heightmap: Heightmap = 'WORLD_SURFACE_WG'): BlockPos {
-		const posX = chunkX << 4 + 8
-		const posZ = chunkZ << 4 + 8
+		const posX = (chunkX << 4) + 8
+		const posZ = (chunkZ << 4) + 8
 
 		return [posX, context.surfaceLevelAccessor(posX, posZ, heightmap) , posZ] // TODO
 	}
@@ -41,6 +41,7 @@ export abstract class WorldgenStructure {
 		const pos = this.findGenerationPoint(chunkX, chunkZ, random, context)
 		if (pos === undefined) return false
 		const biome = biomeSource.getBiome(pos[0]>>2, pos[1], pos[2]>>2, sampler)
+		//		console.log(`${chunkX}, ${chunkZ} => ${pos[0]}, ${pos[1]}, ${pos[2]}: ${biome.toString()}`)
 		return [...this.settings.validBiomes.getBiomes()].findIndex((b) => b.key()?.equals(biome)) >= 0
 	}
 }
