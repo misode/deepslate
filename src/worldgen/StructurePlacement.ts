@@ -144,11 +144,10 @@ export namespace StructurePlacement {
 			}
 		}
 
-		public getPotenticalStructureChunk(seed: bigint, chunkX: number, chunkZ: number): ChunkPos {
+		public getPotentialStructureChunk(seed: bigint, chunkX: number, chunkZ: number): ChunkPos {
 			const x = Math.floor(chunkX / this.spacing)
 			const z = Math.floor(chunkZ / this.spacing)
-			const randomSeed = BigInt(x) * BigInt('341873128712') + BigInt(z) * BigInt('132897987541') + seed + BigInt(this.salt)
-			const random = new LegacyRandom(randomSeed)
+			const random = LegacyRandom.fromLargeFeatureWithSalt(seed, x, z, this.salt)
 			const maxOffset = this.spacing - this.separation
 			const offsetX = this.evaluateSpread(random, maxOffset)
 			const offsetZ = this.evaluateSpread(random, maxOffset)
@@ -156,7 +155,7 @@ export namespace StructurePlacement {
 		}
 
 		protected isPlacementChunk(seed: bigint, chunkX: number, chunkZ: number): boolean {
-			const [placementX, palcementZ] = this.getPotenticalStructureChunk(seed, chunkX, chunkZ)
+			const [placementX, palcementZ] = this.getPotentialStructureChunk(seed, chunkX, chunkZ)
 			return placementX === chunkX && palcementZ === chunkZ
 		}
 
@@ -164,7 +163,7 @@ export namespace StructurePlacement {
 			const positions: ChunkPos[] = []
 			for (let chunkX = Math.floor(minChunkX / this.spacing) * this.spacing; chunkX <= maxChunkX; chunkX += this.spacing){
 				for (let chunkZ = Math.floor(minChunkZ / this.spacing) * this.spacing; chunkZ <= maxChunkZ; chunkZ += this.spacing){
-					positions.push(this.getPotenticalStructureChunk(seed, chunkX, chunkZ))
+					positions.push(this.getPotentialStructureChunk(seed, chunkX, chunkZ))
 				}
 			}
 			return positions
