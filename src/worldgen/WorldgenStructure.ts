@@ -1,4 +1,5 @@
 import { BlockPos, HolderSet } from '../core/index.js'
+import { Rotation } from '../core/Rotation.js'
 import type { Random } from '../math/index.js'
 import { LegacyRandom } from '../math/index.js'
 import { Json } from '../util/Json.js'
@@ -33,6 +34,24 @@ export abstract class WorldgenStructure {
 			context.surfaceLevelAccessor(minX + width, minZ, 'WORLD_SURFACE_WG'), 
 			context.surfaceLevelAccessor(minX + width, minZ + depth, 'WORLD_SURFACE_WG')
 		)
+	}
+
+	protected getLowestYIn5by5BoxOffset7Blocks(context: WorldgenStructure.GenerationContext, chunkX: number, chunkZ: number, rotation: Rotation) {
+		let width =  5
+		let depth = 5
+		if (rotation === Rotation.CLOCKWISE_90){
+			width = -5
+		} else if (rotation === Rotation.CLOCKWISE_180){
+			width = -5
+			depth = - 5
+		} else if (rotation === Rotation.COUNTERCLOCKWISE_90){
+			depth = -5
+		}
+
+		const posX = (chunkX << 4) + 7
+		const posZ = (chunkZ << 4) + 7
+
+		return BlockPos.create(posX, this.getLowestY(context, posX, posZ, width, depth), posZ)
 	}
 
 	public tryGenerate(seed: bigint, chunkX: number, chunkZ: number, biomeSource: BiomeSource, sampler: Climate.Sampler, context: WorldgenStructure.GenerationContext): boolean {
@@ -171,8 +190,11 @@ export namespace WorldgenStructure {
 	}
 
 	export class EndCityStructure extends WorldgenStructure {
-		public findGenerationPoint(chunkX: number, chunkZ: number): BlockPos | undefined {
-			throw new Error('Method not implemented.')
+		public findGenerationPoint(chunkX: number, chunkZ: number, random: Random, context: WorldgenStructure.GenerationContext): BlockPos | undefined {
+			const rotation = Rotation.getRandom(random)
+			const pos = this.getLowestYIn5by5BoxOffset7Blocks(context, chunkX, chunkZ, rotation)
+			if (pos[1] < 60) return undefined
+			return pos
 		}
 	}
 
@@ -204,7 +226,7 @@ export namespace WorldgenStructure {
 			super(settings)
 		}
 
-		public findGenerationPoint(chunkX: number, chunkZ: number): BlockPos | undefined {
+		public findGenerationPoint(chunkX: number, chunkZ: number, random: Random, context: WorldgenStructure.GenerationContext): BlockPos | undefined {
 			throw new Error('Method not implemented.')
 		}
 	}
@@ -267,7 +289,10 @@ export namespace WorldgenStructure {
 
 	export class WoodlandMansionStructure extends WorldgenStructure {
 		public findGenerationPoint(chunkX: number, chunkZ: number): BlockPos | undefined {
-			throw new Error('Method not implemented.')
+			const rotation = Rotation.getRandom(random)
+			const pos = this.getLowestYIn5by5BoxOffset7Blocks(context, chunkX, chunkZ, rotation)
+			if (pos[1] < 60) return undefined
+			return pos
 		}
 	}
 
