@@ -15,6 +15,35 @@ export abstract class StructurePlacement {
 
 	}
 
+	public static fromJson(obj: unknown): StructurePlacement {
+		const root = Json.readObject(obj) ?? {}
+		const type = Json.readString(root.type)?.replace(/^minecraft:/, '')
+
+		const locateOffset = BlockPos.fromJson(root.locate_offset)
+		const frequencyReductionMethod = StructurePlacement.FrequencyReducer.fromType(Json.readString(root.frequency_reduction_method) ?? 'default')
+		const frequency = Json.readNumber(root.frequency) ?? 1
+		const salt = Json.readInt(root.salt) ?? 0
+		const exclusionZone = 'exclusion_zone' in root ? StructurePlacement.ExclusionZone.fromJson(root.exclusion_zone) : undefined
+
+		switch (type) {
+			case 'random_spread':
+				const spacing = Json.readInt(root.spacing) ?? 1
+				const separation = Json.readInt(root.separation) ?? 1
+				const spreadType = StructurePlacement.SpreadType.fromJson(root.spread_type)
+
+				return new StructurePlacement.RandomSpreadStructurePlacement(locateOffset, frequencyReductionMethod, frequency, salt, exclusionZone, spacing, separation, spreadType)
+			case 'concentric_rings':
+				const distance = Json.readInt(root.distance) ?? 1
+				const spread = Json.readInt(root.spread) ?? 1
+				const count = Json.readInt(root.count) ?? 1
+				const preferredBiomes = HolderSet.parser(WorldgenRegistries.BIOME)(root.preferred_biomes)
+
+				return new StructurePlacement.ConcentricRingsStructurePlacement(locateOffset, frequencyReductionMethod, frequency, salt, exclusionZone, distance, spread, count, preferredBiomes)
+		}
+
+		return new StructurePlacement.RandomSpreadStructurePlacement([0,0,0], StructurePlacement.FrequencyReducer.ProbabilityReducer, 1, 0, undefined, 1, 1, 'linear')
+	}
+
 	protected abstract isPlacementChunk(seed: bigint, chunkX: number, chunkZ: number): boolean
 
 	public isStructureChunk(seed: bigint, chunkX: number, chunkZ: number): boolean {
@@ -71,14 +100,12 @@ export namespace StructurePlacement {
 	}
 
 	export class ExclusionZone {
+		public static fromJson(obj: unknown) {
+			return new ExclusionZone()
+		}
+
 		public isPlacementForbidden(seed: bigint, chunkX: number, chunkZ: number) {
 			return false // todo
-		}
-	}
-
-	export namespace ExclusionZone {
-		export function fromJson(obj: unknown) {
-			return new ExclusionZone()
 		}
 	}
 
@@ -90,35 +117,6 @@ export namespace StructurePlacement {
 			if (string === 'triangular') return 'triangular'
 			return 'linear'
 		}
-	}
-
-	export function fromJson(obj: unknown): StructurePlacement {
-		const root = Json.readObject(obj) ?? {}
-		const type = Json.readString(root.type)?.replace(/^minecraft:/, '')
-
-		const locateOffset = BlockPos.fromJson(root.locate_offset)
-		const frequencyReductionMethod = StructurePlacement.FrequencyReducer.fromType(Json.readString(root.frequency_reduction_method) ?? 'default')
-		const frequency = Json.readNumber(root.frequency) ?? 1
-		const salt = Json.readInt(root.salt) ?? 0
-		const exclusionZone = 'exclusion_zone' in root ? ExclusionZone.fromJson(root.exclusion_zone) : undefined
-
-		switch (type) {
-			case 'random_spread':
-				const spacing = Json.readInt(root.spacing) ?? 1
-				const separation = Json.readInt(root.separation) ?? 1
-				const spreadType = SpreadType.fromJson(root.spread_type)
-
-				return new RandomSpreadStructurePlacement(locateOffset, frequencyReductionMethod, frequency, salt, exclusionZone, spacing, separation, spreadType)
-			case 'concentric_rings':
-				const distance = Json.readInt(root.distance) ?? 1
-				const spread = Json.readInt(root.spread) ?? 1
-				const count = Json.readInt(root.count) ?? 1
-				const preferredBiomes = HolderSet.parser(WorldgenRegistries.BIOME)(root.preferred_biomes)
-
-				return new ConcentricRingsStructurePlacement(locateOffset, frequencyReductionMethod, frequency, salt, exclusionZone, distance, spread, count, preferredBiomes)
-		}
-
-		return new RandomSpreadStructurePlacement([0,0,0], FrequencyReducer.ProbabilityReducer, 1, 0, undefined, 1, 1, 'linear')
 	}
 
 	export class RandomSpreadStructurePlacement extends StructurePlacement {
