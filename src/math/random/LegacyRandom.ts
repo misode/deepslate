@@ -16,6 +16,20 @@ export class LegacyRandom implements Random {
 		this.setSeed(seed)
 	}
 
+	public static fromLargeFeatureSeed(worldSeed: bigint, x: number, z: number): LegacyRandom {
+		const random = new LegacyRandom(worldSeed)
+		const a = random.nextLong()
+		const b = random.nextLong()
+		const seed = BigInt(x) * a ^ BigInt(z) * b ^ worldSeed
+		random.setSeed(seed)
+		return random
+	}
+
+	public static fromLargeFeatureWithSalt(worldSeed: bigint, x: number, z: number, salt: number): LegacyRandom {
+		const seed = BigInt(x) * BigInt('341873128712') + BigInt(z) * BigInt('132897987541') + worldSeed + BigInt(salt)
+		return new LegacyRandom(seed)
+	}
+
 	public fork() {
 		return new LegacyRandom(this.nextLong())
 	}
@@ -68,22 +82,6 @@ export class LegacyRandom implements Random {
 		const a = this.next(30)
 		this.advance()
 		return a * LegacyRandom.DOUBLE_MULTIPLIER
-	}
-}
-
-export namespace LegacyRandom {
-	export function fromLargeFeatureSeed(worldSeed: bigint, x: number, z: number): LegacyRandom {
-		const random = new LegacyRandom(worldSeed)
-		const a = random.nextLong()
-		const b = random.nextLong()
-		const seed = BigInt(x) * a ^ BigInt(z) * b ^ worldSeed
-		random.setSeed(seed)
-		return random
-	}
-
-	export function fromLargeFeatureWithSalt(worldSeed: bigint, x: number, z: number, salt: number): LegacyRandom {
-		const seed = BigInt(x) * BigInt('341873128712') + BigInt(z) * BigInt('132897987541') + worldSeed + BigInt(salt)
-		return new LegacyRandom(seed)
 	}
 }
 
