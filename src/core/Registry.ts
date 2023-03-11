@@ -3,7 +3,6 @@ import type { HolderSet } from './HolderSet.js'
 import { Identifier } from './Identifier.js'
 
 export class Registry<T> {
-	public static readonly REGISTRY = new Registry<Registry<unknown>>(Identifier.create('root'))
 
 	private readonly storage = new Map<string, T>()
 	private readonly builtin = new Map<string, T>()
@@ -100,4 +99,14 @@ export class Registry<T> {
 		return this.tags
 	}
 
+}
+
+export namespace Registry{
+	export const REGISTRY = new Registry<Registry<unknown>>(Identifier.create('root'))
+
+	export function register<T>(name: string, parser?: (obj: unknown) => T) {
+		const registry = new Registry<T>(Identifier.create(name), parser)
+		Registry.REGISTRY.register(registry.key, registry)
+		return registry
+	}
 }

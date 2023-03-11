@@ -1,10 +1,9 @@
-import { Holder, Identifier } from '../core/index.js'
+import { Holder, Identifier, Registry } from '../core/index.js'
 import { LegacyRandom } from '../math/index.js'
 import { Json } from '../util/index.js'
 import type { BiomeSource, Climate } from './biome/index.js'
 import { StructurePlacement } from './StructurePlacement.js'
-import { WorldgenRegistries } from './WorldgenRegistries.js'
-import type { WorldgenStructure } from './WorldgenStructure.js'
+import { WorldgenStructure } from './WorldgenStructure.js'
 
 export class StructureSet {
 	constructor(
@@ -55,6 +54,8 @@ export class StructureSet {
 }
 
 export namespace StructureSet {
+	export const REGISTRY = Registry.register('worldgen/structure_set', fromJson)
+
 	export function fromJson(obj: unknown): StructureSet {
 		const root = Json.readObject(obj) ?? {}
 		const structures = Json.readArray(root.structures, (StructureSelectionEntry.fromJson)) ?? []
@@ -72,7 +73,7 @@ export namespace StructureSet {
 	export namespace StructureSelectionEntry {
 		export function fromJson(obj: unknown) {
 			const root = Json.readObject(obj) ?? {}
-			return new StructureSelectionEntry(Holder.reference(WorldgenRegistries.STRUCTURE, Identifier.parse(Json.readString(root.structure) ?? 'minecraft:empty')), Json.readInt(root.weight) ?? 1)
+			return new StructureSelectionEntry(Holder.reference(WorldgenStructure.REGISTRY, Identifier.parse(Json.readString(root.structure) ?? 'minecraft:empty')), Json.readInt(root.weight) ?? 1)
 		}
 	}
 }

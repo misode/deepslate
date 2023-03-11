@@ -1,4 +1,4 @@
-import { BlockPos, HolderSet } from '../core/index.js'
+import { BlockPos, Holder, HolderSet, Identifier, Registry } from '../core/index.js'
 import { Rotation } from '../core/Rotation.js'
 import type { Random } from '../math/index.js'
 import { LegacyRandom } from '../math/index.js'
@@ -6,6 +6,8 @@ import { Json } from '../util/Json.js'
 import type { BiomeSource, Climate } from './biome/index.js'
 import { Heightmap } from './Heightmap.js'
 import { HeightProvider } from './HeightProvider.js'
+import { StructurePoolElement } from './StructurePoolElement.js'
+import { StructureTemplatePool } from './StructureTemplatePool.js'
 import type { WorldgenContext } from './VerticalAnchor.js'
 import { WorldgenRegistries } from './WorldgenRegistries.js'
 
@@ -61,11 +63,13 @@ export abstract class WorldgenStructure {
 		if (pos === undefined) return false
 		const biome = biomeSource.getBiome(pos[0]>>2, pos[1], pos[2]>>2, sampler)
 		//		console.log(`${chunkX}, ${chunkZ} => ${pos[0]}, ${pos[1]}, ${pos[2]}: ${biome.toString()}`)
+
 		return [...this.settings.validBiomes.getBiomes()].findIndex((b) => b.key()?.equals(biome)) >= 0
 	}
 }
 
 export namespace WorldgenStructure {
+	export const REGISTRY = Registry.register<WorldgenStructure>('worldgen/structure', fromJson)
 
 	export class StructureSettings {
 		constructor(
@@ -85,6 +89,9 @@ export namespace WorldgenStructure {
 
 		}
 	}
+
+
+	const structurePoolParser = Holder.parser(StructureTemplatePool.REGISTRY, StructureTemplatePool.fromJson)
 
 	export function fromJson(obj: unknown): WorldgenStructure {
 		const BiomeTagParser = HolderSet.parser(WorldgenRegistries.BIOME)
@@ -107,8 +114,11 @@ export namespace WorldgenStructure {
 				return new IglooStructure(settings)
 			case 'jigsaw':
 				const startHeight = HeightProvider.fromJson(root.start_height)
+				const startPool = structurePoolParser(root.start_pool)
+				const startJigsawNameString = Json.readString(root.start_jigsaw_name)
+				const startJigsawName = startJigsawNameString ? Identifier.parse(startJigsawNameString) : undefined
 				const heightmap = Heightmap.fromJson(root.project_start_to_heightmap)
-				return new JigsawStructure(settings, startHeight, heightmap)
+				return new JigsawStructure(settings, startPool, startHeight, heightmap, startJigsawName)
 			case 'jungle_temple':
 				return new JungleTempleStructure(settings)
 			case 'mineshaft':
@@ -139,21 +149,65 @@ export namespace WorldgenStructure {
 	export class JigsawStructure extends WorldgenStructure {
 		constructor(
 			settings: WorldgenStructure.StructureSettings,
+			private readonly startingPoolHolder: Holder<StructureTemplatePool>,
 			private readonly startHeight: HeightProvider,
-			private readonly projectStartToHeightmap: Heightmap | undefined
+			private readonly projectStartToHeightmap: Heightmap | undefined,
+			private readonly startJigsawName: Identifier | undefined
 		) {
 			super(settings)
 		}
 
 		public findGenerationPoint(chunkX: number, chunkZ: number, random: Random, context: WorldgenStructure.GenerationContext): BlockPos | undefined {
 			var y = this.startHeight(random, context.worldgenContext)
+			const pos = BlockPos.create(chunkX << 4, y, chunkZ << 4)
+			
+			const rotation = Rotation.getRandom(random)
+			const startingPool = this.startingPoolHolder.value()
+			const startingElement = startingPool.getRandomTemplate(random)
 
-			// this is actually much more complicated, but for now this is enough
-			if (this.projectStartToHeightmap) {
-				y += context.surfaceLevelAccessor(chunkX << 4, chunkZ << 4, this.projectStartToHeightmap)
+			if (startingElement instanceof StructurePoolElement.EmptyPoolElement){
+				return undefined
+			} else {
+				var startJigsawOffset: BlockPos
+				if (this.startJigsawName){
+					const offset = JigsawStructure.getRandomNamedJigsaw(startingElement, this.startJigsawName, rotation, random)
+					if (offset === undefined){
+						return undefined
+					}
+					startJigsawOffset = offset
+				} else {
+					startJigsawOffset = BlockPos.ZERO
+				}
+
+				const templateStartPos = BlockPos.subtract(pos, startJigsawOffset)
+				const boundingBox = startingElement.getBoundingBox(templateStartPos, rotation)
+
+				const x = ((boundingBox[1][0] + boundingBox[0][0]) / 2)^0
+				const z = ((boundingBox[1][2] + boundingBox[0][2]) / 2)^0
+				var y: number
+				if (this.projectStartToHeightmap){
+					y = pos[1] + context.surfaceLevelAccessor(x, z, this.projectStartToHeightmap)
+				} else {
+					y = templateStartPos[1]
+				}
+
+				const generationPoint = BlockPos.create(x, y + startJigsawOffset[1], z)
+
+				//console.log(`Generating Jigsaw Structure in Chunk ${chunkX}, ${chunkZ}: rotation: ${rotation}, startingElement: ${startingElement.toString()}, center: ${x}, ${y}, ${z}`)
+
+				return generationPoint
+			}
+		}
+
+		private static getRandomNamedJigsaw(element: StructurePoolElement, name: Identifier, rotation: Rotation, random: Random): BlockPos | undefined{
+			const jigsaws = element.getShuffledJigsawBlocks(rotation, random)
+			for (const jigsaw of jigsaws){
+				if (Identifier.parse(jigsaw.nbt?.getString('name') ?? 'minecraft:empty').equals(name)){
+					return jigsaw.pos
+				}
 			}
 
-			return BlockPos.create(chunkX << 4, y, chunkZ << 4)
+			return undefined
 		}
 	}
 
@@ -288,7 +342,7 @@ export namespace WorldgenStructure {
 	}
 
 	export class WoodlandMansionStructure extends WorldgenStructure {
-		public findGenerationPoint(chunkX: number, chunkZ: number): BlockPos | undefined {
+		public findGenerationPoint(chunkX: number, chunkZ: number, random: Random, context: WorldgenStructure.GenerationContext): BlockPos | undefined {
 			const rotation = Rotation.getRandom(random)
 			const pos = this.getLowestYIn5by5BoxOffset7Blocks(context, chunkX, chunkZ, rotation)
 			if (pos[1] < 60) return undefined

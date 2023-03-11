@@ -15,6 +15,14 @@ export namespace BlockPos {
 		return [pos[0] + dx, pos[1] + dy, pos[2] + dz]
 	}
 
+	export function subtract(pos: BlockPos, other: BlockPos): BlockPos {
+		return [pos[0] - other[0], pos[1] - other[1], pos[2] - other[2]]
+	}
+
+	export function add(pos: BlockPos, other: BlockPos): BlockPos {
+		return [pos[0] + other[0], pos[1] + other[1], pos[2] + other[2]]
+	}
+
 	export function towards(pos: BlockPos, dir: Direction): BlockPos {
 		return BlockPos.offset(pos, ...Direction.normal(dir))
 	}

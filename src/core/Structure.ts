@@ -3,6 +3,8 @@ import { NbtType } from '../nbt/index.js'
 import { BlockPos } from './BlockPos.js'
 import { BlockState } from './BlockState.js'
 import type { Identifier } from './Identifier.js'
+import { Registry } from './Registry.js'
+import { Rotation } from './Rotation.js'
 import type { StructureProvider } from './StructureProvider.js'
 
 type StoredBlock = { pos: BlockPos, state: number, nbt?: NbtCompound }
@@ -39,7 +41,7 @@ export class Structure implements StructureProvider {
 			this.palette.push(blockState)
 		}
 		this.blocks.push({ pos, state, nbt })
-		this.blocksMap[pos[0] * this.size[1] * this.size[2] + pos[1] * this.size[2] + pos[2]] = { pos, state, nbt }    
+		this.blocksMap[pos[0] * this.size[1] * this.size[2] + pos[1] * this.size[2] + pos[2]] = { pos, state, nbt }
 		return this
 	}
 
@@ -83,4 +85,21 @@ export class Structure implements StructureProvider {
 		})
 		return new Structure(size, palette, blocks)
 	}
+
+	public static transform(pos: BlockPos, rotation: Rotation, pivot: BlockPos) {
+		switch (rotation) {
+			case Rotation.COUNTERCLOCKWISE_90:
+				return BlockPos.create(pivot[0] - pivot[2] + pos[2], pos[1], pivot[0] + pivot[2] - pos[0])
+			case Rotation.CLOCKWISE_90:
+				return BlockPos.create(pivot[0] + pivot[2] - pos[2], pos[1], pivot[2] - pivot[0] + pos[0])
+			case Rotation.CLOCKWISE_180:
+				return BlockPos.create(pivot[0] + pivot[0] - pos[0], pos[1], pivot[2] + pivot[2] - pos[2])
+			default:
+				return pos
+		}
+	}
+}
+
+export namespace Structure {
+	export const REGISTRY = Registry.register<Structure>('structures')
 }
