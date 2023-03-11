@@ -8,30 +8,30 @@ import { Json } from '../util/index.js'
 
 
 export abstract class StructurePoolElement {
-	public abstract getBoundingBox(pos: BlockPos, rotation: Rotation): [BlockPos, BlockPos]
-	public abstract getShuffledJigsawBlocks(rotation: Rotation, random: Random): PlacedBlock[]
-}
-
-export namespace StructurePoolElement {
-	export function fromJson(obj: unknown): StructurePoolElement{
+	public static fromJson(obj: unknown): StructurePoolElement{
 		const root = Json.readObject(obj) ?? {}
 		
 		switch (Json.readString(root.element_type)?.replace(/^minecraft:/, '')) {
 			case 'single_pool_element':
 			case 'legacy_single_pool_element':
 				const template = Holder.reference(Structure.REGISTRY, Identifier.parse(Json.readString(root.location) ?? ''))
-				return new SinlgePoolElement(template)
+				return new StructurePoolElement.SinlgePoolElement(template)
 			case 'list_pool_element':
-				const elements = Json.readArray('elements', fromJson) ?? []
-				return new ListPoolElement(elements)
+				const elements = Json.readArray('elements', StructurePoolElement.fromJson) ?? []
+				return new StructurePoolElement.ListPoolElement(elements)
 			case 'feature_pool_element':
-				return new FeaturePoolElement()
+				return new StructurePoolElement.FeaturePoolElement()
 			case 'empty_pool_element':
 			default:
-				return new EmptyPoolElement()
+				return new StructurePoolElement.EmptyPoolElement()
 		}
 	}
 
+	public abstract getBoundingBox(pos: BlockPos, rotation: Rotation): [BlockPos, BlockPos]
+	public abstract getShuffledJigsawBlocks(rotation: Rotation, random: Random): PlacedBlock[]
+}
+
+export namespace StructurePoolElement {
 	export class EmptyPoolElement extends StructurePoolElement{
 		public getBoundingBox(pos: BlockPos, rotation: Rotation): [BlockPos, BlockPos] {
 			throw new Error('Invalid call of EmptyPoolElement')

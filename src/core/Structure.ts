@@ -11,6 +11,8 @@ type StoredBlock = { pos: BlockPos, state: number, nbt?: NbtCompound }
 export type PlacedBlock = { pos: BlockPos, state: BlockState, nbt?: NbtCompound }
 
 export class Structure implements StructureProvider {
+	public static readonly REGISTRY = Registry.createAndRegister<Structure>('structures')
+
 	private blocksMap: StoredBlock[] = []
 
 	constructor(
@@ -98,8 +100,4 @@ export class Structure implements StructureProvider {
 				return pos
 		}
 	}
-}
-
-export namespace Structure {
-	export const REGISTRY = Registry.register<Structure>('structures')
 }

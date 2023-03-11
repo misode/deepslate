@@ -6,10 +6,19 @@ import { StructurePlacement } from './StructurePlacement.js'
 import { WorldgenStructure } from './WorldgenStructure.js'
 
 export class StructureSet {
+	public static readonly REGISTRY = Registry.createAndRegister('worldgen/structure_set', StructureSet.fromJson)
+
 	constructor(
 		public readonly structures: StructureSet.StructureSelectionEntry[],
 		public readonly placement: StructurePlacement
 	) { }
+
+	public static fromJson(obj: unknown): StructureSet {
+		const root = Json.readObject(obj) ?? {}
+		const structures = Json.readArray(root.structures, (StructureSet.StructureSelectionEntry.fromJson)) ?? []
+		const placement = StructurePlacement.fromJson(root.placement)
+		return new StructureSet(structures, placement)
+	}
 
 	public getStructureInChunk(seed: bigint, chunkX: number, chunkZ: number, biomeSource: BiomeSource, sampler: Climate.Sampler, context: WorldgenStructure.GenerationContext): Identifier | undefined {
 		if (!this.placement.isStructureChunk(seed, chunkX, chunkZ)) {
@@ -54,24 +63,13 @@ export class StructureSet {
 }
 
 export namespace StructureSet {
-	export const REGISTRY = Registry.register('worldgen/structure_set', fromJson)
-
-	export function fromJson(obj: unknown): StructureSet {
-		const root = Json.readObject(obj) ?? {}
-		const structures = Json.readArray(root.structures, (StructureSelectionEntry.fromJson)) ?? []
-		const placement = StructurePlacement.fromJson(root.placement)
-		return new StructureSet(structures, placement)
-	}
-
 	export class StructureSelectionEntry {
 		constructor(
 			public readonly structure: Holder<WorldgenStructure>,
 			public readonly weight: number
 		) { }
-	}
 
-	export namespace StructureSelectionEntry {
-		export function fromJson(obj: unknown) {
+		public static fromJson(obj: unknown) {
 			const root = Json.readObject(obj) ?? {}
 			return new StructureSelectionEntry(Holder.reference(WorldgenStructure.REGISTRY, Identifier.parse(Json.readString(root.structure) ?? 'minecraft:empty')), Json.readInt(root.weight) ?? 1)
 		}

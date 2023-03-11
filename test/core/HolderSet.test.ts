@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { Holder, HolderSet, Identifier, Registry } from '../../src/core/index.js'
+import { Json } from '../../src/util/index.js'
 
 
 describe('HolderSet', () => {
@@ -24,9 +25,9 @@ describe('HolderSet', () => {
 		const holders = [Holder.reference(REGISTRY, Identifier.create('test1')), Holder.reference(REGISTRY, Identifier.create('test2'))]
 		const set = new HolderSet(holders)
 
-		const biomes = [...set.getBiomes()].map(b => b.key()?.toString())
-		expect(biomes).toContain('minecraft:test1')
-		expect(biomes).toContain('minecraft:test2')
+		const entries = [...set.getEntries()].map(b => b.key()?.toString())
+		expect(entries).toContain('minecraft:test1')
+		expect(entries).toContain('minecraft:test2')
 	})
 
 	it('getBiomes nested', () => {
@@ -34,24 +35,11 @@ describe('HolderSet', () => {
 		const holders = [Holder.reference(REGISTRY, Identifier.create('test3')), Holder.reference(REGISTRY.getTagRegistry(), Identifier.create('tag1'))]
 		const set = new HolderSet(holders)
 
-		const biomes = [...set.getBiomes()].map(b => b.key()?.toString())
-		expect(biomes.length).toEqual(3)
-		expect(biomes).toContain('minecraft:test1')
-		expect(biomes).toContain('minecraft:test2')
-		expect(biomes).toContain('minecraft:test3')
-	})
-
-	it('direct', () => {
-		const set = HolderSet.direct(REGISTRY, [
-			'minecraft:test3',
-			'#minecraft:tag1',
-		])
-
-		const biomes = [...set.getBiomes()].map(b => b.key()?.toString())
-		expect(biomes.length).toEqual(3)
-		expect(biomes).toContain('minecraft:test1')
-		expect(biomes).toContain('minecraft:test2')
-		expect(biomes).toContain('minecraft:test3')
+		const entries = [...set.getEntries()].map(b => b.key()?.toString())
+		expect(entries.length).toEqual(3)
+		expect(entries).toContain('minecraft:test1')
+		expect(entries).toContain('minecraft:test2')
+		expect(entries).toContain('minecraft:test3')
 	})
 
 	it('fromJson', () => {
@@ -62,11 +50,11 @@ describe('HolderSet', () => {
 			],
 		}, Identifier.create('tag2'))
 
-		const biomes = [...set.getBiomes()].map(b => b.key()?.toString())
-		expect(biomes.length).toEqual(3)
-		expect(biomes).toContain('minecraft:test1')
-		expect(biomes).toContain('minecraft:test2')
-		expect(biomes).toContain('minecraft:test3')
+		const entries = [...set.getEntries()].map(b => b.key()?.toString())
+		expect(entries.length).toEqual(3)
+		expect(entries).toContain('minecraft:test1')
+		expect(entries).toContain('minecraft:test2')
+		expect(entries).toContain('minecraft:test3')
 	})
 
 	it('fromJson extend', () => {
@@ -76,11 +64,11 @@ describe('HolderSet', () => {
 			],
 		}, Identifier.create('tag1'))
 
-		const biomes = [...set.getBiomes()].map(b => b.key()?.toString())
-		expect(biomes.length).toEqual(3)
-		expect(biomes).toContain('minecraft:test1')
-		expect(biomes).toContain('minecraft:test2')
-		expect(biomes).toContain('minecraft:test3')
+		const entries = [...set.getEntries()].map(b => b.key()?.toString())
+		expect(entries.length).toEqual(3)
+		expect(entries).toContain('minecraft:test1')
+		expect(entries).toContain('minecraft:test2')
+		expect(entries).toContain('minecraft:test3')
 	})
 
 	it('fromJson replace', () => {
@@ -91,38 +79,42 @@ describe('HolderSet', () => {
 			],
 		}, Identifier.create('tag1'))
 
-		const biomes = [...set.getBiomes()].map(b => b.key()?.toString())
-		expect(biomes.length).toEqual(1)
-		expect(biomes).toContain('minecraft:test3')
-	})
-
-	it('parser single', () => {
-		const parser = HolderSet.parser(REGISTRY)
-
-		const set = parser('minecraft:test1').value()
-		const biomes = [...set.getBiomes()].map(b => b.key()?.toString())
-		expect(biomes.length).toEqual(1)
-		expect(biomes).toContain('minecraft:test1')
+		const entries = [...set.getEntries()].map(b => b.key()?.toString())
+		expect(entries.length).toEqual(1)
+		expect(entries).toContain('minecraft:test3')
 	})
 
 	it('parser tag', () => {
 		const parser = HolderSet.parser(REGISTRY)
 
 		const set = parser('#minecraft:tag1').value()
-		const biomes = [...set.getBiomes()].map(b => b.key()?.toString())
-		expect(biomes.length).toEqual(2)
-		expect(biomes).toContain('minecraft:test1')
-		expect(biomes).toContain('minecraft:test2')
+		const entries = [...set.getEntries()].map(b => b.key()?.toString())
+		expect(entries.length).toEqual(2)
+		expect(entries).toContain('minecraft:test1')
+		expect(entries).toContain('minecraft:test2')
 	})
 
-	it('parser direct', () => {
+	it('parser list', () => {
 		const parser = HolderSet.parser(REGISTRY)
 
 		const set = parser(['minecraft:test1', 'minecraft:test2']).value()
-		const biomes = [...set.getBiomes()].map(b => b.key()?.toString())
-		expect(biomes.length).toEqual(2)
-		expect(biomes).toContain('minecraft:test1')
-		expect(biomes).toContain('minecraft:test2')
+		const entries = [...set.getEntries()].map(b => b.key()?.toString())
+		expect(entries.length).toEqual(2)
+		expect(entries).toContain('minecraft:test1')
+		expect(entries).toContain('minecraft:test2')
 	})
+
+	it('parser list valueParser', () => {
+		const valueParser = Holder.parser(REGISTRY, obj => `integer: ${Json.readInt(obj) ?? 0}`)
+		const parser = HolderSet.parser(REGISTRY, valueParser)
+
+		const set = parser(['minecraft:test1', 4, 'minecraft:test2']).value()
+		const entries = [...set.getEntries()].map(b => b.value())
+		expect(entries.length).toEqual(3)
+		expect(entries).toContain('value1')
+		expect(entries).toContain('integer: 4')
+		expect(entries).toContain('value2')
+	})
+
 
 })

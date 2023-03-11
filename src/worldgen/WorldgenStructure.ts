@@ -64,12 +64,12 @@ export abstract class WorldgenStructure {
 		const biome = biomeSource.getBiome(pos[0]>>2, pos[1], pos[2]>>2, sampler)
 		//		console.log(`${chunkX}, ${chunkZ} => ${pos[0]}, ${pos[1]}, ${pos[2]}: ${biome.toString()}`)
 
-		return [...this.settings.validBiomes.getBiomes()].findIndex((b) => b.key()?.equals(biome)) >= 0
+		return [...this.settings.validBiomes.getEntries()].findIndex((b) => b.key()?.equals(biome)) >= 0
 	}
 }
 
 export namespace WorldgenStructure {
-	export const REGISTRY = Registry.register<WorldgenStructure>('worldgen/structure', fromJson)
+	export const REGISTRY = Registry.createAndRegister<WorldgenStructure>('worldgen/structure', fromJson)
 
 	export class StructureSettings {
 		constructor(
@@ -89,7 +89,6 @@ export namespace WorldgenStructure {
 
 		}
 	}
-
 
 	const structurePoolParser = Holder.parser(StructureTemplatePool.REGISTRY, StructureTemplatePool.fromJson)
 

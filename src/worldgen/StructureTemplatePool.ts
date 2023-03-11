@@ -4,6 +4,8 @@ import { Json } from '../util/index.js'
 import { StructurePoolElement } from './StructurePoolElement.js'
 
 export class StructureTemplatePool{
+	public static readonly REGISTRY = Registry.createAndRegister<StructureTemplatePool>('worldgen/template_pool', StructureTemplatePool.fromJson)
+
 	private readonly totalWeight: number
 
 	public constructor(
@@ -14,6 +16,21 @@ export class StructureTemplatePool{
 		public fallback: Holder<StructureTemplatePool>
 	){
 		this.totalWeight = rawTemplates.reduce((v, e) => v + e.weight, 0)
+	}
+
+
+	private static readonly structurePoolParser: (obj: unknown) => Holder<StructureTemplatePool> = Holder.parser<StructureTemplatePool>(StructureTemplatePool.REGISTRY, StructureTemplatePool.fromJson)
+
+	public static fromJson(obj: unknown){
+		const root = Json.readObject(obj) ?? {}
+		const fallback = StructureTemplatePool.structurePoolParser(root.fallback)
+		const elements = Json.readArray(root.elements, (obj) => {
+			const root = Json.readObject(obj) ?? {}
+			const element = StructurePoolElement.fromJson(root.element)
+			const weight = Json.readInt(root.weight) ?? 1
+			return {element, weight}
+		}) ?? []
+		return new StructureTemplatePool(elements, fallback)
 	}
 
 	public getRandomTemplate(random: Random): StructurePoolElement {
@@ -28,20 +45,3 @@ export class StructureTemplatePool{
 	}
 }
 
-export namespace StructureTemplatePool{
-	export const REGISTRY = Registry.register<StructureTemplatePool>('worldgen/template_pool', fromJson)
-
-	const structurePoolParser: (obj: unknown) => Holder<StructureTemplatePool> = Holder.parser<StructureTemplatePool>(REGISTRY, fromJson)
-
-	export function fromJson(obj: unknown){
-		const root = Json.readObject(obj) ?? {}
-		const fallback = structurePoolParser(root.fallback)
-		const elements = Json.readArray(root.elements, (obj) => {
-			const root = Json.readObject(obj) ?? {}
-			const element = StructurePoolElement.fromJson(root.element)
-			const weight = Json.readInt(root.weight) ?? 1
-			return {element, weight}
-		}) ?? []
-		return new StructureTemplatePool(elements, fallback)
-	}
-}

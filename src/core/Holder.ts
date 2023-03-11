@@ -7,7 +7,7 @@ export interface Holder<T> {
 }
 
 export namespace Holder {
-	export function parser<T>(registry: Registry<T>, directParser: (obj: unknown) => T) {
+	export function parser<T>(registry: Registry<T>, directParser: (obj: unknown) => T): (obj: unknown) => Holder<T>{
 		return (obj: unknown) => {
 			if (typeof obj === 'string') {
 				return reference(registry, Identifier.parse(obj))
