@@ -5,8 +5,8 @@ import { Identifier } from './Identifier.js'
 export class Registry<T> {
 	public static readonly REGISTRY = new Registry<Registry<unknown>>(Identifier.create('root'))
 
-	private readonly storage = new Map<string, T>()
-	private readonly builtin = new Map<string, T>()
+	private readonly storage = new Map<string, T | (() => T)>()
+	private readonly builtin = new Map<string, T | (() => T)>()
 	private tags: Registry<HolderSet<T>> | undefined = undefined
 
 	constructor(
@@ -20,7 +20,7 @@ export class Registry<T> {
 		return registry
 	}
 
-	public register(id: Identifier, value: T, builtin?: boolean): Holder<T> {
+	public register(id: Identifier, value: T | (() => T), builtin?: boolean): Holder<T> {
 		this.storage.set(id.toString(), value)
 		if (builtin) {
 			this.builtin.set(id.toString(), value)
@@ -43,11 +43,17 @@ export class Registry<T> {
 	}
 
 	public get(id: Identifier) {
-		return this.storage.get(id.toString())
+		var value = this.storage.get(id.toString())
+		if (value instanceof Function){
+			value = value()
+			this.storage.set(id.toString(), value)
+		}
+
+		return value
 	}
 
 	public getOrThrow(id: Identifier) {
-		const value = this.storage.get(id.toString())
+		const value = this.get(id)
 		if (value === undefined) {
 			throw new Error(`Missing key in ${this.key.toString()}: ${id.toString()}`)
 		}
@@ -89,13 +95,13 @@ export class Registry<T> {
 
 	public forEach(fn: (key: Identifier, value: T, registry: Registry<T>) => void) {
 		for (const [key, value] of this.storage.entries()) {
-			fn(Identifier.parse(key), value, this)
+			fn(Identifier.parse(key), value instanceof Function ? value() : value, this)
 		}
 	}
 
 	public map<U>(fn: (key: Identifier, value: T, registry: Registry<T>) => U): U[] {
 		return [...this.storage.entries()].map(([key, value]) => {
-			return fn(Identifier.parse(key), value, this)
+			return fn(Identifier.parse(key), value instanceof Function ? value() : value, this)
 		})
 	}
 

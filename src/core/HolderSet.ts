@@ -5,7 +5,7 @@ import type { Registry } from './Registry.js'
 
 export class HolderSet<T>{
 	constructor(
-		private readonly entries: (Holder<T | HolderSet<T>>)[]
+		private readonly entries: (Holder<T | HolderSet<T> | undefined>)[]
 	){}
 
 	public static parser<T>(registry: Registry<T>, valueParser?: (obj: unknown) => Holder<T>) {
@@ -25,12 +25,12 @@ export class HolderSet<T>{
 		}
 	}
 
-	public static fromJson<T>(registry: Registry<T>, obj: unknown, id?: Identifier){
+	public static fromJson<T>(registry: Registry<T>, obj: unknown, id?: Identifier): HolderSet<T>{
 		const root = Json.readObject(obj) ?? {}
 
 		const replace = Json.readBoolean(root.replace) ?? false
 
-		const entries = Json.readArray(root.values, (obj) => {
+		const entries: Holder<T | HolderSet<T> | undefined>[] = Json.readArray(root.values, (obj) => {
 			var required: boolean = true
 			var id: string = ''
 
