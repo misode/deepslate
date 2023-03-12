@@ -1,5 +1,5 @@
-import type { PlacedBlock, Rotation } from '../core/index.js'
-import { BlockPos, BlockState, Holder, Identifier, Structure } from '../core/index.js'
+import type { Holder, PlacedBlock, Rotation } from '../core/index.js'
+import { BlockPos, BlockState, Identifier, Structure } from '../core/index.js'
 import type { Random } from '../math/index.js'
 import { shuffle } from '../math/index.js'
 import type { NbtTag } from '../nbt/index.js'
@@ -14,7 +14,11 @@ export abstract class StructurePoolElement {
 		switch (Json.readString(root.element_type)?.replace(/^minecraft:/, '')) {
 			case 'single_pool_element':
 			case 'legacy_single_pool_element':
-				const template = Holder.reference(Structure.REGISTRY, Identifier.parse(Json.readString(root.location) ?? ''))
+				const id = Identifier.parse(Json.readString(root.location) ?? '')
+				const template: Holder<Structure> = {
+					key: () => id,
+					value: () => Structure.REGISTRY.get(id) ?? Structure.EMPTY,
+				}
 				return new StructurePoolElement.SinlgePoolElement(template)
 			case 'list_pool_element':
 				const elements = Json.readArray('elements', StructurePoolElement.fromJson) ?? []

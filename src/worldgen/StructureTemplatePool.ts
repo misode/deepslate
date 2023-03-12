@@ -23,7 +23,7 @@ export class StructureTemplatePool{
 
 	public static fromJson(obj: unknown){
 		const root = Json.readObject(obj) ?? {}
-		const fallback = StructureTemplatePool.structurePoolParser(root.fallback)
+		const fallback = StructureTemplatePool.structurePoolParser(root.fallback ?? '')
 		const elements = Json.readArray(root.elements, (obj) => {
 			const root = Json.readObject(obj) ?? {}
 			const element = StructurePoolElement.fromJson(root.element)

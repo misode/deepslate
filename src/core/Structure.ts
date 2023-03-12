@@ -13,6 +13,8 @@ export type PlacedBlock = { pos: BlockPos, state: BlockState, nbt?: NbtCompound 
 export class Structure implements StructureProvider {
 	public static readonly REGISTRY = Registry.createAndRegister<Structure>('structures')
 
+	public static readonly EMPTY = new Structure(BlockPos.ZERO)
+
 	private blocksMap: StoredBlock[] = []
 
 	constructor(

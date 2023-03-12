@@ -43,9 +43,9 @@ export class HolderSet<T>{
 			} 
 
 			if (id.startsWith('#')){
-				return Holder.reference(registry.getTagRegistry(), Identifier.parse(id.substring(1)))
+				return Holder.reference(registry.getTagRegistry(), Identifier.parse(id.substring(1)), required)
 			} else {
-				return Holder.reference(registry, Identifier.parse(id))
+				return Holder.reference(registry, Identifier.parse(id), required)
 			}
 		}) ?? []
 
@@ -59,6 +59,10 @@ export class HolderSet<T>{
 	public* getEntries(): Iterable<Holder<T>>{
 		for (const entry of this.entries) {
 			const value = entry.value()
+			if (value === undefined){
+				continue
+			}
+			
 			if (value instanceof HolderSet) {
 				yield* value.getEntries()
 			} else {
@@ -66,9 +70,4 @@ export class HolderSet<T>{
 			}
 		}
 	}
-}
-
-export namespace HolderSet {
-
-
 }
