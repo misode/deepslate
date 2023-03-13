@@ -143,7 +143,7 @@ describe('StructurePlacement', () => {
 			const otherSet = new StructureSet([], new StructurePlacement.RandomSpreadStructurePlacement(
 				[0,0,0],
 				StructurePlacement.FrequencyReducer.ProbabilityReducer,
-				1,
+				0.5,
 				0,
 				undefined,
 				4,
@@ -162,20 +162,23 @@ describe('StructurePlacement', () => {
 				'linear'
 			)
 
-			expect(placement.isStructureChunk(seed, 0, 0)).toBeFalsy()
-			expect(placement.isStructureChunk(seed, 1, 0)).toBeFalsy()
+			expect(placement.isStructureChunk(seed, 0, 0)).toBeTruthy()
+			expect(placement.isStructureChunk(seed, 1, 0)).toBeTruthy()
 			expect(placement.isStructureChunk(seed, 2, 0)).toBeTruthy()
 			expect(placement.isStructureChunk(seed, 3, 0)).toBeFalsy()
+			expect(placement.isStructureChunk(seed, 4, 0)).toBeFalsy()
 
-			expect(placement.isStructureChunk(seed, 0, 1)).toBeFalsy()
-			expect(placement.isStructureChunk(seed, 1, 1)).toBeFalsy()
+			expect(placement.isStructureChunk(seed, 0, 1)).toBeTruthy()
+			expect(placement.isStructureChunk(seed, 1, 1)).toBeTruthy()
 			expect(placement.isStructureChunk(seed, 2, 1)).toBeTruthy()
 			expect(placement.isStructureChunk(seed, 3, 1)).toBeFalsy()
+			expect(placement.isStructureChunk(seed, 4, 1)).toBeFalsy()
 
 			expect(placement.isStructureChunk(seed, 0, 2)).toBeTruthy()
 			expect(placement.isStructureChunk(seed, 1, 2)).toBeTruthy()
 			expect(placement.isStructureChunk(seed, 2, 2)).toBeTruthy()
 			expect(placement.isStructureChunk(seed, 3, 2)).toBeTruthy()
+			expect(placement.isStructureChunk(seed, 4, 2)).toBeTruthy()
 
 		})		
 	})

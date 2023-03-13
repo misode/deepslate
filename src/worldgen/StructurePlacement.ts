@@ -111,9 +111,10 @@ export namespace StructurePlacement {
 		}
 
 		public isPlacementForbidden(seed: bigint, chunkX: number, chunkZ: number) {
-			return this.otherSet.value().placement
+			const placement = this.otherSet.value().placement
+			return placement
 				.getPotentialStructureChunks(seed, chunkX - this.chunkCount, chunkZ - this.chunkCount, chunkX + this.chunkCount, chunkZ + this.chunkCount)
-				.findIndex((chunk) => Math.abs(chunk[0] - chunkX) <= this.chunkCount && Math.abs(chunk[1] - chunkZ) <= this.chunkCount) >= 0
+				.findIndex((chunk) => Math.abs(chunk[0] - chunkX) <= this.chunkCount && Math.abs(chunk[1] - chunkZ) <= this.chunkCount && placement.isStructureChunk(seed, chunk[0], chunk[1])) >= 0
 		}
 	}
 
