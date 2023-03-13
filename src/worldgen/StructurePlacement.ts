@@ -9,7 +9,7 @@ export abstract class StructurePlacement {
 	protected constructor(
 		protected readonly locateOffset: BlockPos,
 		protected readonly frequencyReductionMethod: StructurePlacement.FrequencyReducer,
-		protected readonly frequency: number,
+		public readonly frequency: number,
 		protected readonly salt: number,
 		protected readonly exclusionZone: StructurePlacement.ExclusionZone | undefined) {
 
@@ -126,9 +126,9 @@ export namespace StructurePlacement {
 			frequency: number,
 			salt: number,
 			exclusionZone: StructurePlacement.ExclusionZone | undefined,
-			private readonly spacing: number,
-			private readonly separation: number,
-			private readonly spreadType: SpreadType
+			public readonly spacing: number,
+			public readonly separation: number,
+			public readonly spreadType: SpreadType
 		) {
 			super(locateOffset, frequencyReductionMethod, frequency, salt, exclusionZone)
 		}
