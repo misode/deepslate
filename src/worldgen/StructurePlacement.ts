@@ -1,8 +1,9 @@
-import type { ChunkPos, Holder } from '../core/index.js'
-import { BlockPos, HolderSet } from '../core/index.js'
+import type { ChunkPos } from '../core/index.js'
+import { BlockPos, Holder, HolderSet, Identifier } from '../core/index.js'
 import type { Random } from '../math/index.js'
 import { LegacyRandom } from '../math/index.js'
 import { Json } from '../util/index.js'
+import { StructureSet } from './StructureSet.js'
 import { WorldgenRegistries } from './WorldgenRegistries.js'
 
 export abstract class StructurePlacement {
@@ -70,9 +71,8 @@ export namespace StructurePlacement {
 				case 'legacy_type_1': return LegacyPillagerOutpostReducer
 				case 'legacy_type_2': return LegacyArbitrarySaltProbabilityReducer
 				case 'legacy_type_3': return LegacyProbabilityReducerWithDouble
-				case 'default': return ProbabilityReducer
+				case 'default': default: return ProbabilityReducer
 			}
-			return ProbabilityReducer
 		}
 
 		export function ProbabilityReducer(seed: bigint, salt: number, chunkX: number, chunkZ: number, frequency: number): boolean {
@@ -91,8 +91,8 @@ export namespace StructurePlacement {
 		}
 
 		export function LegacyPillagerOutpostReducer(seed: bigint, _: number, chunkX: number, chunkZ: number, frequency: number): boolean {
-			const a = chunkX >> 2
-			const b = chunkZ >> 2
+			const a = chunkX >> 4
+			const b = chunkZ >> 4
 			const random = new LegacyRandom(BigInt(a ^ b << 4) ^ seed)
 			random.nextInt()
 			return random.nextInt(Math.floor(1 / frequency)) === 0
@@ -100,12 +100,20 @@ export namespace StructurePlacement {
 	}
 
 	export class ExclusionZone {
+		constructor(
+			private readonly otherSet: Holder<StructureSet>,
+			private readonly chunkCount: number
+		){ }
+
 		public static fromJson(obj: unknown) {
-			return new ExclusionZone()
+			const root = Json.readObject(obj) ?? {}
+			return new ExclusionZone(Holder.reference(StructureSet.REGISTRY, Identifier.parse(Json.readString(root.other_set) ?? '')), Json.readInt(root.chunk_count) ?? 1)
 		}
 
 		public isPlacementForbidden(seed: bigint, chunkX: number, chunkZ: number) {
-			return false // todo
+			return this.otherSet.value().placement
+				.getPotentialStructureChunks(seed, chunkX - this.chunkCount, chunkZ - this.chunkCount, chunkX + this.chunkCount, chunkZ + this.chunkCount)
+				.findIndex((chunk) => Math.abs(chunk[0] - chunkX) <= this.chunkCount && Math.abs(chunk[1] - chunkZ) <= this.chunkCount) >= 0
 		}
 	}
 
