@@ -26,6 +26,18 @@ export namespace BiomeSource {
 	}
 
 	export function findBiomeHorizontal(biomeSource: BiomeSource, centerX: number, y: number, centerZ: number, range: number, predicate: (biome: Identifier) => boolean, random: Random, sampler: Climate.Sampler, step: number = 1, searchFromCenter: boolean = false) {
+		if (biomeSource instanceof FixedBiomeSource){
+			if (predicate(biomeSource.getBiome())){
+				if (searchFromCenter){
+					return {pos: BlockPos.create(centerX, y, centerZ), biome: biomeSource.getBiome()}
+				} else {
+					return {pos: BlockPos.create(centerX - range + random.nextInt(range * 2 + 1), y, centerZ - range + random.nextInt(range * 2 + 1)), biome: biomeSource.getBiome()}
+				}
+			} else {
+				return undefined
+			}
+		}
+
 		const centerQuardX = centerX >> 2
 		const centerQuardZ = centerZ >> 2
 		const quardRange = range >> 2

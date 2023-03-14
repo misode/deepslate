@@ -39,7 +39,7 @@ export class LegacyRandom implements Random {
 	}
 
 	public setSeed(seed: bigint) {
-		this.seed = seed ^ LegacyRandom.MULTIPLIER & LegacyRandom.MODULUS_MASK
+		this.seed = (seed ^ LegacyRandom.MULTIPLIER) & LegacyRandom.MODULUS_MASK
 	}
 
 	private advance() {

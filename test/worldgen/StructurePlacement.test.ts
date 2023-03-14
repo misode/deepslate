@@ -104,16 +104,19 @@ describe('StructurePlacement', () => {
 			expect(chunks).toContainEqual([121, 52])
 		})
 
-		it('Correct biome', () => {
+		it('Correct biome SingleBiome', () => {
 			placement.prepare(new FixedBiomeSource(Identifier.create('plains')), new Climate.Sampler(ZERO, ZERO, ZERO, ZERO, ZERO, ZERO ), seed)
 
 			const chunks = placement.getPotentialStructureChunks(seed, -92, -108, 125, 70)
 			expect(chunks.length).toEqual(3)
 			expect(chunks).toContainEqual([-95, 73])
 			expect(chunks).toContainEqual([-19, -108])
-			expect(chunks).toContainEqual([127, 48])
+			expect(chunks).toContainEqual([127, 49])
 		})
 
+		it('Correct biome MultiNoise', () => {
+
+		})
 	})
 
 	describe('isStructureChunk', () => {
