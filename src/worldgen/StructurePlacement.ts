@@ -3,6 +3,8 @@ import { BlockPos, Holder, HolderSet, Identifier } from '../core/index.js'
 import type { Random } from '../math/index.js'
 import { LegacyRandom } from '../math/index.js'
 import { Json } from '../util/index.js'
+import type { Climate } from './index.js'
+import { BiomeSource } from './index.js'
 import { StructureSet } from './StructureSet.js'
 import { WorldgenRegistries } from './WorldgenRegistries.js'
 
@@ -60,6 +62,8 @@ export abstract class StructurePlacement {
 	}
 
 	public abstract getPotentialStructureChunks(seed: bigint, minChunkX: number, minChunkZ: number, maxChunkX: number, maxChunkZ: number): ChunkPos[]
+
+	public prepare(_biomeSource: BiomeSource, _sampler: Climate.Sampler, _concentricRingsSeed: bigint){}
 }
 
 export namespace StructurePlacement {
@@ -178,7 +182,11 @@ export namespace StructurePlacement {
 
 	}
 
+	const SEARCH_RANGE = 112
 	export class ConcentricRingsStructurePlacement extends StructurePlacement {
+
+		private positions?: {center: ChunkPos, real: (() => ChunkPos) | ChunkPos}[]
+
 		constructor(
 			locateOffset: BlockPos,
 			frequencyReductionMethod: StructurePlacement.FrequencyReducer,
@@ -193,12 +201,86 @@ export namespace StructurePlacement {
 			super(locateOffset, frequencyReductionMethod, frequency, salt, exclusionZone)
 		}
 
+		public prepare(biomeSource: BiomeSource, sampler: Climate.Sampler, concentricRingsSeed: bigint){
+			if (this.positions !== undefined){
+				return
+			}
+			
+			this.positions = []
+			if (this.count === 0){
+				return
+			}
+
+			const random = new LegacyRandom(concentricRingsSeed)
+			var angle = random.nextDouble() * Math.PI * 2
+			var current_spread = this.spread
+			var ringNr = 0
+			var posInRingNr = 0
+
+			const preferredBiomes = [...this.preferredBiomes.value().getEntries()].flatMap(b => b.key() ?? [])
+
+			for (var i = 0 ; i < this.count; i++){
+				const current_distance = 4 * this.distance + this.distance * ringNr * 6 + (random.nextDouble() - 0.5) * this.distance * 2.5
+				const chunkX = Math.round(Math.cos(angle) * current_distance)
+				const chunkZ = Math.round(Math.sin(angle) * current_distance)
+
+				const posX = (chunkX << 4) + 8
+				const posZ = (chunkZ << 4) + 8
+
+				const forkedRandom = random.fork()
+
+				const provider: () => ChunkPos = () => {
+					const searchResult = BiomeSource.findBiomeHorizontal(biomeSource, posX, 0, posZ, SEARCH_RANGE, (biome) => preferredBiomes.findIndex(b => b.equals(biome)) >= 0 , forkedRandom, sampler)
+					if (searchResult){
+						return [searchResult.pos[0] >> 4, searchResult.pos[2] >> 4]
+					} else {
+						return [chunkX, chunkZ]
+					}
+				}
+
+				this.positions.push({center: [chunkX, chunkZ], real: provider })
+
+				angle += Math.PI * 2 / current_spread
+				posInRingNr++
+				if (posInRingNr == current_spread){
+					ringNr++
+					posInRingNr = 0
+					current_spread += 2 * current_spread / (ringNr + 1)
+					current_spread = Math.min(current_spread, this.count - i)
+					angle += random.nextDouble() * Math.PI * 2
+				}
+			}
+
+		}
+
 		protected isPlacementChunk(seed: bigint, chunkX: number, chunkZ: number): boolean {
-			return false // TODO
+			if (this.positions === undefined){
+				console.warn('trying to access concentric rings placement before position calculation')
+				return false
+			}
+			return this.getPotentialStructureChunks(seed, chunkX, chunkZ, chunkX, chunkZ).findIndex((p) => p[0] === chunkX && p[1] === chunkZ) >= 0
 		}
 
 		public getPotentialStructureChunks(seed: bigint, minChunkX: number, minChunkZ: number, maxChunkX: number, maxChunkZ: number): ChunkPos[] {
-			return [] // TODO
+			if (this.positions === undefined){
+				console.warn('trying to access concentric rings placement before position calculation')
+				return []
+			}
+
+			const results = []
+			for (const position of this.positions){
+				if (position.center[0] < minChunkX - (SEARCH_RANGE >> 4)) continue
+				if (position.center[0] > maxChunkX + (SEARCH_RANGE >> 4)) continue
+				if (position.center[1] < minChunkZ - (SEARCH_RANGE >> 4)) continue
+				if (position.center[1] > maxChunkZ + (SEARCH_RANGE >> 4)) continue
+
+				if (position.real instanceof Function){
+					position.real = position.real()
+				}
+				results.push(position.real)
+			}
+
+			return results
 		}
 
 	}

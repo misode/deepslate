@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest'
-import { Holder, StructurePlacement, StructureSet } from '../../src'
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { Climate, DensityFunction, FixedBiomeSource, Holder, HolderSet, Identifier, StructurePlacement, StructureSet, WorldgenRegistries } from '../../src'
 
 
 describe('StructurePlacement', () => {
@@ -62,6 +62,56 @@ describe('StructurePlacement', () => {
 			expect(chunks).toContainEqual([10, 0])
 			expect(chunks).toContainEqual([0, 10])
 			expect(chunks).toContainEqual([10, 10])
+		})
+
+	})
+
+	describe('ConcentricRingsStructurePlacement' , () => {
+		var placement: StructurePlacement.ConcentricRingsStructurePlacement
+		const ZERO = new DensityFunction.Constant(0)
+
+		beforeAll(() => {
+			WorldgenRegistries.BIOME.clear()
+			WorldgenRegistries.BIOME.register(Identifier.create('plains'), {})
+			WorldgenRegistries.BIOME.register(Identifier.create('desert'), {})
+		})
+
+		afterAll(() => {
+			WorldgenRegistries.BIOME.clear()
+		})
+
+		beforeEach(() => {
+			placement = new StructurePlacement.ConcentricRingsStructurePlacement(
+				[0,0,0],
+				StructurePlacement.FrequencyReducer.ProbabilityReducer,
+				1,
+				0,
+				undefined,
+				32,
+				3,
+				128,
+				Holder.direct(new HolderSet([Holder.reference(WorldgenRegistries.BIOME, Identifier.create('plains'))]))				
+			)
+		})
+
+		it('Wrong biome', () => {
+			placement.prepare(new FixedBiomeSource(Identifier.create('desert')), new Climate.Sampler(ZERO, ZERO, ZERO, ZERO, ZERO, ZERO ), seed)
+
+			const chunks = placement.getPotentialStructureChunks(seed, -92, -108, 125, 70)
+			expect(chunks.length).toEqual(3)
+			expect(chunks).toContainEqual([-92, 69])
+			expect(chunks).toContainEqual([-13, -106])
+			expect(chunks).toContainEqual([121, 52])
+		})
+
+		it('Correct biome', () => {
+			placement.prepare(new FixedBiomeSource(Identifier.create('plains')), new Climate.Sampler(ZERO, ZERO, ZERO, ZERO, ZERO, ZERO ), seed)
+
+			const chunks = placement.getPotentialStructureChunks(seed, -92, -108, 125, 70)
+			expect(chunks.length).toEqual(3)
+			expect(chunks).toContainEqual([-95, 73])
+			expect(chunks).toContainEqual([-19, -108])
+			expect(chunks).toContainEqual([127, 48])
 		})
 
 	})

@@ -21,6 +21,8 @@ export class StructureSet {
 	}
 
 	public getStructureInChunk(seed: bigint, chunkX: number, chunkZ: number, biomeSource: BiomeSource, sampler: Climate.Sampler, context: WorldgenStructure.GenerationContext): Identifier | undefined {
+		this.placement.prepare(biomeSource, sampler, seed)
+
 		if (!this.placement.isStructureChunk(seed, chunkX, chunkZ)) {
 			return undefined
 		}
