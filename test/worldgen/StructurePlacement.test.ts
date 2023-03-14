@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
-import { Climate, DensityFunction, FixedBiomeSource, Holder, HolderSet, Identifier, StructurePlacement, StructureSet, WorldgenRegistries } from '../../src'
+import { Climate, DensityFunction, FixedBiomeSource, Holder, HolderSet, Identifier, MultiNoiseBiomeSource, StructurePlacement, StructureSet, WorldgenRegistries } from '../../src'
 
 
 describe('StructurePlacement', () => {
@@ -69,6 +69,7 @@ describe('StructurePlacement', () => {
 	describe('ConcentricRingsStructurePlacement' , () => {
 		var placement: StructurePlacement.ConcentricRingsStructurePlacement
 		const ZERO = new DensityFunction.Constant(0)
+		const ALL = new Climate.Param(-1, 1)
 
 		beforeAll(() => {
 			WorldgenRegistries.BIOME.clear()
@@ -94,7 +95,7 @@ describe('StructurePlacement', () => {
 			)
 		})
 
-		it('Wrong biome', () => {
+		it('Wrong biome SingleBiome', () => {
 			placement.prepare(new FixedBiomeSource(Identifier.create('desert')), new Climate.Sampler(ZERO, ZERO, ZERO, ZERO, ZERO, ZERO ), seed)
 
 			const chunks = placement.getPotentialStructureChunks(seed, -92, -108, 125, 70)
@@ -103,6 +104,18 @@ describe('StructurePlacement', () => {
 			expect(chunks).toContainEqual([-13, -106])
 			expect(chunks).toContainEqual([121, 52])
 		})
+
+		it('Wrong biome MultiNoise', () => {
+			const biomeSource = new MultiNoiseBiomeSource([[new Climate.ParamPoint(ALL, ALL, ALL, ALL, ALL, ALL, 0), () => Identifier.create('desert')]])
+			placement.prepare(biomeSource , new Climate.Sampler(ZERO, ZERO, ZERO, ZERO, ZERO, ZERO ), seed)
+
+			const chunks = placement.getPotentialStructureChunks(seed, -92, -108, 125, 70)
+			expect(chunks.length).toEqual(3)
+			expect(chunks).toContainEqual([-92, 69])
+			expect(chunks).toContainEqual([-13, -106])
+			expect(chunks).toContainEqual([121, 52])
+		})
+
 
 		it('Correct biome SingleBiome', () => {
 			placement.prepare(new FixedBiomeSource(Identifier.create('plains')), new Climate.Sampler(ZERO, ZERO, ZERO, ZERO, ZERO, ZERO ), seed)
@@ -115,6 +128,14 @@ describe('StructurePlacement', () => {
 		})
 
 		it('Correct biome MultiNoise', () => {
+			const biomeSource = new MultiNoiseBiomeSource([[new Climate.ParamPoint(ALL, ALL, ALL, ALL, ALL, ALL, 0), () => Identifier.create('plains')]])
+			placement.prepare(biomeSource , new Climate.Sampler(ZERO, ZERO, ZERO, ZERO, ZERO, ZERO ), seed)
+
+			const chunks = placement.getPotentialStructureChunks(seed, -92, -108, 125, 70)
+			expect(chunks.length).toEqual(3)
+			expect(chunks).toContainEqual([-99, 71])
+			expect(chunks).toContainEqual([-13, -101])
+			expect(chunks).toContainEqual([126, 58])
 
 		})
 	})
