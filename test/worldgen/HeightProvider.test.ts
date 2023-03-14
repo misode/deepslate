@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import type { Random } from '../../src/math/random/index.js'
 import { LegacyRandom } from '../../src/math/random/index.js'
-import { HeightProvider, VerticalAnchor, WorldgenContext } from '../../src/worldgen/index.js'
+import { HeightProvider, NoiseSettings, VerticalAnchor } from '../../src/worldgen/index.js'
 
 
 describe('HeightProvider', () => {
-	const context = WorldgenContext.create(0, 128)
+	const context = NoiseSettings.create({minY: 0, height: 128})
 	
 	const va1 = VerticalAnchor.absolute(15)
 	const va2 = VerticalAnchor.absolute(64)

@@ -4,11 +4,11 @@ import { computeIfAbsent } from '../util/index.js'
 import type { FluidPicker } from './Aquifer.js'
 import { FluidStatus } from './Aquifer.js'
 import type { BiomeSource } from './biome/index.js'
+import type { Heightmap } from './Heightmap.js'
 import { NoiseChunk } from './NoiseChunk.js'
 import type { NoiseGeneratorSettings } from './NoiseGeneratorSettings.js'
 import { NoiseSettings } from './NoiseSettings.js'
 import type { RandomState } from './RandomState.js'
-import { WorldgenContext } from './VerticalAnchor.js'
 
 export class NoiseChunkGenerator {
 	private readonly noiseChunkCache: Map<bigint, NoiseChunk>
@@ -27,6 +27,48 @@ export class NoiseChunkGenerator {
 				return lavaFluid
 			}
 			return defaultFluid
+		}
+	}
+
+	public getBaseHeight(blockX: number, blockZ: number, heightmap: Heightmap, randomState: RandomState){
+		let predicate: (state: BlockState) => boolean
+		if (heightmap === 'OCEAN_FLOOR' || heightmap === 'OCEAN_FLOOR_WG'){
+			predicate = (state: BlockState) => !state.equals(BlockState.AIR)
+		} else {
+			predicate = (state: BlockState) => state.equals(BlockState.STONE)
+		}
+		return this.iterateNoiseColumn(randomState, blockX, blockZ, undefined, predicate, BlockState.STONE) ?? this.settings.noise.minY
+	}
+
+	private iterateNoiseColumn(randomState: RandomState, blockX: number, blockZ: number, fillArray?: BlockState[], predicate?: (blockState: BlockState) => boolean, defaultBlock?: BlockState ){
+		const minY = this.settings.noise.minY
+		const cellHeight = NoiseSettings.cellHeight(this.settings.noise)
+		const minCellY = Math.floor(minY / cellHeight)
+		const cellCountY = Math.floor(this.settings.noise.height / cellHeight)
+
+		if (cellCountY <= 0){
+			return undefined
+		}
+
+		const cellWidth = NoiseSettings.cellWidth(this.settings.noise)
+		const cellX = Math.floor(blockX / cellWidth)
+		
+		const cellZ = Math.floor(blockZ / cellWidth)		
+
+		const noiseChunk = new NoiseChunk(1, cellCountY, minCellY, randomState, cellX, cellZ, this.settings.noise, this.settings.aquifersEnabled, this.globalFluidPicker)
+
+		for (let cellY = cellCountY - 1; cellY >= 0; cellY -= 1) {
+			for (let offY = cellHeight - 1; offY >= 0; offY -= 1) {
+				const blockY = (minCellY + cellY) * cellHeight + offY
+				const state = noiseChunk.getFinalState(blockX, blockY, blockZ) ?? defaultBlock ?? this.settings.defaultBlock
+				if (fillArray !== undefined){
+					fillArray[blockY + minY] = state
+				}
+
+				if (predicate !== undefined && predicate(state)){
+					return blockY + 1
+				}
+			}
 		}
 	}
 
@@ -75,7 +117,7 @@ export class NoiseChunkGenerator {
 
 	public buildSurface(randomState: RandomState, chunk: Chunk, /** @deprecated */ biome: string = 'minecraft:plains') {
 		const noiseChunk = this.getOrCreateNoiseChunk(randomState, chunk)
-		const context = WorldgenContext.create(this.settings.noise.minY, this.settings.noise.height)
+		const context = this.settings.noise
 		randomState.surfaceSystem.buildSurface(chunk, noiseChunk, context, () => biome)
 	}
 

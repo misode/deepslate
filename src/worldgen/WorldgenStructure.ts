@@ -3,12 +3,14 @@ import { Rotation } from '../core/Rotation.js'
 import type { Random } from '../math/index.js'
 import { LegacyRandom } from '../math/index.js'
 import { Json } from '../util/Json.js'
-import type { BiomeSource, Climate } from './biome/index.js'
+import type { BiomeSource } from './biome/index.js'
 import { Heightmap } from './Heightmap.js'
 import { HeightProvider } from './HeightProvider.js'
+import { NoiseChunkGenerator } from './NoiseChunkGenerator.js'
+import type { NoiseGeneratorSettings } from './NoiseGeneratorSettings.js'
+import { RandomState } from './RandomState.js'
 import { StructurePoolElement } from './StructurePoolElement.js'
 import { StructureTemplatePool } from './StructureTemplatePool.js'
-import type { WorldgenContext } from './VerticalAnchor.js'
 import { WorldgenRegistries } from './WorldgenRegistries.js'
 
 export type SufaceLevelAccessor = (posX: number, posZ: number, heightmap: Heightmap) => number
@@ -26,15 +28,15 @@ export abstract class WorldgenStructure {
 		const posX = (chunkX << 4) + 8
 		const posZ = (chunkZ << 4) + 8
 
-		return [posX, context.surfaceLevelAccessor(posX, posZ, heightmap) , posZ] // TODO
+		return [posX, context.chunkGenerator.getBaseHeight(posX, posZ, heightmap, context.randomState) - 1 , posZ] // TODO
 	}
 
 	protected getLowestY(context: WorldgenStructure.GenerationContext, minX: number, minZ: number, width: number, depth: number) {
 		return Math.min(
-			context.surfaceLevelAccessor(minX, minZ, 'WORLD_SURFACE_WG'), 
-			context.surfaceLevelAccessor(minX, minZ + depth, 'WORLD_SURFACE_WG'), 
-			context.surfaceLevelAccessor(minX + width, minZ, 'WORLD_SURFACE_WG'), 
-			context.surfaceLevelAccessor(minX + width, minZ + depth, 'WORLD_SURFACE_WG')
+			context.chunkGenerator.getBaseHeight(minX, minZ, 'WORLD_SURFACE_WG', context.randomState) - 1,
+			context.chunkGenerator.getBaseHeight(minX, minZ + depth, 'WORLD_SURFACE_WG', context.randomState) - 1,
+			context.chunkGenerator.getBaseHeight(minX + width, minZ, 'WORLD_SURFACE_WG', context.randomState) - 1,
+			context.chunkGenerator.getBaseHeight(minX + width, minZ + depth, 'WORLD_SURFACE_WG', context.randomState) - 1
 		)
 	}
 
@@ -56,13 +58,12 @@ export abstract class WorldgenStructure {
 		return BlockPos.create(posX, this.getLowestY(context, posX, posZ, width, depth), posZ)
 	}
 
-	public tryGenerate(seed: bigint, chunkX: number, chunkZ: number, biomeSource: BiomeSource, sampler: Climate.Sampler, context: WorldgenStructure.GenerationContext): boolean {
-		const random = LegacyRandom.fromLargeFeatureSeed(seed, chunkX, chunkZ)
+	public tryGenerate(chunkX: number, chunkZ: number, context: WorldgenStructure.GenerationContext): boolean {
+		const random = LegacyRandom.fromLargeFeatureSeed(context.seed, chunkX, chunkZ)
 
 		const pos = this.findGenerationPoint(chunkX, chunkZ, random, context)
 		if (pos === undefined) return false
-		const biome = biomeSource.getBiome(pos[0]>>2, pos[1], pos[2]>>2, sampler)
-		//		console.log(`${chunkX}, ${chunkZ} => ${pos[0]}, ${pos[1]}, ${pos[2]}: ${biome.toString()}`)
+		const biome = context.biomeSource.getBiome(pos[0]>>2, pos[1], pos[2]>>2, context.randomState.sampler)
 
 		return [...this.settings.validBiomes.getEntries()].findIndex((b) => b.key()?.equals(biome)) >= 0
 	}
@@ -80,13 +81,16 @@ export namespace WorldgenStructure {
 	}
 
 	export class GenerationContext {
+		public readonly chunkGenerator: NoiseChunkGenerator
+		public readonly randomState: RandomState
 
 		constructor(
-			public readonly surfaceLevelAccessor: SufaceLevelAccessor,
-			public readonly worldgenContext: WorldgenContext,
-			public readonly seaLevel: number
+			public readonly seed: bigint,
+			public readonly biomeSource: BiomeSource,
+			public readonly settings: NoiseGeneratorSettings,
 		) {
-
+			this.randomState = new RandomState(settings, seed)
+			this.chunkGenerator = new NoiseChunkGenerator(biomeSource, settings)
 		}
 	}
 
@@ -157,7 +161,7 @@ export namespace WorldgenStructure {
 		}
 
 		public findGenerationPoint(chunkX: number, chunkZ: number, random: Random, context: WorldgenStructure.GenerationContext): BlockPos | undefined {
-			var y = this.startHeight(random, context.worldgenContext)
+			var y = this.startHeight(random, context.settings.noise)
 			const pos = BlockPos.create(chunkX << 4, y, chunkZ << 4)
 			
 			const rotation = Rotation.getRandom(random)
@@ -185,7 +189,7 @@ export namespace WorldgenStructure {
 				const z = ((boundingBox[1][2] + boundingBox[0][2]) / 2)^0
 				var y: number
 				if (this.projectStartToHeightmap){
-					y = pos[1] + context.surfaceLevelAccessor(x, z, this.projectStartToHeightmap)
+					y = pos[1] + context.chunkGenerator.getBaseHeight(x, z, this.projectStartToHeightmap, context.randomState)
 				} else {
 					y = templateStartPos[1]
 				}
@@ -226,7 +230,7 @@ export namespace WorldgenStructure {
 		}
 
 		public findGenerationPoint(chunkX: number, chunkZ: number, _: Random, context: WorldgenStructure.GenerationContext): BlockPos | undefined {
-			if (this.getLowestY(context, chunkX << 4, chunkZ << 4, this.width, this.depth) < context.seaLevel) {
+			if (this.getLowestY(context, chunkX << 4, chunkZ << 4, this.width, this.depth) < context.settings.seaLevel) {
 				return undefined
 			} else {
 				return this.onTopOfChunkCenter(context, chunkX, chunkZ)

@@ -1,7 +1,6 @@
 import { Holder, Identifier, Registry } from '../core/index.js'
 import { LegacyRandom } from '../math/index.js'
 import { Json } from '../util/index.js'
-import type { BiomeSource, Climate } from './biome/index.js'
 import { StructurePlacement } from './StructurePlacement.js'
 import { WorldgenStructure } from './WorldgenStructure.js'
 
@@ -20,22 +19,22 @@ export class StructureSet {
 		return new StructureSet(structures, placement)
 	}
 
-	public getStructureInChunk(seed: bigint, chunkX: number, chunkZ: number, biomeSource: BiomeSource, sampler: Climate.Sampler, context: WorldgenStructure.GenerationContext): Identifier | undefined {
-		this.placement.prepare(biomeSource, sampler, seed)
+	public getStructureInChunk(chunkX: number, chunkZ: number, context: WorldgenStructure.GenerationContext): Identifier | undefined {
+		this.placement.prepare(context.biomeSource, context.randomState.sampler, context.seed)
 
-		if (!this.placement.isStructureChunk(seed, chunkX, chunkZ)) {
+		if (!this.placement.isStructureChunk(context.seed, chunkX, chunkZ)) {
 			return undefined
 		}
 
 		if (this.structures.length === 0) return undefined
 
 		if (this.structures.length === 1) {
-			if (this.structures[0].structure.value().tryGenerate(seed, chunkX, chunkZ, biomeSource, sampler, context)) {
+			if (this.structures[0].structure.value().tryGenerate(chunkX, chunkZ, context)) {
 				return this.structures[0].structure.key()
 			}
 		} else {
 
-			const random = LegacyRandom.fromLargeFeatureSeed(seed, chunkX, chunkZ)
+			const random = LegacyRandom.fromLargeFeatureSeed(context.seed, chunkX, chunkZ)
 
 			const list: StructureSet.StructureSelectionEntry[] = Object.assign([], this.structures)
 			let totalWeight = list.reduce((v, e, i) => v + e.weight, 0)
@@ -51,7 +50,7 @@ export class StructureSet {
 					}
 				}
 
-				if (entry!.structure.value().tryGenerate(seed, chunkX, chunkZ, biomeSource, sampler, context)) {
+				if (entry!.structure.value().tryGenerate(chunkX, chunkZ, context)) {
 					return entry!.structure.key()
 				}
 

@@ -1,10 +1,10 @@
 import type { Random } from '../math/index.js'
 import { nextInt, randomBetweenInclusive } from '../math/index.js'
 import { Json } from '../util/index.js'
-import type { WorldgenContext } from './VerticalAnchor.js'
+import type { NoiseSettings } from './NoiseSettings.js'
 import { VerticalAnchor } from './VerticalAnchor.js'
 
-export type HeightProvider = (random: Random, context: WorldgenContext) => number
+export type HeightProvider = (random: Random, context: NoiseSettings) => number
 
 export namespace HeightProvider {
 

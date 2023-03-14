@@ -6,7 +6,7 @@ import { lerp2, map, XoroshiroRandom } from '../math/index.js'
 import { computeIfAbsent, Json, lazy } from '../util/index.js'
 import type { NoiseChunk } from './NoiseChunk.js'
 import { NoiseRouter } from './NoiseRouter.js'
-import type { WorldgenContext } from './VerticalAnchor.js'
+import type { NoiseSettings } from './NoiseSettings.js'
 import { VerticalAnchor } from './VerticalAnchor.js'
 import { WorldgenRegistries } from './WorldgenRegistries.js'
 
@@ -27,7 +27,7 @@ export class SurfaceSystem {
 		this.positionalRandoms = new Map()
 	}
 
-	public buildSurface(chunk: Chunk, noiseChunk: NoiseChunk, worldgenContext: WorldgenContext, getBiome: (pos: BlockPos) => string) {
+	public buildSurface(chunk: Chunk, noiseChunk: NoiseChunk, worldgenContext: NoiseSettings, getBiome: (pos: BlockPos) => string) {
 		const minX = ChunkPos.minBlockX(chunk.pos)
 		const minZ = ChunkPos.minBlockZ(chunk.pos)
 		const surfaceContext = new SurfaceContext(this, chunk, noiseChunk, worldgenContext, getBiome)
@@ -116,7 +116,7 @@ export class SurfaceContext {
 		public readonly system: SurfaceSystem,
 		public readonly chunk: Chunk,
 		public readonly noiseChunk: NoiseChunk,
-		public readonly context: WorldgenContext,
+		public readonly context: NoiseSettings,
 		private readonly getBiome: (pos: BlockPos) => string,
 	) {}
 
