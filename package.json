@@ -1,7 +1,7 @@
 {
   "name": "deepslate",
   "description": "Library for rendering and emulating parts of Minecraft",
-  "version": "0.17.3",
+  "version": "0.17.4",
   "author": "Misode",
   "license": "MIT",
   "repository": {
