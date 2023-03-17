@@ -37,4 +37,47 @@ describe('MultiNoise', () => {
 		expect(nether.getBiome(600, 0, 0, sampler)).toEqual(Identifier.create('crimson_forest'))
 		expect(nether.getBiome(0, 0, -500, sampler)).toEqual(Identifier.create('soul_sand_valley'))
 	})
+
+	it('offset', () => {
+		const test = MultiNoiseBiomeSource.fromJson({
+			type: 'minecraft:multi_noise',
+			biomes: [
+				{
+					biome: 'minecraft:plains',
+					parameters: {
+						temperature: 0,
+						humidity: 0,
+						continentalness: 0,
+						erosion: 0,
+						weirdness: 0,
+						depth: 0,
+						offset: 0,
+					},
+				},
+				{
+					biome: 'minecraft:desert',
+					parameters: {
+						temperature: 0.3,
+						humidity: 0,
+						continentalness: 0,
+						erosion: 0,
+						weirdness: 0,
+						depth: 0,
+						offset: 0.4,
+					},
+				},
+			],
+		})
+
+		const settings = NoiseGeneratorSettings.create({
+			noise: { minY: 0, height: 128, xzSize: 1, ySize: 2 },
+			noiseRouter: NoiseRouter.create({
+				temperature: new DF.Constant(0.3),
+			}),
+		})
+		const randomState = new RandomState(settings, BigInt(123))
+		const sampler = randomState.sampler
+
+		expect(test.getBiome(0, 0, 0, sampler)).toEqual(Identifier.create('plains'))
+	})
 })
