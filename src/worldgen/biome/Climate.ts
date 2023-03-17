@@ -84,7 +84,7 @@ export namespace Climate {
 				Param.fromJson(root.erosion),
 				Param.fromJson(root.depth),
 				Param.fromJson(root.weirdness),
-				Json.readInt(root.offset) ?? 0,
+				Json.readNumber(root.offset) ?? 0,
 			)
 		}
 	}
