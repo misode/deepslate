@@ -146,6 +146,8 @@ export namespace Climate {
 		public static readonly CHILDREN_PER_NODE = 10
 		private readonly root: RNode<T>
 
+		private last_leaf: RLeaf<T> | null = null
+
 		constructor(points: [ParamPoint, () => T][]) {
 			if (points.length === 0) {
 				throw new Error('At least one point is required to build search tree')
@@ -227,8 +229,9 @@ export namespace Climate {
 			return f
 		}
 
-		public search(target: TargetPoint, distance: DistanceMetric<T>) {
-			const leaf = this.root.search(target.toArray(), distance)
+		public search(target: TargetPoint, distance: DistanceMetric<T>): T {
+			const leaf = this.root.search(target.toArray(), this.last_leaf, distance)
+			this.last_leaf = leaf
 			return leaf.thing()
 		}
 	}
@@ -236,7 +239,7 @@ export namespace Climate {
 	export abstract class RNode<T> {
 		constructor(public readonly space: Param[]) {}
 
-		public abstract search(values: number[], distance: DistanceMetric<T>): RLeaf<T>
+		public abstract search(values: number[], closest_leaf: RLeaf<T> | null, distance: DistanceMetric<T>): RLeaf<T>
 
 		public distance(values: number[]) {
 			let result = 0
@@ -260,14 +263,16 @@ export namespace Climate {
 			return space
 		}
 
-		search(values: number[], distance: DistanceMetric<T>): RLeaf<T> {
-			let dist = Infinity
-			let leaf: RLeaf<T> | null = null
+		search(values: number[], closest_leaf: RLeaf<T> | null, distance: DistanceMetric<T>): RLeaf<T> {
+			let dist = closest_leaf ? distance(closest_leaf, values) : Infinity
+			let leaf: RLeaf<T> | null = closest_leaf
 			for (const node of this.children) {
 				const d1 = distance(node, values)
 				if (dist <= d1) continue
-				const leaf2 = node.search(values, distance)
+				const leaf2 = node.search(values, leaf, distance)
+				if (leaf2 === null) continue
 				const d2 = node == leaf2 ? d1 : distance(leaf2, values)
+				if (d2 === 0) return leaf2
 				if (dist <= d2) continue
 				dist = d2
 				leaf = leaf2
