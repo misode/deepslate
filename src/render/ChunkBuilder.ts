@@ -6,13 +6,15 @@ import { SpecialRenderer, SpecialRenderers } from './SpecialRenderer.js'
 
 export class ChunkBuilder {
 	private chunks: Mesh[][][] = []
+	private readonly chunkSize: vec3
 
 	constructor(
 		private readonly gl: WebGLRenderingContext,
 		private structure: StructureProvider,
 		private readonly resources: Resources,
-		private readonly chunkSize: number = 16
+		chunkSize: number | vec3 = 16
 	) {
+		this.chunkSize = typeof chunkSize === 'number' ? [chunkSize, chunkSize, chunkSize] : chunkSize
 		this.updateStructureBuffers()
 	}
 
@@ -40,7 +42,7 @@ export class ChunkBuilder {
 				if (!blockProps[k]) blockProps[k] = v
 			})
 
-			const chunkPos: vec3 = [Math.floor(b.pos[0] / this.chunkSize), Math.floor(b.pos[1] / this.chunkSize), Math.floor(b.pos[2] / this.chunkSize)]
+			const chunkPos: vec3 = [Math.floor(b.pos[0] / this.chunkSize[0]), Math.floor(b.pos[1] / this.chunkSize[1]), Math.floor(b.pos[2] / this.chunkSize[2])]
 
 			if (chunkPositions && !chunkPositions.some(pos => vec3.equals(pos, chunkPos)))
 				continue
