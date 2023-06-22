@@ -113,6 +113,3 @@ export class Registry<T> {
 	}
 
 }
-
-export namespace Registry{
-}
