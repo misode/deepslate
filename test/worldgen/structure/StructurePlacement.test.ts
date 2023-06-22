@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
-import { Climate, DensityFunction, FixedBiomeSource, Holder, HolderSet, Identifier, MultiNoiseBiomeSource, StructurePlacement, StructureSet, WorldgenRegistries } from '../../src'
+import { Climate, DensityFunction, FixedBiomeSource, Holder, HolderSet, Identifier, MultiNoiseBiomeSource, StructurePlacement, StructureSet, WorldgenRegistries } from '../../../src'
 
 
 describe('StructurePlacement', () => {

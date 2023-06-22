@@ -1,6 +1,6 @@
-import { Holder, Identifier, Registry } from '../core/index.js'
-import { LegacyRandom } from '../math/index.js'
-import { Json } from '../util/index.js'
+import { Holder, Identifier, Registry } from '../../core/index.js'
+import { LegacyRandom } from '../../math/index.js'
+import { Json } from '../../util/index.js'
 import { StructurePlacement } from './StructurePlacement.js'
 import { WorldgenStructure } from './WorldgenStructure.js'
 

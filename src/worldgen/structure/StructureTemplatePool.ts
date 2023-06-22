@@ -1,6 +1,6 @@
-import { Holder, Registry } from '../core/index.js'
-import type { Random } from '../math/index.js'
-import { Json } from '../util/index.js'
+import { Holder, Registry } from '../../core/index.js'
+import type { Random } from '../../math/index.js'
+import { Json } from '../../util/index.js'
 import { StructurePoolElement } from './StructurePoolElement.js'
 
 export class StructureTemplatePool{
@@ -44,4 +44,3 @@ export class StructureTemplatePool{
 		return this.rawTemplates[this.rawTemplates.length - 1].element
 	}
 }
-

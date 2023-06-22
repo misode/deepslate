@@ -1,12 +1,12 @@
-import type { ChunkPos } from '../core/index.js'
-import { BlockPos, Holder, HolderSet, Identifier } from '../core/index.js'
-import type { Random } from '../math/index.js'
-import { LegacyRandom } from '../math/index.js'
-import { Json } from '../util/index.js'
-import type { Climate } from './index.js'
-import { BiomeSource } from './index.js'
+import type { ChunkPos } from '../../core/index.js'
+import { BlockPos, Holder, HolderSet, Identifier } from '../../core/index.js'
+import type { Random } from '../../math/index.js'
+import { LegacyRandom } from '../../math/index.js'
+import { Json } from '../../util/index.js'
+import { WorldgenRegistries } from '../WorldgenRegistries.js'
+import type { Climate } from '../biome/index.js'
+import { BiomeSource } from '../biome/index.js'
 import { StructureSet } from './StructureSet.js'
-import { WorldgenRegistries } from './WorldgenRegistries.js'
 
 export abstract class StructurePlacement {
 	protected constructor(

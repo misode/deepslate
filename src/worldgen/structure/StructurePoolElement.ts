@@ -1,10 +1,10 @@
-import type { Holder, PlacedBlock, Rotation } from '../core/index.js'
-import { BlockPos, BlockState, Identifier, Structure } from '../core/index.js'
-import type { Random } from '../math/index.js'
-import { shuffle } from '../math/index.js'
-import type { NbtTag } from '../nbt/index.js'
-import { NbtCompound, NbtString } from '../nbt/index.js'
-import { Json } from '../util/index.js'
+import type { Holder, PlacedBlock, Rotation } from '../../core/index.js'
+import { BlockPos, BlockState, Identifier, Structure } from '../../core/index.js'
+import type { Random } from '../../math/index.js'
+import { shuffle } from '../../math/index.js'
+import type { NbtTag } from '../../nbt/index.js'
+import { NbtCompound, NbtString } from '../../nbt/index.js'
+import { Json } from '../../util/index.js'
 
 
 export abstract class StructurePoolElement {
