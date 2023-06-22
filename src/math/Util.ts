@@ -1,3 +1,5 @@
+import type { Random } from './random/index.js'
+
 export function square(x: number) {
 	return x * x
 }
@@ -103,4 +105,22 @@ export function upperPowerOfTwo(x: number) {
 	x |= x >> 18
 	x |= x >> 32
 	return x + 1
+}
+
+
+export function randomBetweenInclusive(random: Random, min: number, max: number) {
+	return random.nextInt(max - min + 1) + min
+}
+
+export function nextInt(random: Random, min: number, max: number) {
+	return min >= max ? min : random.nextInt(max - min + 1) + min
+}
+
+export function shuffle(array: unknown[], random: Random) {
+	for (var i = array.length; i > 1 ; i --){
+		const switchIndex = random.nextInt(i)
+		const tmp = array[switchIndex]
+		array[switchIndex] = array[i - 1]
+		array[i - 1] = tmp
+	}
 }

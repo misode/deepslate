@@ -7,7 +7,7 @@ export interface Holder<T> {
 }
 
 export namespace Holder {
-	export function parser<T>(registry: Registry<T>, directParser: (obj: unknown) => T) {
+	export function parser<T>(registry: Registry<T>, directParser: (obj: unknown) => T): (obj: unknown) => Holder<T>{
 		return (obj: unknown) => {
 			if (typeof obj === 'string') {
 				return reference(registry, Identifier.parse(obj))
@@ -24,10 +24,20 @@ export namespace Holder {
 		}
 	}
 
-	export function reference<T>(registry: Registry<T>, id: Identifier): Holder<T> {
-		return {
-			value: () => registry.getOrThrow(id),
-			key: () => id,
+	export function reference<T>(registry: Registry<T>, id: Identifier): Holder<T>	
+	export function reference<T>(registry: Registry<T>, id: Identifier, required: true): Holder<T>	
+	export function reference<T>(registry: Registry<T>, id: Identifier, required: boolean): Holder<T | undefined>	
+	export function reference<T>(registry: Registry<T>, id: Identifier, required: boolean = true): Holder<T | undefined> {
+		if (required){
+			return {
+				value: () => registry.getOrThrow(id),
+				key: () => id,
+			}
+		} else {
+			return {
+				value: () => registry.get(id),
+				key: () => id,
+			}
 		}
 	}
 }

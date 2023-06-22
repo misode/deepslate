@@ -5,15 +5,10 @@ import { DensityFunction } from './DensityFunction.js'
 import { NoiseGeneratorSettings } from './NoiseGeneratorSettings.js'
 
 export namespace WorldgenRegistries {
-	export const NOISE = register('worldgen/noise', NoiseParameters.fromJson)
-	export const DENSITY_FUNCTION = register('worldgen/density_function', obj => DensityFunction.fromJson(obj))
-	export const NOISE_SETTINGS = register('worldgen/noise_settings', NoiseGeneratorSettings.fromJson)
-
-	function register<T>(name: string, parser?: (obj: unknown) => T) {
-		const registry = new Registry<T>(Identifier.create(name), parser)
-		Registry.REGISTRY.register(registry.key, registry)
-		return registry
-	}
+	export const NOISE = Registry.createAndRegister('worldgen/noise', NoiseParameters.fromJson)
+	export const DENSITY_FUNCTION = Registry.createAndRegister('worldgen/density_function', obj => DensityFunction.fromJson(obj))
+	export const NOISE_SETTINGS = Registry.createAndRegister('worldgen/noise_settings', NoiseGeneratorSettings.fromJson)
+	export const BIOME = Registry.createAndRegister<{}>('worldgen/biome')
 
 	export const SURFACE_NOISE = createNoise('surface', -6, [1, 1, 1])
 	export const SURFACE_SECONDARY_NOISE = createNoise('surface_secondary', -6, [1, 1, 0, 1])

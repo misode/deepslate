@@ -1,6 +1,7 @@
 import { Json } from '../util/index.js'
+import type { NoiseSettings } from './NoiseSettings.js'
 
-export type VerticalAnchor = (context: WorldgenContext) => number
+export type VerticalAnchor = (context: NoiseSettings) => number
 
 export namespace VerticalAnchor {
 	export function fromJson(obj: unknown): VerticalAnchor {
@@ -15,31 +16,16 @@ export namespace VerticalAnchor {
 		return () => 0
 	}
 
-	function absolute(value: number): VerticalAnchor {
+	export function absolute(value: number): VerticalAnchor {
 		return () => value
 	}
 
-	function aboveBottom(value: number): VerticalAnchor {
+	export function aboveBottom(value: number): VerticalAnchor {
 		return context => context.minY + value
 	}
 
-	function belowTop(value: number): VerticalAnchor {
-		return context => context.maxY - value
+	export function belowTop(value: number): VerticalAnchor {
+		return context => context.minY + context.height - 1 - value
 	}
 }
 
-export interface WorldgenContext {
-	minY: number
-	height: number
-	maxY: number
-}
-
-export namespace WorldgenContext {
-	export function create(minY: number, height: number) {
-		return {
-			minY,
-			height,
-			maxY: minY + height - 1,
-		}
-	}
-}
