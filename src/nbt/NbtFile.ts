@@ -1,11 +1,11 @@
 import Pako from 'pako'
 import type { JsonValue } from '../util/index.js'
 import { Json } from '../util/index.js'
+import { getBedrockHeader, hasGzipHeader, hasZlibHeader } from './Util.js'
 import { NbtType } from './index.js'
 import type { DataInput, DataOutput } from './io/index.js'
 import { RawDataInput, RawDataOutput } from './io/index.js'
 import { NbtCompound } from './tags/NbtCompound.js'
-import { getBedrockHeader, hasGzipHeader, hasZlibHeader } from './Util.js'
 
 export type NbtCompressionMode = 'gzip' | 'zlib' | 'none'
 
@@ -77,7 +77,7 @@ export class NbtFile {
 	}
 
 	public static read(array: Uint8Array, options: NbtCreateOptions = {}) {
-		const bedrockHeader = typeof options.bedrockHeader !== 'number' ? undefined : getBedrockHeader(array)
+		const bedrockHeader = typeof options.bedrockHeader === 'number' ? options.bedrockHeader : (options.bedrockHeader ? getBedrockHeader(array) : undefined)
 		const isGzipCompressed = options.compression === 'gzip' ||
 			(!bedrockHeader && options.compression === undefined && hasGzipHeader(array))
 		const isZlibCompressed = options.compression === 'zlib' ||
