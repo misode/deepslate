@@ -31,6 +31,7 @@ export const BlockColors: {
 	fern: () => grass,
 	grass: () => grass,
 	potted_fern: () => grass,
+	pink_petals: () => grass,
 	spruce_leaves: () => spruce,
 	birch_leaves: () => birch,
 	oak_leaves: () => foliage,
