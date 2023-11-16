@@ -5,7 +5,7 @@ import { Mesh } from './Mesh.js'
 import { SpecialRenderer, SpecialRenderers } from './SpecialRenderer.js'
 
 export class ChunkBuilder {
-	private chunks: Mesh[][][] = []
+	private chunks: {mesh: Mesh, transparentMesh: Mesh}[][][] = []
 	private readonly chunkSize: vec3
 
 	constructor(
@@ -24,13 +24,19 @@ export class ChunkBuilder {
 	}
 
 	public updateStructureBuffers(chunkPositions?: vec3[]): void {
+		if (!this.structure)
+			return
+		
 		if (!chunkPositions) {
 			this.chunks.forEach(x => x.forEach(y => y.forEach(chunk => {
-				chunk.clear()
+				chunk.mesh.clear()
+				chunk.transparentMesh.clear()
 			})))
 		} else {
 			chunkPositions.forEach(chunkPos => {
-				this.getChunk(chunkPos).clear()
+				const chunk = this.getChunk(chunkPos)
+				chunk.mesh.clear()
+				chunk.transparentMesh.clear()
 			})
 		}
 
@@ -68,7 +74,11 @@ export class ChunkBuilder {
 				}
 				if (!mesh.isEmpty()) {	
 					this.finishChunkMesh(mesh, b.pos)
-					chunk.merge(mesh)
+					if (this.resources.getBlockFlags(b.state.getName())?.transparent){
+						chunk.transparentMesh.merge(mesh)
+					} else {
+						chunk.mesh.merge(mesh)
+					}
 				}
 			} catch (e) {
 				console.error(`Error rendering block ${blockName}`, e)
@@ -77,23 +87,33 @@ export class ChunkBuilder {
 
 		if (!chunkPositions) {
 			this.chunks.forEach(x => x.forEach(y => y.forEach(chunk => {
-				chunk.rebuild(this.gl, { pos: true, color: true, texture: true, normal: true, blockPos: true })
+				chunk.mesh.rebuild(this.gl, { pos: true, color: true, texture: true, normal: true, blockPos: true })
+				chunk.transparentMesh.rebuild(this.gl, { pos: true, color: true, texture: true, normal: true, blockPos: true })
 			})))
 		} else {
 			chunkPositions.forEach(chunkPos => {
-				this.getChunk(chunkPos).rebuild(this.gl, { pos: true, color: true, texture: true, normal: true, blockPos: true })
+				const chunk = this.getChunk(chunkPos)
+				chunk.mesh.rebuild(this.gl, { pos: true, color: true, texture: true, normal: true, blockPos: true })
+				chunk.transparentMesh.rebuild(this.gl, { pos: true, color: true, texture: true, normal: true, blockPos: true })
 			})
 		}
 	}
 
 	public getMeshes(): Mesh[] {
-		return this.chunks.flatMap(x => x.flatMap(y => y.flatMap(chunk => chunk ?? [])))
+		const chunks = this.chunks.flatMap(x => x.flatMap(y => y.flatMap(chunk => chunk ?? [])))
+		return chunks.flatMap(chunk => chunk.mesh.isEmpty() ? [] : chunk.mesh).concat(chunks.flatMap(chunk => chunk.transparentMesh.isEmpty() ? [] : chunk.transparentMesh))
 	}
 
 	private needsCull(block: PlacedBlock, dir: Direction) {
 		const neighbor = this.structure.getBlock(BlockPos.towards(block.pos, dir))?.state
 		if (!neighbor) return false
-		if (this.resources.getBlockFlags(neighbor.getName())?.opaque) {
+		const neighborFlags = this.resources.getBlockFlags(neighbor.getName())
+
+		if (block.state.getName().equals(neighbor.getName()) && neighborFlags?.self_culling){
+			return true
+		}
+		
+		if (neighborFlags?.opaque) {
 			return !(dir === Direction.UP && block.state.isFluid())
 		} else {
 			return block.state.isFluid() && neighbor.isFluid()
@@ -112,14 +132,14 @@ export class ChunkBuilder {
 		}
 	}
 
-	private getChunk(chunkPos: vec3): Mesh {
+	private getChunk(chunkPos: vec3): {mesh: Mesh, transparentMesh: Mesh} {
 		const x = Math.abs(chunkPos[0]) * 2 + (chunkPos[0] < 0 ? 1 : 0)
 		const y = Math.abs(chunkPos[1]) * 2 + (chunkPos[1] < 0 ? 1 : 0)
 		const z = Math.abs(chunkPos[2]) * 2 + (chunkPos[2] < 0 ? 1 : 0)
 
 		if (!this.chunks[x]) this.chunks[x] = []
 		if (!this.chunks[x][y]) this.chunks[x][y] = []
-		if (!this.chunks[x][y][z]) this.chunks[x][y][z] = new Mesh()
+		if (!this.chunks[x][y][z]) this.chunks[x][y][z] = {mesh: new Mesh(), transparentMesh: new Mesh()}
 
 		return this.chunks[x][y][z]
 	}

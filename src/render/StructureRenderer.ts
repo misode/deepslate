@@ -68,8 +68,10 @@ type GridBuffers = {
 	length: number,
 }
 
-type BlockFlags = {
+export type BlockFlags = {
 	opaque?: boolean,
+	transparent?: boolean,
+	self_culling?: boolean,
 }
 
 export interface BlockFlagsProvider {
