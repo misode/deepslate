@@ -6,7 +6,7 @@
 npm install deepslate
 ```
 ```html
-<script src="https://unpkg.com/deepslate@0.18.1"></script>
+<script src="https://unpkg.com/deepslate@0.18.2"></script>
 ```
 
 ## Quick Examples
