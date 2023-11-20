@@ -52,6 +52,18 @@ export class BlockState {
 		return `${this.name.toString()}[${Object.entries(this.properties).map(([k, v]) => k + '=' + v).join(',')}]`
 	}
 
+	public static parse(str: string) {
+		const stateStart = str.indexOf('[')
+		if (stateStart === -1) {
+			return new BlockState(str)
+		} else {
+			const blockId = str.substring(0, stateStart)
+			const states = str.substring(stateStart + 1, str.length - 1).split(',')
+			const properties = Object.fromEntries(states.map(e => e.split('=') as [string, string]))
+			return new BlockState(blockId, properties)
+		}
+	}
+
 	public static fromNbt(nbt: NbtCompound) {
 		const name = Identifier.parse(nbt.getString('Name'))
 		const properties = nbt.getCompound('Properties')
