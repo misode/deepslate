@@ -97,7 +97,7 @@ export class StructureRenderer extends Renderer {
 	private readonly outlineMesh: Mesh = new Mesh()
 	private invisibleBlocksMesh: Mesh = new Mesh()
 	private readonly atlasTexture: WebGLTexture
-	private readonly useInvisibleBlocks: boolean
+	public useInvisibleBlocks: boolean
 
 	private readonly chunkBuilder: ChunkBuilder
 
