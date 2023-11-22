@@ -80,6 +80,49 @@ function chestRenderer(facing: string, type: string, uvProvider: TextureAtlasPro
 	])).transform(rotation)
 }
 
+function decoratedPotRenderer(uvProvider: TextureAtlasProvider){
+	const id = Identifier.create('decorated_pot')
+	return dummy(id, uvProvider, {}, new BlockModel(id, undefined, {
+		0: 'entity/decorated_pot/decorated_pot_side',
+		1: 'entity/decorated_pot/decorated_pot_base',
+	}, [
+		{
+			from: [1, 0, 1],
+			to: [15, 16, 15],
+			faces: {
+				north: {uv: [1, 0, 15, 16], texture: '#0'},
+				east: {uv: [1, 0, 15, 16], texture: '#0'},
+				south: {uv: [1, 0, 15, 16], texture: '#0'},
+				west: {uv: [1, 0, 15, 16], texture: '#0'},
+				up: {uv: [0, 6.5, 7, 13.5], texture: '#1'},
+				down: {uv: [7, 6.5, 14, 13.5], texture: '#1'},
+			},
+		},
+		{
+			from: [5, 16, 5],
+			to: [11, 17, 11],
+			faces: {
+				north: {uv: [0, 5.5, 3, 6], texture: '#1'},
+				east: {uv: [3, 5.5, 6, 6], texture: '#1'},
+				south: {uv: [6, 5.5, 9, 6], texture: '#1'},
+				west: {uv: [9, 5.5, 12, 6], texture: '#1'},
+			},
+		},
+		{
+			from: [4, 17, 4],
+			to: [12, 20, 12],
+			faces: {
+				north: {uv: [0, 4, 4, 5.5], texture: '#1'},
+				east: {uv: [4, 4, 8, 5.5], texture: '#1'},
+				south: {uv: [8, 4, 12, 5.5], texture: '#1'},
+				west: {uv: [12, 4, 16, 5.5], texture: '#1'},
+				up: {uv: [4, 0, 8, 4], texture: '#1'},
+				down: {uv: [8, 0, 12, 4], texture: '#1'},
+			},
+		},
+	]))
+}
+
 export const SpecialRenderer: {
 	[key: string]: (props: { [key: string]: string }, uvProvider: TextureAtlasProvider, cull: Cull) => any,
 } = {
@@ -89,6 +132,8 @@ export const SpecialRenderer: {
 		liquidRenderer('lava', parseInt(props.level), uvProvider, cull),
 	'minecraft:chest': (props, uvProvider) =>
 		chestRenderer(props.facing || 'south', props.type || 'single', uvProvider),
+	'minecraft:decorated_pot': (_, uvProvider) =>
+		decoratedPotRenderer(uvProvider),
 }
 
 export const SpecialRenderers = new Set(Object.keys(SpecialRenderer))
