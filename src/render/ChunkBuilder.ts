@@ -74,7 +74,7 @@ export class ChunkBuilder {
 				}
 				if (!mesh.isEmpty()) {	
 					this.finishChunkMesh(mesh, b.pos)
-					if (this.resources.getBlockFlags(b.state.getName())?.transparent){
+					if (this.resources.getBlockFlags(b.state.getName())?.semi_transparent){
 						chunk.transparentMesh.merge(mesh)
 					} else {
 						chunk.mesh.merge(mesh)

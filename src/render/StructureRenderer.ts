@@ -70,7 +70,7 @@ type GridBuffers = {
 
 export type BlockFlags = {
 	opaque?: boolean,
-	transparent?: boolean,
+	semi_transparent?: boolean,
 	self_culling?: boolean,
 }
 
