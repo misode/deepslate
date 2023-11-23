@@ -59,17 +59,10 @@ const fsGrid = `
   }
 `
 
-
-
-
-type GridBuffers = {
-	position: WebGLBuffer,
-	color: WebGLBuffer,
-	length: number,
-}
-
-type BlockFlags = {
+export type BlockFlags = {
 	opaque?: boolean,
+	semi_transparent?: boolean,
+	self_culling?: boolean,
 }
 
 export interface BlockFlagsProvider {
