@@ -84,9 +84,11 @@ export class BlockModel {
 		private guiLight?: BlockModelGuiLight | undefined,
 	) {}
 
-	public getDisplayMesh(display: Display, uvProvider: TextureAtlasProvider, tint?: Color | ((index: number) => Color)) {
+	public getDisplayMesh(display: Display, uvProvider: TextureAtlasProvider, tint?: Color | ((index: number) => Color), additionalMesh?: Mesh) {
 		const mesh = this.getMesh(uvProvider, Cull.none(), tint)
-		
+		if (additionalMesh){
+			mesh.merge(additionalMesh)
+		}
 		const transform = this.display?.[display]
 		const t = mat4.create()
 		mat4.identity(t)
