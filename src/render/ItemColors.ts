@@ -160,7 +160,8 @@ for (const egg of SpawnEggs) {
 
 for (const id of [
 	'grass_block',
-	'grass',
+	'grass', // this is removed in versions since 1.20.3-pre1
+	'short_grass',
 	'fern',
 	'vine',
 	'oak_leaves',

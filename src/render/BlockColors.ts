@@ -29,7 +29,8 @@ export const BlockColors: {
 	tall_grass: () => grass,
 	grass_block: () => grass,
 	fern: () => grass,
-	grass: () => grass,
+	grass: () => grass, // this is removed in versions since 1.20.3-pre1
+	short_grass: () => grass,
 	potted_fern: () => grass,
 	pink_petals: () => grass,
 	spruce_leaves: () => spruce,
