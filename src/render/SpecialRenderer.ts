@@ -3,6 +3,7 @@ import { Direction, Identifier } from '../core/index.js'
 import { BlockDefinition } from './BlockDefinition.js'
 import { BlockModel } from './BlockModel.js'
 import type { Cull } from './Cull.js'
+import type { Mesh } from './Mesh.js'
 import type { TextureAtlasProvider } from './TextureAtlas.js'
 
 function dummy(id: Identifier, uvProvider: TextureAtlasProvider, cull: Cull, model: BlockModel) {
@@ -124,7 +125,7 @@ function decoratedPotRenderer(uvProvider: TextureAtlasProvider){
 }
 
 export const SpecialRenderer: {
-	[key: string]: (props: { [key: string]: string }, uvProvider: TextureAtlasProvider, cull: Cull) => any,
+	[key: string]: (props: { [key: string]: string }, uvProvider: TextureAtlasProvider, cull: Cull) => Mesh,
 } = {
 	'minecraft:water': (props, uvProvider, cull) =>
 		liquidRenderer('water', parseInt(props.level), uvProvider, cull, 0),

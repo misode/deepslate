@@ -4,7 +4,7 @@ import type { Direction } from '../core/index.js'
 import { Identifier } from '../core/index.js'
 import { Vector } from '../math/index.js'
 import type { Color } from '../util/index.js'
-import { Cull } from './Cull.js'
+import type { Cull } from './Cull.js'
 import { Mesh } from './Mesh.js'
 import { Quad } from './Quad.js'
 import type { TextureAtlasProvider, UV } from './TextureAtlas.js'
@@ -84,11 +84,7 @@ export class BlockModel {
 		private guiLight?: BlockModelGuiLight | undefined,
 	) {}
 
-	public getDisplayMesh(display: Display, uvProvider: TextureAtlasProvider, tint?: Color | ((index: number) => Color), additionalMesh?: Mesh) {
-		const mesh = this.getMesh(uvProvider, Cull.none(), tint)
-		if (additionalMesh){
-			mesh.merge(additionalMesh)
-		}
+	public getDisplayTransform(display: Display) {
 		const transform = this.display?.[display]
 		const t = mat4.create()
 		mat4.identity(t)
@@ -105,9 +101,7 @@ export class BlockModel {
 			mat4.scale(t, t, transform.scale)
 		}
 		mat4.translate(t, t, [-8, -8, -8])
-		mesh.transform(t)
-
-		return mesh
+		return t
 	}
 
 	public getMesh(uvProvider: TextureAtlasProvider, cull: Cull, tint?: Color | ((index: number) => Color)) {
