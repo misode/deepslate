@@ -104,12 +104,11 @@ Promise.all([
 	const atlasCtx = atlasCanvas.getContext('2d')!
 	atlasCtx.drawImage(atlas, 0, 0)
 	const atlasData = atlasCtx.getImageData(0, 0, atlasSize, atlasSize)
-	const part = 16 / atlasData.width
 	const idMap = {}
 	Object.keys(uvMap).forEach(id => {
-		const u = uvMap[id][0] / atlasSize
-		const v = uvMap[id][1] / atlasSize
-		idMap['minecraft:' + id] = [u, v, u + part, v + part]
+		const [u, v, du, dv] = uvMap[id]
+		const dv2 = (du !== dv && id.startsWith('block/')) ? du : dv
+		idMap[Identifier.create(id).toString()] = [u / atlasSize, v / atlasSize, (u + du) / atlasSize, (v + dv2) / atlasSize]
 	})
 	const textureAtlas = new TextureAtlas(atlasData, idMap)
 

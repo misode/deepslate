@@ -1,7 +1,7 @@
 import { mat4 } from 'gl-matrix'
 import { Identifier } from '../core/index.js'
 import { ItemStack } from '../core/ItemStack.js'
-import type { Color } from '../index.js'
+import { Cull, SpecialRenderer, SpecialRenderers, type Color } from '../index.js'
 import type { BlockModelProvider } from './BlockModel.js'
 import { getItemColor } from './ItemColors.js'
 import type { Mesh } from './Mesh.js'
@@ -48,7 +48,17 @@ export class ItemRenderer extends Renderer {
 		if (!tint && this.item.id.namespace === Identifier.DEFAULT_NAMESPACE) {
 			tint = getItemColor(this.item)
 		}
-		const mesh = model.getDisplayMesh('gui', this.resources, tint)
+		const mesh = model.getMesh(this.resources, Cull.none(), tint)
+		if (SpecialRenderers.has(this.item.id.toString())){
+			const specialMesh = SpecialRenderer[this.item.id.toString()]({}, this.resources, Cull.none())
+			// undo the scaling done by the special renderer
+			const t = mat4.create()
+			mat4.identity(t)
+			mat4.scale(t, t, [16, 16, 16])
+			specialMesh.transform(t)
+			mesh.merge(specialMesh)
+		}
+		mesh.transform(model.getDisplayTransform('gui'))
 		mesh.quads.forEach(q => {
 			const normal = q.normal()
 			q.forEach(v => v.normal = normal)
