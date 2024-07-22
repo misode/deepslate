@@ -32,6 +32,10 @@ export class BlockState {
 		return this.is(BlockState.WATER) || this.is(BlockState.LAVA)
 	}
 
+	public isWaterlogged() {
+		return this.is(BlockState.WATER) || this.is(BlockState.LAVA) || this.properties["waterlogged"] === 'true'
+	}
+
 	public equals(other: BlockState) {
 		if (!this.name.equals(other.name)) {
 			return false
