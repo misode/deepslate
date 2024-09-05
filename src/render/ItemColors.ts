@@ -1,6 +1,6 @@
 import type { ItemStack } from '../core/index.js'
-import { Identifier } from '../core/index.js'
-import { Potion } from '../core/world/Potion.js'
+import { Identifier, PotionContents } from '../core/index.js'
+import { NbtIntArray } from '../index.js'
 import type { Color } from '../util/index.js'
 import { intToRgb } from '../util/index.js'
 import { BlockColors } from './BlockColors.js'
@@ -20,31 +20,44 @@ function register(items: string[], fn: (item: ItemStack) => Tint) {
 	}
 }
 
+function getDyedColor(item: ItemStack, fallback: number) {
+	const dyedColor = item.getComponent('dyed_color', tag => {
+		return tag.isCompound() ? tag.getNumber('rgb') : tag.getAsNumber()
+	})
+	return intToRgb(dyedColor ?? fallback)
+}
+
 register([
 	'leather_helmet',
 	'leather_chestplate',
 	'leather_leggings',
 	'leather_boots',
 	'leather_horse_armor',
-], ({ tag }) => {
-	const display = tag.getCompound('display')
-	const color = intToRgb(display.hasNumber('color') ? display.getNumber('color') : 10511680)
+], item => {
+	const color = getDyedColor(item, -6265536)
 	return (index: number) => index > 0 ? [1, 1, 1] : color
 })
 
-const grass: Color = [124 / 255, 189 / 255, 107 / 255]
+register([
+	'wolf_armor',
+], item => {
+	const color = getDyedColor(item, 0)
+	return (index: number) => index !== 1 ? [1, 1, 1] : color
+})
+
 register([
 	'tall_grass',
 	'large_fern',
-], () => grass)
+], () => [124 / 255, 189 / 255, 107 / 255])
 
 register([
 	'firework_star',
-], ({ tag }) => {
+], item => {
+	const colors = item.getComponent('firework_explosion', tag => {
+		return tag.isCompound() ? tag.getIntArray('colors') : new NbtIntArray()
+	})
 	const color: Color = (() => {
-		const explosion = tag.getCompound('Explosion')
-		const colors = explosion.get('Colors')
-		if (!colors?.isIntArray() || colors.length === 0) {
+		if (!colors || colors.length === 0) {
 			return intToRgb(9079434)
 		}
 		if (colors.length === 1) {
@@ -68,17 +81,25 @@ register([
 	'potion',
 	'splash_potion',
 	'lingering_potion',
-], ({ tag }) => {
-	const color = Potion.getColor(tag)
+	'tipped_arrow',
+], item => {
+	const data = item.getComponent('potion_contents', PotionContents.fromNbt)
+	if (!data) {
+		return () => [1, 1, 1]
+	}
+	const color = PotionContents.getColor(data)
 	return (index: number) => index > 0 ? [1, 1, 1] : color
 })
 
 const SpawnEggs: [string, number, number][] = [
 	['allay', 56063, 44543],
+	['armadillo', 11366765, 8538184],
 	['axolotl', 16499171, 10890612],
 	['bat', 4996656, 986895],
 	['bee', 15582019, 4400155],
 	['blaze', 16167425, 16775294],
+	['bogged', 9084018, 3231003],
+	['breeze', 11506911, 9529055],
 	['cat', 15714446, 9794134],
 	['camel', 16565097, 13341495],
 	['cave_spider', 803406, 11013646],
@@ -127,6 +148,7 @@ const SpawnEggs: [string, number, number][] = [
 	['skeleton', 12698049, 4802889],
 	['skeleton_horse', 6842447, 15066584],
 	['slime', 5349438, 8306542],
+	['sniffer', 8855049, 2468720],
 	['snow_golem', 14283506, 8496292],
 	['spider', 3419431, 11013646],
 	['squid', 2243405, 7375001],
@@ -160,7 +182,6 @@ for (const egg of SpawnEggs) {
 
 for (const id of [
 	'grass_block',
-	'grass', // this is removed in versions since 1.20.3-pre1
 	'short_grass',
 	'fern',
 	'vine',
@@ -181,18 +202,9 @@ register([
 ], () => intToRgb(9619016))
 
 register([
-	'tipped_arrow',
-], ({ tag }) => {
-	const color = Potion.getColor(tag)
-	return (index: number) => index === 0 ? color : [1, 1, 1]
-})
-
-register([
 	'filled_map',
-], ({ tag }) => {
-	const display = tag.getCompound('display')
-	const color = intToRgb(display.hasNumber('MapColor')
-		? (0xFF000000 | display.getNumber('MapColor') & 16777215)
-		: -12173266)
+], item => {
+	const mapColor = item.getComponent('map_color', tag => tag.getAsNumber())
+	const color = intToRgb(mapColor ?? 4603950)
 	return (index: number) => index === 0 ? [1, 1, 1] : color
 })

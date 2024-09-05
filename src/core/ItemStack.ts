@@ -1,26 +1,25 @@
-import { NbtCompound } from '../nbt/index.js'
+import type { NbtTag } from '../nbt/index.js'
 import { Identifier } from './Identifier.js'
-import { Item } from './world/Item.js'
 
 export class ItemStack {
-	private item: Item | undefined
-
 	constructor(
 		public id: Identifier,
 		public count: number,
-		public tag: NbtCompound = new NbtCompound(),
+		public components: Map<string, NbtTag> = new Map(),
 	) {}
-
-	public getItem() {
-		if (this.item === undefined) {
-			this.item = Item.get(this.id)
+	
+	public getComponent<T>(key: string | Identifier, reader: (tag: NbtTag) => T) {
+		const value = this.components.get(key.toString())
+		if (value) {
+			return reader(value)
 		}
-		return this.item
+		return undefined
 	}
 
 	public clone(): ItemStack {
-		const tag = NbtCompound.fromJson(this.tag.toJson())
-		return new ItemStack(this.id, this.count, tag)
+		// Component values are not cloned because they are assumed to be immutable
+		const components = new Map(this.components)
+		return new ItemStack(this.id, this.count, components)
 	}
 
 	public is(other: string | Identifier | ItemStack) {
@@ -40,12 +39,23 @@ export class ItemStack {
 		if (!(other instanceof ItemStack)) {
 			return false
 		}
-		return this.id.equals(other.id)
-			&& this.count === other.count
-			&& this.tag.toString() == other.tag.toString()
+		return this.count === other.count && this.isSameItemSameComponents(other)
+	}
+
+	public isSameItemSameComponents(other: ItemStack) {
+		if (!this.id.equals(other.id) || this.components.size !== other.components.size) {
+			return false
+		}
+		for (const [key, value] of this.components) {
+			const otherValue = other.components.get(key)
+			if (value.toString() !== otherValue?.toString()) {
+				return false
+			}
+		}
+		return true
 	}
 
 	public toString() {
-		return this.id.toString() + (this.tag.size > 0 ? this.tag.toString() : '') + (this.count > 1 ? ` ${this.count}` : '')
+		return this.id.toString() + (this.count > 1 ? ` ${this.count}` : '')
 	}
 }

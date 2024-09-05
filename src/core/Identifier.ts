@@ -5,14 +5,7 @@ export class Identifier {
 	constructor(
 		public readonly namespace: string,
 		public readonly path: string,
-	) {
-		if (!namespace.match(/^[a-z0-9._-]*$/)) {
-			throw new Error(`Non [a-z0-9._-] character in namespace of ${namespace}${Identifier.SEPARATOR}${path}`)
-		}
-		if (!path.match(/^[a-z0-9/._-]*$/)) {
-			throw new Error(`Non [a-z0-9/._-] character in path of ${namespace}${Identifier.SEPARATOR}${path}`)
-		}
-	}
+	) {}
 
 	public equals(other: unknown) {
 		if (this === other) {
