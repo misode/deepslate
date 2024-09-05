@@ -2,7 +2,7 @@ import { mat4, vec3 } from 'gl-matrix'
 import type { PlacedBlock, Resources, StructureProvider } from '../index.js'
 import { BlockPos, Direction, Vector } from '../index.js'
 import { Mesh } from './Mesh.js'
-import { SpecialRenderer, SpecialRenderers } from './SpecialRenderer.js'
+import { SpecialRenderers } from './SpecialRenderer.js'
 
 export class ChunkBuilder {
 	private chunks: {mesh: Mesh, transparentMesh: Mesh}[][][] = []
@@ -69,8 +69,9 @@ export class ChunkBuilder {
 				if (blockDefinition) {
 					mesh.merge(blockDefinition.getMesh(blockName, blockProps, this.resources, this.resources, cull))
 				}
-				if (SpecialRenderers.has(blockName.toString())) {
-					mesh.merge(SpecialRenderer[blockName.toString()](blockProps, this.resources, cull))
+				const specialMesh = SpecialRenderers.getMesh(blockName.toString(), blockProps, this.resources, cull)
+				if (!specialMesh.isEmpty()) {
+					mesh.merge(specialMesh)
 				}
 				if (!mesh.isEmpty()) {	
 					this.finishChunkMesh(mesh, b.pos)
@@ -114,9 +115,9 @@ export class ChunkBuilder {
 		}
 		
 		if (neighborFlags?.opaque) {
-			return !(dir === Direction.UP && block.state.isFluid())
+			return !(dir === Direction.UP && block.state.isWaterlogged())
 		} else {
-			return block.state.isFluid() && neighbor.isFluid()
+			return block.state.isWaterlogged() && neighbor.isWaterlogged()
 		}
 	}
 

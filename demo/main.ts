@@ -158,6 +158,7 @@ Promise.all([
 	structure.addBlock([1, 0, 0], 'minecraft:stone')
 	structure.addBlock([2, 0, 0], 'minecraft:grass_block', { snowy: 'false' })
 	structure.addBlock([1, 1, 0], 'minecraft:cake', { bites: '3' })
+	structure.addBlock([2, 1, 0], 'minecraft:acacia_fence', { waterlogged: 'true' })
 	structure.addBlock([0, 0, 0], 'minecraft:wall_torch', { facing: 'west' })
 
 	const structureCanvas = document.getElementById('structure-display') as HTMLCanvasElement

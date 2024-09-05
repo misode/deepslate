@@ -3,7 +3,7 @@ import { Direction, Identifier } from '../core/index.js'
 import { BlockDefinition } from './BlockDefinition.js'
 import { BlockModel } from './BlockModel.js'
 import type { Cull } from './Cull.js'
-import type { Mesh } from './Mesh.js'
+import { Mesh } from './Mesh.js'
 import type { TextureAtlasProvider } from './TextureAtlas.js'
 
 function dummy(id: Identifier, uvProvider: TextureAtlasProvider, cull: Cull, model: BlockModel) {
@@ -124,7 +124,7 @@ function decoratedPotRenderer(uvProvider: TextureAtlasProvider){
 	]))
 }
 
-export const SpecialRenderer: {
+const RENDERERS: {
 	[key: string]: (props: { [key: string]: string }, uvProvider: TextureAtlasProvider, cull: Cull) => Mesh,
 } = {
 	'minecraft:water': (props, uvProvider, cull) =>
@@ -137,4 +137,15 @@ export const SpecialRenderer: {
 		decoratedPotRenderer(uvProvider),
 }
 
-export const SpecialRenderers = new Set(Object.keys(SpecialRenderer))
+export namespace SpecialRenderers {
+	export function getMesh(id: string, props: { [key: string]: string }, uvProvider: TextureAtlasProvider, cull: Cull): Mesh {
+		const mesh = new Mesh()
+		if (id in RENDERERS) {
+			mesh.merge(RENDERERS[id](props, uvProvider, cull))
+		}
+		if (props['waterlogged'] === 'true') {
+			mesh.merge(liquidRenderer('water', 0, uvProvider, cull, 0))
+		}
+		return mesh
+	}
+}

@@ -1,7 +1,7 @@
 import { mat4 } from 'gl-matrix'
 import { Identifier } from '../core/index.js'
 import { ItemStack } from '../core/ItemStack.js'
-import { Cull, SpecialRenderer, SpecialRenderers, type Color } from '../index.js'
+import { Cull, SpecialRenderers, type Color } from '../index.js'
 import type { BlockModelProvider } from './BlockModel.js'
 import { getItemColor } from './ItemColors.js'
 import type { Mesh } from './Mesh.js'
@@ -49,8 +49,8 @@ export class ItemRenderer extends Renderer {
 			tint = getItemColor(this.item)
 		}
 		const mesh = model.getMesh(this.resources, Cull.none(), tint)
-		if (SpecialRenderers.has(this.item.id.toString())){
-			const specialMesh = SpecialRenderer[this.item.id.toString()]({}, this.resources, Cull.none())
+		const specialMesh = SpecialRenderers.getMesh(this.item.id.toString(), {}, this.resources, Cull.none())
+		if (!specialMesh.isEmpty()) {
 			// undo the scaling done by the special renderer
 			const t = mat4.create()
 			mat4.identity(t)
