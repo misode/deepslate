@@ -138,18 +138,14 @@ const RENDERERS: {
 }
 
 export namespace SpecialRenderers {
-	export function has(id: string, props: { [key: string]: string }): boolean {
-		return id in RENDERERS || props['waterlogged'] === 'true'
-	}
-
 	export function getMesh(id: string, props: { [key: string]: string }, uvProvider: TextureAtlasProvider, cull: Cull): Mesh {
-		const result = new Mesh()
+		const mesh = new Mesh()
 		if (id in RENDERERS) {
-			result.merge(RENDERERS[id](props, uvProvider, cull))
+			mesh.merge(RENDERERS[id](props, uvProvider, cull))
 		}
 		if (props['waterlogged'] === 'true') {
-			result.merge(liquidRenderer('water', 0, uvProvider, cull, 0))
+			mesh.merge(liquidRenderer('water', 0, uvProvider, cull, 0))
 		}
-		return result
+		return mesh
 	}
 }

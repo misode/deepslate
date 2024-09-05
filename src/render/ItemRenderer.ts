@@ -49,8 +49,8 @@ export class ItemRenderer extends Renderer {
 			tint = getItemColor(this.item)
 		}
 		const mesh = model.getMesh(this.resources, Cull.none(), tint)
-		if (SpecialRenderers.has(this.item.id.toString(), {})) {
-			const specialMesh = SpecialRenderers.getMesh(this.item.id.toString(), {}, this.resources, Cull.none())
+		const specialMesh = SpecialRenderers.getMesh(this.item.id.toString(), {}, this.resources, Cull.none())
+		if (!specialMesh.isEmpty()) {
 			// undo the scaling done by the special renderer
 			const t = mat4.create()
 			mat4.identity(t)
