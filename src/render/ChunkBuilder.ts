@@ -70,7 +70,7 @@ export class ChunkBuilder {
 					mesh.merge(blockDefinition.getMesh(blockName, blockProps, this.resources, this.resources, cull))
 				}
 				if (SpecialRenderers.has(blockName.toString(), blockProps)) {
-					mesh.merge(SpecialRenderers.mesh(blockName.toString(), blockProps, this.resources, cull))
+					mesh.merge(SpecialRenderers.getMesh(blockName.toString(), blockProps, this.resources, cull))
 				}
 				if (!mesh.isEmpty()) {	
 					this.finishChunkMesh(mesh, b.pos)

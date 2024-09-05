@@ -124,7 +124,7 @@ function decoratedPotRenderer(uvProvider: TextureAtlasProvider){
 	]))
 }
 
-export const SpecialRenderer: {
+const RENDERERS: {
 	[key: string]: (props: { [key: string]: string }, uvProvider: TextureAtlasProvider, cull: Cull) => Mesh,
 } = {
 	'minecraft:water': (props, uvProvider, cull) =>
@@ -137,15 +137,15 @@ export const SpecialRenderer: {
 		decoratedPotRenderer(uvProvider),
 }
 
-export const SpecialRenderers = new class {
-	has(id: string, props: { [key: string]: string }): boolean {
-		return id in SpecialRenderer || props['waterlogged'] === 'true'
+export namespace SpecialRenderers {
+	export function has(id: string, props: { [key: string]: string }): boolean {
+		return id in RENDERERS || props['waterlogged'] === 'true'
 	}
 
-	mesh(id: string, props: { [key: string]: string }, uvProvider: TextureAtlasProvider, cull: Cull): Mesh {
-		var result = new Mesh()
-		if (id in SpecialRenderer) {
-			result.merge(SpecialRenderer[id](props, uvProvider, cull))
+	export function getMesh(id: string, props: { [key: string]: string }, uvProvider: TextureAtlasProvider, cull: Cull): Mesh {
+		const result = new Mesh()
+		if (id in RENDERERS) {
+			result.merge(RENDERERS[id](props, uvProvider, cull))
 		}
 		if (props['waterlogged'] === 'true') {
 			result.merge(liquidRenderer('water', 0, uvProvider, cull, 0))
