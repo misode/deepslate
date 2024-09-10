@@ -16,6 +16,10 @@ export class NbtDouble extends NbtTag {
 		return NbtType.Double
 	}
 
+	public override equals(other: NbtTag): boolean {
+		return other.isDouble() && this.value === other.value
+	}
+
 	public override getAsNumber() {
 		return this.value
 	}

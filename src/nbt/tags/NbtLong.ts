@@ -41,6 +41,12 @@ export class NbtLong extends NbtTag {
 		return NbtType.Long
 	}
 
+	public override equals(other: NbtTag): boolean {
+		return other.isLong()
+			&& this.value[0] === other.value[0]
+			&& this.value[1] === other.value[1]
+	}
+
 	public override getAsNumber() {
 		return NbtLong.pairToNumber(this.value)
 	}

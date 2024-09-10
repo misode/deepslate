@@ -15,6 +15,10 @@ export class NbtShort extends NbtTag {
 		return NbtType.Short
 	}
 
+	public override equals(other: NbtTag): boolean {
+		return other.isShort() && this.value === other.value
+	}
+
 	public override getAsNumber() {
 		return this.value
 	}

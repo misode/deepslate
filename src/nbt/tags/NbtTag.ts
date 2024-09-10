@@ -115,6 +115,8 @@ export abstract class NbtTag {
 
 	public abstract getId(): NbtType
 
+	public abstract equals(other: NbtTag): boolean
+
 	public abstract toString(): string
 
 	public abstract toPrettyString(indent?: string, depth?: number): string

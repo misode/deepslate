@@ -13,6 +13,10 @@ export class NbtEnd extends NbtTag {
 		return NbtType.End
 	}
 
+	public override equals(other: NbtTag): boolean {
+		return other.isEnd()
+	}
+
 	public override toString() {
 		return 'END'
 	}

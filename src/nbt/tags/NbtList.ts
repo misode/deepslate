@@ -32,6 +32,13 @@ export class NbtList<T extends NbtTag = NbtTag> extends NbtAbstractList<T> {
 		return NbtType.List
 	}
 
+	public override equals(other: NbtTag): boolean {
+		return other.isList()
+			&& this.type === other.type
+			&& this.length === other.length
+			&& this.items.every((item, i) => item.equals(other.items[i]))
+	}
+
 	public override getType() {
 		return this.type
 	}

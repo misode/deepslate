@@ -15,6 +15,12 @@ export class NbtIntArray extends NbtAbstractList<NbtInt> {
 		return NbtType.IntArray
 	}
 
+	public override equals(other: NbtTag): boolean {
+		return other.isIntArray()
+			&& this.length === other.length
+			&& this.items.every((item, i) => item.equals(other.items[i]))
+	}
+
 	public override getType() {
 		return NbtType.Int
 	}

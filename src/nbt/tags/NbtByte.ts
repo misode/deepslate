@@ -18,6 +18,10 @@ export class NbtByte extends NbtTag {
 		return NbtType.Byte
 	}
 
+	public override equals(other: NbtTag): boolean {
+		return other.isByte() && this.value === other.value
+	}
+
 	public override getAsNumber() {
 		return this.value
 	}

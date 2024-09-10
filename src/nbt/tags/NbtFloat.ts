@@ -16,6 +16,10 @@ export class NbtFloat extends NbtTag {
 		return NbtType.Float
 	}
 
+	public override equals(other: NbtTag): boolean {
+		return other.isFloat() && this.value === other.value
+	}
+
 	public override getAsNumber() {
 		return this.value
 	}
