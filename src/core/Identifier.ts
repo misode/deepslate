@@ -7,6 +7,10 @@ export class Identifier {
 		public readonly path: string,
 	) {}
 
+	public is(other: string) {
+		return this.equals(Identifier.parse(other))
+	}
+
 	public equals(other: unknown) {
 		if (this === other) {
 			return true

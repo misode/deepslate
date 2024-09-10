@@ -1,4 +1,5 @@
 import type { NbtTag } from '../nbt/index.js'
+import { NbtCompound, NbtInt, NbtString } from '../nbt/index.js'
 import { Identifier } from './Identifier.js'
 
 export class ItemStack {
@@ -7,13 +8,23 @@ export class ItemStack {
 		public count: number,
 		public components: Map<string, NbtTag> = new Map(),
 	) {}
-	
+
 	public getComponent<T>(key: string | Identifier, reader: (tag: NbtTag) => T) {
+		if (typeof key === 'string') {
+			key = Identifier.parse(key)
+		}
 		const value = this.components.get(key.toString())
 		if (value) {
 			return reader(value)
 		}
 		return undefined
+	}
+
+	public hasComponent(key: string | Identifier) {
+		if (typeof key === 'string') {
+			key = Identifier.parse(key)
+		}
+		return this.components.has(key.toString())
 	}
 
 	public clone(): ItemStack {
@@ -56,6 +67,34 @@ export class ItemStack {
 	}
 
 	public toString() {
-		return this.id.toString() + (this.count > 1 ? ` ${this.count}` : '')
+		let result = this.id.toString()
+		if (this.components.size > 0) {
+			result += `[${[...this.components.entries()].map(([k, v]) => `${k}=${v.toString()}`).join(',')}]`
+		}
+		if (this.count > 1) {
+			result += ` ${this.count}`
+		}
+		return result
+	}
+
+	public toNbt() {
+		const result = new NbtCompound()
+			.set('id', new NbtString(this.id.toString()))
+		if (this.count > 1) {
+			result.set('count', new NbtInt(this.count))
+		}
+		if (this.components.size > 0) {
+			result.set('components', new NbtCompound(this.components))
+		}
+		return result
+	}
+
+	public static fromNbt(nbt: NbtCompound) {
+		const id = Identifier.parse(nbt.getString('id'))
+		const count = nbt.hasNumber('count') ? nbt.getNumber('count') : 1
+		const components = new Map(Object.entries(
+			nbt.getCompound('components').map((key, value) => [Identifier.parse(key).toString(), value])
+		))
+		return new ItemStack(id, count, components)
 	}
 }
