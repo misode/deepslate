@@ -144,6 +144,161 @@ function shieldRenderer(uvProvider: TextureAtlasProvider) {
 	]))
 }
 
+function skullRenderer(texture: string, uvProvider: TextureAtlasProvider, n: number = 1) {
+	const id = Identifier.create('skull')
+	console.log(uvProvider.getTextureUV(Identifier.create(`entity/${texture}`)))
+	return dummy(id, uvProvider, {}, new BlockModel(id, undefined, {
+		0: `entity/${texture}`,
+	}, [
+		{
+			from: [4, 0, 4],
+			to: [12, 8, 12],
+			faces: {
+				north: {uv: [6, 2*n, 8, 4*n], texture: '#0'},
+				east: {uv: [2, 2*n, 0, 4*n], texture: '#0'},
+				south: {uv: [2, 2*n, 4, 4*n], texture: '#0'},
+				west: {uv: [6, 2*n, 4, 4*n], texture: '#0'},
+				up: {uv: [2, 0*n, 4, 2*n], texture: '#0'},
+				down: {uv: [4, 0*n, 6, 2*n], texture: '#0'},
+			},
+		},
+	]))
+}
+
+function dragonHead(uvProvider: TextureAtlasProvider) {
+	const id = Identifier.create('dragon_head')
+	const transformation = mat4.create()
+	mat4.translate(transformation, transformation, [0.5, 0.5, 0.5])
+	mat4.scale(transformation, transformation, [0.75, 0.75, 0.75])
+	mat4.rotateY(transformation, transformation, Math.PI)
+	mat4.translate(transformation, transformation, [-0.5, -0.6, -0.5])
+	return dummy(id, uvProvider, {}, new BlockModel(id, undefined, {
+		0: 'entity/enderdragon/dragon',
+	}, [
+		// TODO: add scales and nostrils
+		{
+			from: [2, 4, -16],
+			to: [14, 9, 0],
+			rotation: {angle: 0, axis: 'y', origin: [0, -3, 0]},
+			faces: {
+				north: {uv: [12, 3.75, 12.75, 4.0625], texture: '#0'},
+				east: {uv: [11, 3.75, 12, 4.0625], texture: '#0'},
+				south: {uv: [13.75, 3.75, 14.5, 4.0625], texture: '#0'},
+				west: {uv: [12.75, 3.75, 13.75, 4.0625], texture: '#0'},
+				up: {uv: [12.75, 3.75, 12, 2.75], texture: '#0'},
+				down: {uv: [13.5, 2.75, 12.75, 3.75], texture: '#0'},
+			},
+		},
+		{
+			from: [0, 0, -2],
+			to: [16, 16, 14],
+			faces: {
+				north: {uv: [8, 2.875, 9, 3.875], texture: '#0'},
+				east: {uv: [7, 2.875, 8, 3.875], texture: '#0'},
+				south: {uv: [10, 2.875, 11, 3.875], texture: '#0'},
+				west: {uv: [9, 2.875, 10, 3.875], texture: '#0'},
+				up: {uv: [9, 2.875, 8, 1.875], texture: '#0'},
+				down: {uv: [10, 1.875, 9, 2.875], texture: '#0'},
+			},
+		},
+		{
+			from: [2, 0, -16],
+			to: [14, 4, 0],
+			rotation: {angle: -0.2 * 180 / Math.PI, axis: 'x', origin: [8, 4, -2]},
+			faces: {
+				north: {uv: [12, 5.0625, 12.75, 5.3125], texture: '#0'},
+				east: {uv: [11, 5.0625, 12, 5.3125], texture: '#0'},
+				south: {uv: [13.75, 5.0625, 14.5, 5.3125], texture: '#0'},
+				west: {uv: [12.75, 5.0625, 13.75, 5.3125], texture: '#0'},
+				up: {uv: [12.75, 5.0625, 12, 4.0625], texture: '#0'},
+				down: {uv: [13.5, 4.0625, 12.75, 5.0625], texture: '#0'},
+			},
+		},
+	]).withUvEpsilon(1/256)).transform(transformation)
+}
+
+function piglinHead(uvProvider: TextureAtlasProvider) {
+	const id = Identifier.create('piglin_head')
+	return dummy(id, uvProvider, {}, new BlockModel(id, undefined, {
+		0: 'entity/piglin/piglin',
+	}, [
+		{
+			from: [3, 0, 4],
+			to: [13, 8, 12],
+			faces: {
+				north: {uv: [6.5, 2, 9, 4], texture: '#0'},
+				east: {uv: [2, 2, 0, 4], texture: '#0'},
+				south: {uv: [2, 2, 4.5, 4], texture: '#0'},
+				west: {uv: [6.5, 2, 4.5, 4], texture: '#0'},
+				up: {uv: [2, 0, 4.5, 2], texture: '#0'},
+				down: {uv: [4.5, 0, 7, 2], texture: '#0'},
+			},
+		},
+		{
+			from: [6, 0, 12],
+			to: [10, 4, 13],
+			faces: {
+				north: {uv: [9.25, 0.5, 10.25, 1.5], texture: '#0'},
+				east: {uv: [7.75, 0.5, 8, 1.5], texture: '#0'},
+				south: {uv: [8, 0.5, 9, 1.5], texture: '#0'},
+				west: {uv: [9, 0.5, 9.25, 1.5], texture: '#0'},
+				up: {uv: [8, 0.25, 9, 0.5], texture: '#0'},
+				down: {uv: [9, 0.25, 10, 0.5], texture: '#0'},
+			},
+		},
+		{
+			from: [5, 0, 12],
+			to: [6, 2, 13],
+			faces: {
+				north: {uv: [1.25, 0.25, 1.5, 0.75], texture: '#0'},
+				east: {uv: [0.5, 0.25, 0.75, 0.75], texture: '#0'},
+				south: {uv: [0.75, 0.25, 1, 0.75], texture: '#0'},
+				west: {uv: [1, 0.25, 1.25, 0.75], texture: '#0'},
+				up: {uv: [0.75, 0, 1, 0.25], texture: '#0'},
+				down: {uv: [1, 0, 1.25, 0.25], texture: '#0'},
+			},
+		},
+		{
+			from: [10, 0, 12],
+			to: [11, 2, 13],
+			faces: {
+				north: {uv: [1.25, 1.25, 1.5, 1.75], texture: '#0'},
+				east: {uv: [0.5, 1.25, 0.75, 1.75], texture: '#0'},
+				south: {uv: [0.75, 1.25, 1, 1.75], texture: '#0'},
+				west: {uv: [1, 1.25, 1.25, 1.75], texture: '#0'},
+				up: {uv: [0.75, 1, 1, 1.25], texture: '#0'},
+				down: {uv: [1, 1, 1.25, 1.25], texture: '#0'},
+			},
+		},
+		{
+			from: [2.5, 1.5, 6],
+			to: [3.5, 6.5, 10],
+			rotation: {angle: -30, axis: 'z', origin: [3, 7, 8]},
+			faces: {
+				north: {uv: [12, 2.5, 12.25, 3.75], texture: '#0'},
+				east: {uv: [9.75, 2.5, 10.75, 3.75], texture: '#0'},
+				south: {uv: [10.75, 2.5, 11, 3.75], texture: '#0'},
+				west: {uv: [11, 2.5, 12, 3.75], texture: '#0'},
+				up: {uv: [10.75, 1.5, 11, 2.5], texture: '#0'},
+				down: {uv: [11, 1.5, 11.25, 2.5], texture: '#0'},
+			},
+		},
+		{
+			from: [12.5, 1.5, 6],
+			to: [13.5, 6.5, 10],
+			rotation: {angle: 30, axis: 'z', origin: [13, 7, 8]},
+			faces: {
+				north: {uv: [15.25, 2.5, 15, 3.75], texture: '#0'},
+				east: {uv: [15, 2.5, 14, 3.75], texture: '#0'},
+				south: {uv: [14, 2.5, 13.75, 3.75], texture: '#0'},
+				west: {uv: [13.75, 2.5, 12.75, 3.75], texture: '#0'},
+				up: {uv: [14, 1.5, 13.75, 2.5], texture: '#0'},
+				down: {uv: [14.25, 1.5, 14, 2.5], texture: '#0'},
+			},
+		},
+	]))
+}
+
 const RENDERERS: {
 	[key: string]: (props: { [key: string]: string }, uvProvider: TextureAtlasProvider, cull: Cull) => Mesh,
 } = {
@@ -157,6 +312,20 @@ const RENDERERS: {
 		decoratedPotRenderer(uvProvider),
 	'minecraft:shield': (_, uvProvider) =>
 		shieldRenderer(uvProvider),
+	'minecraft:skeleton_skull': (_, uvProvider) =>
+		skullRenderer('skeleton/skeleton', uvProvider, 2),
+	'minecraft:wither_skeleton_skull': (_, uvProvider) =>
+		skullRenderer('skeleton/wither_skeleton', uvProvider, 2),
+	'minecraft:zombie_head': (_, uvProvider) =>
+		skullRenderer('zombie/zombie', uvProvider),
+	'minecraft:creeper_head': (_, uvProvider) =>
+		skullRenderer('creeper/creeper', uvProvider, 2),
+	'minecraft:dragon_head': (_, uvProvider) =>
+		dragonHead(uvProvider),
+	'minecraft:piglin_head': (_, uvProvider) =>
+		piglinHead(uvProvider),
+	'minecraft:player_head': (_, uvProvider) =>
+		skullRenderer('player/wide/steve', uvProvider), // TODO: fix texture
 }
 
 export namespace SpecialRenderers {

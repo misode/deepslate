@@ -74,6 +74,7 @@ export class BlockModel {
 	private static readonly BUILTIN_GENERATED = Identifier.create('builtin/generated')
 	private static readonly GENERATED_LAYERS = ['layer0', 'layer1', 'layer2', 'layer3', 'layer4']
 	private generationMarker = false
+	private uvEpsilon = 1/16
 
 	constructor(
 		private readonly id: Identifier,
@@ -136,8 +137,8 @@ export class BlockModel {
 			const [u0, v0, u1, v1] = uvProvider.getTextureUV(this.getTexture(face.texture))
 			const du = (u1 - u0) / 16
 			const dv = (v1 - v0) / 16
-			const duu = du / 16
-			const dvv = dv / 16
+			const duu = du * this.uvEpsilon
+			const dvv = dv * this.uvEpsilon
 			uv[0] = (face.uv?.[0] ?? uv[0]) * du + duu
 			uv[1] = (face.uv?.[1] ?? uv[1]) * dv + dvv
 			uv[2] = (face.uv?.[2] ?? uv[2]) * du - duu
@@ -196,6 +197,11 @@ export class BlockModel {
 			textureRef = this.textures?.[textureRef.slice(1)] ?? ''
 		}
 		return Identifier.parse(textureRef)
+	}
+
+	public withUvEpsilon(epsilon: number) {
+		this.uvEpsilon = epsilon
+		return this
 	}
 
 	public flatten(accessor: BlockModelProvider) {

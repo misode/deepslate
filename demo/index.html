@@ -24,12 +24,16 @@
 		.invalid {
 			color: #cb0000;
 		}
+		#item-display {
+			width: 64px;
+			height: 64px;
+		}
 	</style>
 </head>
 <body>
 	<div class="row">
-		<canvas id="item-display" width="64" height="64"></canvas>
-		<input id="item-input" list="item-list" type="text" value="stone">
+		<canvas id="item-display" width="256" height="256"></canvas>
+		<input id="item-input" list="item-list" type="text">
 	</div>
 	<canvas id="voxel-display" width="600" height="400"></canvas>
 	<canvas id="structure-display" width="600" height="400"></canvas>
