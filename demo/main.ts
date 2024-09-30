@@ -126,15 +126,17 @@ Promise.all([
 
 	const itemCanvas = document.getElementById('item-display') as HTMLCanvasElement
 	const itemGl = itemCanvas.getContext('webgl')!
-	const itemRenderer = new ItemRenderer(itemGl, Identifier.parse('stone'), resources)
-
 	const itemInput = document.getElementById('item-input') as HTMLInputElement
+	itemInput.value = localStorage.getItem('deepslate_demo_item') ?? 'stone'
+	const itemRenderer = new ItemRenderer(itemGl, Identifier.parse(itemInput.value), resources)
+
 	itemInput.addEventListener('keyup', () => {
 		try {
 			const id = itemInput.value
 			itemRenderer.setItem(new ItemStack(Identifier.parse(id), 1))
 			itemRenderer.drawItem()
 			itemInput.classList.remove('invalid')
+			localStorage.setItem('deepslate_demo_item', id)
 		} catch (e) {
 			console.error(e)
 			itemInput.classList.add('invalid')

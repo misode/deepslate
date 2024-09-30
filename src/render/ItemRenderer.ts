@@ -3,6 +3,7 @@ import { Identifier } from '../core/index.js'
 import { ItemStack } from '../core/ItemStack.js'
 import { Cull, SpecialRenderers, type Color } from '../index.js'
 import type { BlockModelProvider } from './BlockModel.js'
+import { BlockModel } from './BlockModel.js'
 import { getItemColor } from './ItemColors.js'
 import type { Mesh } from './Mesh.js'
 import { Renderer } from './Renderer.js'
@@ -58,7 +59,19 @@ export class ItemRenderer extends Renderer {
 			specialMesh.transform(t)
 			mesh.merge(specialMesh)
 		}
-		mesh.transform(model.getDisplayTransform('gui'))
+		if (this.item.is('shield')) {
+			// Hack to transform shields properly
+			const tempModel = new BlockModel(this.item.id, undefined, {}, [], {
+				gui: {
+					rotation: [15, -30, 5],
+					translation: [1, 2.5, 0],
+					scale: [0.65, 0.65, 0.65],
+				},
+			})
+			mesh.transform(tempModel.getDisplayTransform('gui'))
+		} else {
+			mesh.transform(model.getDisplayTransform('gui'))
+		}
 		mesh.quads.forEach(q => {
 			const normal = q.normal()
 			q.forEach(v => v.normal = normal)

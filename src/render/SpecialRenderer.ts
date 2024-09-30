@@ -124,6 +124,26 @@ function decoratedPotRenderer(uvProvider: TextureAtlasProvider){
 	]))
 }
 
+function shieldRenderer(uvProvider: TextureAtlasProvider) {
+	const id = Identifier.create('shield')
+	return dummy(id, uvProvider, {}, new BlockModel(id, undefined, {
+		0: 'entity/shield_base_nopattern',
+	}, [
+		{
+			from: [-6, -11, -2],
+			to: [6, 11, -1],
+			faces: {
+				north: {uv: [3.5, 0.25, 6.5, 5.75], texture: '#0'},
+				east: {uv: [3.25, 0.25, 3.5, 5.75], texture: '#0'},
+				south: {uv: [0.25, 0.25, 3.25, 5.75], texture: '#0'},
+				west: {uv: [0, 0.25, 0.25, 5.75], texture: '#0'},
+				up: {uv: [0.25, 0, 3.25, 0.25], texture: '#0'},
+				down: {uv: [3.25, 0, 6.25, 0.25], texture: '#0'},
+			},
+		},
+	]))
+}
+
 const RENDERERS: {
 	[key: string]: (props: { [key: string]: string }, uvProvider: TextureAtlasProvider, cull: Cull) => Mesh,
 } = {
@@ -135,6 +155,8 @@ const RENDERERS: {
 		chestRenderer(props.facing || 'south', props.type || 'single', uvProvider),
 	'minecraft:decorated_pot': (_, uvProvider) =>
 		decoratedPotRenderer(uvProvider),
+	'minecraft:shield': (_, uvProvider) =>
+		shieldRenderer(uvProvider),
 }
 
 export namespace SpecialRenderers {
