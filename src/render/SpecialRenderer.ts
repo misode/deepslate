@@ -375,6 +375,40 @@ function conduitRenderer(atlas: TextureAtlasProvider) {
 	]).withUvEpsilon(1/128))
 }
 
+function shulkerBoxRenderer(color: string) {
+	return (atlas: TextureAtlasProvider) => {
+		const id = Identifier.create('shulker_box')
+		return dummy(id, atlas, {}, new BlockModel(id, undefined, {
+			0: `entity/shulker/shulker_${color}`,
+		}, [
+			{
+				from: [0, 0, 0],
+				to: [16, 8, 16],
+				faces: {
+					north: {uv: [4, 11, 8, 13], texture: '#0'},
+					east: {uv: [0, 11, 4, 13], texture: '#0'},
+					south: {uv: [12, 11, 16, 13], texture: '#0'},
+					west: {uv: [8, 11, 12, 13], texture: '#0'},
+					up: {uv: [8, 11, 4, 7], texture: '#0'},
+					down: {uv: [12, 7, 8, 11], texture: '#0'},
+				},
+			},
+			{
+				from: [0, 4, 0],
+				to: [16, 16, 16],
+				faces: {
+					north: {uv: [4, 4, 8, 7], texture: '#0'},
+					east: {uv: [0, 4, 4, 7], texture: '#0'},
+					south: {uv: [12, 4, 16, 7], texture: '#0'},
+					west: {uv: [8, 4, 12, 7], texture: '#0'},
+					up: {uv: [8, 4, 4, 0], texture: '#0'},
+					down: {uv: [12, 0, 8, 4], texture: '#0'},
+				},
+			},
+		]).withUvEpsilon(1/128))
+	}
+}
+
 function getStr(block: BlockState, key: string, fallback = '') {
 	return block.getProperty(key) ?? fallback
 }
@@ -427,6 +461,25 @@ const WallSignRenderers = new Map(Object.entries({
 	'minecraft:warped_wall_sign': wallSignRenderer('warped'),
 }))
 
+const ShulkerBoxRenderers = new Map(Object.entries({
+	'minecraft:white_shulker_box': shulkerBoxRenderer('white'),
+	'minecraft:orange_shulker_box': shulkerBoxRenderer('orange'),
+	'minecraft:magenta_shulker_box': shulkerBoxRenderer('magenta'),
+	'minecraft:light_blue_shulker_box': shulkerBoxRenderer('light_blue'),
+	'minecraft:yellow_shulker_box': shulkerBoxRenderer('yellow'),
+	'minecraft:lime_shulker_box': shulkerBoxRenderer('lime'),
+	'minecraft:pink_shulker_box': shulkerBoxRenderer('pink'),
+	'minecraft:gray_shulker_box': shulkerBoxRenderer('gray'),
+	'minecraft:light_gray_shulker_box': shulkerBoxRenderer('light_gray'),
+	'minecraft:cyan_shulker_box': shulkerBoxRenderer('cyan'),
+	'minecraft:purple_shulker_box': shulkerBoxRenderer('purple'),
+	'minecraft:blue_shulker_box': shulkerBoxRenderer('blue'),
+	'minecraft:brown_shulker_box': shulkerBoxRenderer('brown'),
+	'minecraft:green_shulker_box': shulkerBoxRenderer('green'),
+	'minecraft:red_shulker_box': shulkerBoxRenderer('red'),
+	'minecraft:black_shulker_box': shulkerBoxRenderer('black'),
+}))
+
 export namespace SpecialRenderers {
 	export function getBlockMesh(block: BlockState, atlas: TextureAtlasProvider, cull: Cull): Mesh {
 		if (block.is('water')) {
@@ -438,51 +491,61 @@ export namespace SpecialRenderers {
 		const mesh = new Mesh()
 		const chestRenderer = ChestRenderers.get(block.getName().toString())
 		if (chestRenderer !== undefined) {
-			const chestMesh = chestRenderer(atlas)
 			const facing = getStr(block, 'facing', 'south')
 			const t = mat4.create()
 			mat4.translate(t, t, [0.5, 0.5, 0.5])
 			mat4.rotateY(t, t, facing === 'west' ? Math.PI / 2 : facing === 'south' ? Math.PI : facing === 'east' ? Math.PI * 3 / 2 : 0)
 			mat4.translate(t, t, [-0.5, -0.5, -0.5])
-			mesh.merge(chestMesh.transform(t))
+			mesh.merge(chestRenderer(atlas).transform(t))
 		}
 		if (block.is('decorated_pot')) {
 			mesh.merge(decoratedPotRenderer(atlas))
 		}
 		const skullRenderer = SkullRenderers.get(block.getName().toString())
 		if (skullRenderer !== undefined) {
-			const skullMesh = skullRenderer(atlas)
 			const rotation = getInt(block, 'rotation') / 16 * Math.PI * 2
 			const t = mat4.create()
 			mat4.translate(t, t, [0.5, 0.5, 0.5])
 			mat4.rotateY(t, t, rotation)
 			mat4.translate(t, t, [-0.5, -0.5, -0.5])
-			mesh.merge(skullMesh.transform(t))
+			mesh.merge(skullRenderer(atlas).transform(t))
 		}
 		const signRenderer = SignRenderers.get(block.getName().toString())
 		if (signRenderer !== undefined) {
-			const signMesh = signRenderer(atlas)
 			const rotation = getInt(block, 'rotation') / 16 * Math.PI * 2
 			const t = mat4.create()
 			mat4.translate(t, t, [0.5, 0.5, 0.5])
 			mat4.rotateY(t, t, rotation)
 			mat4.scale(t, t, [2/3, 2/3, 2/3])
 			mat4.translate(t, t, [-0.5, -0.5, -0.5])
-			mesh.merge(signMesh.transform(t))
+			mesh.merge(signRenderer(atlas).transform(t))
 		}
 		const wallSignRenderer = WallSignRenderers.get(block.getName().toString())
 		if (wallSignRenderer !== undefined) {
-			const wallSignMesh = wallSignRenderer(atlas)
 			const facing = getStr(block, 'facing', 'south')
 			const t = mat4.create()
 			mat4.translate(t, t, [0.5, 0.5, 0.5])
 			mat4.rotateY(t, t, facing === 'west' ? Math.PI / 2 : facing === 'south' ? Math.PI : facing === 'east' ? Math.PI * 3 / 2 : 0)
 			mat4.scale(t, t, [2/3, 2/3, 2/3])
 			mat4.translate(t, t, [-0.5, -0.5, -0.5])
-			mesh.merge(wallSignMesh.transform(t))
+			mesh.merge(wallSignRenderer(atlas).transform(t))
 		}
 		if (block.is('conduit')) {
 			mesh.merge(conduitRenderer(atlas))
+		}
+		const shulkerBoxRenderer = ShulkerBoxRenderers.get(block.getName().toString())
+		if (shulkerBoxRenderer !== undefined) {
+			const facing = getStr(block, 'facing', 'up')
+			const t = mat4.create()
+			mat4.translate(t, t, [0.5, 0.5, 0.5])
+			if (facing === 'down') {
+				mat4.rotateX(t, t, Math.PI)
+			} else if (facing !== 'up') {
+				mat4.rotateY(t, t, facing === 'east' ? Math.PI / 2 : facing === 'north' ? Math.PI : facing === 'west' ? Math.PI * 3 / 2 : 0)
+				mat4.rotateX(t, t, Math.PI/2)
+			}
+			mat4.translate(t, t, [-0.5, -0.5, -0.5])
+			mesh.merge(shulkerBoxRenderer(atlas).transform(t))
 		}
 
 		if (block.getProperties()['waterlogged'] === 'true') {
