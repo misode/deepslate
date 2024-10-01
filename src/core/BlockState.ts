@@ -45,7 +45,13 @@ export class BlockState {
 		})
 	}
 
-	public is(other: BlockState) {
+	public is(other: string | Identifier | BlockState) {
+		if (typeof other === 'string') {
+			return this.name.equals(Identifier.parse(other))
+		}
+		if (other instanceof Identifier) {
+			return this.name.equals(other)
+		}
 		return this.name.equals(other.name)
 	}
 

@@ -7,17 +7,17 @@ import { Cull } from './Cull.js'
 import { Mesh } from './Mesh.js'
 import type { TextureAtlasProvider } from './TextureAtlas.js'
 
-function dummy(id: Identifier, uvProvider: TextureAtlasProvider, cull: Cull, model: BlockModel) {
+function dummy(id: Identifier, atlas: TextureAtlasProvider, cull: Cull, model: BlockModel) {
 	const definition = new BlockDefinition(id, {'': { model: 'dummy' } }, undefined)
 	const modelProvider = { getBlockModel: () => model }
 	model.flatten(modelProvider)
-	return definition.getMesh(id, {}, uvProvider, modelProvider, cull)
+	return definition.getMesh(id, {}, atlas, modelProvider, cull)
 }
 
-function liquidRenderer(type: string, level: number, uvProvider: TextureAtlasProvider, cull: Cull, tintindex?: number) {
+function liquidRenderer(type: string, level: number, atlas: TextureAtlasProvider, cull: Cull, tintindex?: number) {
 	const y = cull['up'] ? 16 : [14.2, 12.5, 10.5, 9, 7, 5.3, 3.7, 1.9, 16, 16, 16, 16, 16, 16, 16, 16][level]
 	const id = Identifier.create(type)
-	return dummy(id, uvProvider, cull, new BlockModel(id, undefined, {
+	return dummy(id, atlas, cull, new BlockModel(id, undefined, {
 		still: `block/${type}_still`,
 		flow: `block/${type}_flow`,
 	}, [{
@@ -34,13 +34,13 @@ function liquidRenderer(type: string, level: number, uvProvider: TextureAtlasPro
 	}]))
 }
 
-function chestRenderer(facing: string, type: string, uvProvider: TextureAtlasProvider) {
+function chestRenderer(facing: string, type: string, atlas: TextureAtlasProvider) {
 	const rotation = mat4.create()
 	mat4.translate(rotation, rotation, [0.5, 0.5, 0.5])
 	mat4.rotateY(rotation, rotation, facing === 'west' ? Math.PI / 2 : facing === 'south' ? Math.PI : facing === 'east' ? Math.PI * 3 / 2 : 0)
 	mat4.translate(rotation, rotation, [-0.5, -0.5, -0.5])
 	const id = Identifier.create('chest')
-	return dummy(id, uvProvider, {}, new BlockModel(id, undefined, {
+	return dummy(id, atlas, {}, new BlockModel(id, undefined, {
 		0: 'entity/chest/normal',
 	}, [
 		{
@@ -82,9 +82,9 @@ function chestRenderer(facing: string, type: string, uvProvider: TextureAtlasPro
 	])).transform(rotation)
 }
 
-function decoratedPotRenderer(uvProvider: TextureAtlasProvider){
+function decoratedPotRenderer(atlas: TextureAtlasProvider){
 	const id = Identifier.create('decorated_pot')
-	return dummy(id, uvProvider, {}, new BlockModel(id, undefined, {
+	return dummy(id, atlas, {}, new BlockModel(id, undefined, {
 		0: 'entity/decorated_pot/decorated_pot_side',
 		1: 'entity/decorated_pot/decorated_pot_base',
 	}, [
@@ -125,9 +125,9 @@ function decoratedPotRenderer(uvProvider: TextureAtlasProvider){
 	]))
 }
 
-function shieldRenderer(uvProvider: TextureAtlasProvider) {
+function shieldRenderer(atlas: TextureAtlasProvider) {
 	const id = Identifier.create('shield')
-	return dummy(id, uvProvider, {}, new BlockModel(id, undefined, {
+	return dummy(id, atlas, {}, new BlockModel(id, undefined, {
 		0: 'entity/shield_base_nopattern',
 	}, [
 		{
@@ -145,35 +145,36 @@ function shieldRenderer(uvProvider: TextureAtlasProvider) {
 	]))
 }
 
-function skullRenderer(texture: string, uvProvider: TextureAtlasProvider, n: number = 1) {
-	const id = Identifier.create('skull')
-	console.log(uvProvider.getTextureUV(Identifier.create(`entity/${texture}`)))
-	return dummy(id, uvProvider, {}, new BlockModel(id, undefined, {
-		0: `entity/${texture}`,
-	}, [
-		{
-			from: [4, 0, 4],
-			to: [12, 8, 12],
-			faces: {
-				north: {uv: [6, 2*n, 8, 4*n], texture: '#0'},
-				east: {uv: [2, 2*n, 0, 4*n], texture: '#0'},
-				south: {uv: [2, 2*n, 4, 4*n], texture: '#0'},
-				west: {uv: [6, 2*n, 4, 4*n], texture: '#0'},
-				up: {uv: [2, 0*n, 4, 2*n], texture: '#0'},
-				down: {uv: [4, 0*n, 6, 2*n], texture: '#0'},
+function skullRenderer(texture: string, n: number) {
+	return (atlas: TextureAtlasProvider) => {
+		const id = Identifier.create('skull')
+		return dummy(id, atlas, {}, new BlockModel(id, undefined, {
+			0: `entity/${texture}`,
+		}, [
+			{
+				from: [4, 0, 4],
+				to: [12, 8, 12],
+				faces: {
+					north: {uv: [6, 2*n, 8, 4*n], texture: '#0'},
+					east: {uv: [2, 2*n, 0, 4*n], texture: '#0'},
+					south: {uv: [2, 2*n, 4, 4*n], texture: '#0'},
+					west: {uv: [6, 2*n, 4, 4*n], texture: '#0'},
+					up: {uv: [2, 0*n, 4, 2*n], texture: '#0'},
+					down: {uv: [4, 0*n, 6, 2*n], texture: '#0'},
+				},
 			},
-		},
-	]))
+		]))
+	}
 }
 
-function dragonHead(uvProvider: TextureAtlasProvider) {
+function dragonHead(atlas: TextureAtlasProvider) {
 	const id = Identifier.create('dragon_head')
 	const transformation = mat4.create()
 	mat4.translate(transformation, transformation, [0.5, 0.5, 0.5])
 	mat4.scale(transformation, transformation, [0.75, 0.75, 0.75])
 	mat4.rotateY(transformation, transformation, Math.PI)
 	mat4.translate(transformation, transformation, [-0.5, -0.7, -0.5])
-	return dummy(id, uvProvider, {}, new BlockModel(id, undefined, {
+	return dummy(id, atlas, {}, new BlockModel(id, undefined, {
 		0: 'entity/enderdragon/dragon',
 	}, [
 		// TODO: add scales and nostrils
@@ -218,9 +219,9 @@ function dragonHead(uvProvider: TextureAtlasProvider) {
 	]).withUvEpsilon(1/256)).transform(transformation)
 }
 
-function piglinHead(uvProvider: TextureAtlasProvider) {
+function piglinHead(atlas: TextureAtlasProvider) {
 	const id = Identifier.create('piglin_head')
-	return dummy(id, uvProvider, {}, new BlockModel(id, undefined, {
+	return dummy(id, atlas, {}, new BlockModel(id, undefined, {
 		0: 'entity/piglin/piglin',
 	}, [
 		{
@@ -300,42 +301,51 @@ function piglinHead(uvProvider: TextureAtlasProvider) {
 	]).withUvEpsilon(1/128))
 }
 
-const RENDERERS: {
-	[key: string]: (props: { [key: string]: string }, uvProvider: TextureAtlasProvider, cull: Cull) => Mesh,
-} = {
-	'minecraft:water': (props, uvProvider, cull) =>
-		liquidRenderer('water', parseInt(props.level), uvProvider, cull, 0),
-	'minecraft:lava': (props, uvProvider, cull) =>
-		liquidRenderer('lava', parseInt(props.level), uvProvider, cull),
-	'minecraft:chest': (props, uvProvider) =>
-		chestRenderer(props.facing || 'south', props.type || 'single', uvProvider),
-	'minecraft:decorated_pot': (_, uvProvider) =>
-		decoratedPotRenderer(uvProvider),
-	'minecraft:shield': (_, uvProvider) =>
-		shieldRenderer(uvProvider),
-	'minecraft:skeleton_skull': (_, uvProvider) =>
-		skullRenderer('skeleton/skeleton', uvProvider, 2),
-	'minecraft:wither_skeleton_skull': (_, uvProvider) =>
-		skullRenderer('skeleton/wither_skeleton', uvProvider, 2),
-	'minecraft:zombie_head': (_, uvProvider) =>
-		skullRenderer('zombie/zombie', uvProvider),
-	'minecraft:creeper_head': (_, uvProvider) =>
-		skullRenderer('creeper/creeper', uvProvider, 2),
-	'minecraft:dragon_head': (_, uvProvider) =>
-		dragonHead(uvProvider),
-	'minecraft:piglin_head': (_, uvProvider) =>
-		piglinHead(uvProvider),
-	'minecraft:player_head': (_, uvProvider) =>
-		skullRenderer('player/wide/steve', uvProvider), // TODO: fix texture
+function getStr(block: BlockState, key: string, fallback = '') {
+	return block.getProperty(key) ?? fallback
 }
+
+function getInt(block: BlockState, key: string, fallback = '0') {
+	return parseInt(block.getProperty(key) ?? fallback)
+}
+
+const SkullRenderers = new Map(Object.entries({
+	'minecraft:skeleton_skull': skullRenderer('skeleton/skeleton', 2),
+	'minecraft:wither_skeleton_skull': skullRenderer('skeleton/wither_skeleton_skull', 2),
+	'minecraft:zombie_head': skullRenderer('zombie/zombie', 1),
+	'minecraft:creeper_head': skullRenderer('creeper/creeper', 2),
+	'minecraft:dragon_head': dragonHead,
+	'minecraft:piglin_head': piglinHead,
+	'minecraft:player_head': skullRenderer('player/wide/steve', 1), // TODO: fix texture
+}))
 
 export namespace SpecialRenderers {
 	export function getBlockMesh(block: BlockState, atlas: TextureAtlasProvider, cull: Cull): Mesh {
-		const mesh = new Mesh()
-		const renderer = RENDERERS[block.getName().toString()]
-		if (renderer !== undefined) {
-			mesh.merge(renderer(block.getProperties(), atlas, cull))
+		if (block.is('water')) {
+			return liquidRenderer('water', getInt(block, 'level'), atlas, cull, 0)
 		}
+		if (block.is('lava')) {
+			return liquidRenderer('lava', getInt(block, 'level'), atlas, cull)
+		}
+
+		const mesh = new Mesh()
+		if (block.is('chest')) {
+			mesh.merge(chestRenderer(getStr(block, 'facing', 'south'), getStr(block, 'type', 'single'), atlas))
+		}
+		if (block.is('decorated_pot')) {
+			mesh.merge(decoratedPotRenderer(atlas))
+		}
+		const skullRenderer = SkullRenderers.get(block.getName().toString())
+		if (skullRenderer !== undefined) {
+			const skullMesh = skullRenderer(atlas)
+			const rotation = getInt(block, 'rotation') / 16 * Math.PI * 2
+			const t = mat4.create()
+			mat4.translate(t, t, [0.5, 0.5, 0.5])
+			mat4.rotateY(t, t, rotation)
+			mat4.translate(t, t, [-0.5, -0.5, -0.5])
+			mesh.merge(skullMesh.transform(t))
+		}
+
 		if (block.getProperties()['waterlogged'] === 'true') {
 			mesh.merge(liquidRenderer('water', 0, atlas, cull, 0))
 		}

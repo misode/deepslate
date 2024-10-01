@@ -150,7 +150,7 @@ Promise.all([
 	const size = structure.getSize()
 	structure.addBlock([1, 0, 0], 'minecraft:grass_block', { snowy: 'false' })
 	structure.addBlock([2, 0, 0], 'minecraft:stone')
-	structure.addBlock([1, 1, 0], 'minecraft:skeleton_skull')
+	structure.addBlock([1, 1, 0], 'minecraft:dragon_head', { rotation: '15' })
 	structure.addBlock([2, 1, 0], 'minecraft:acacia_fence', { waterlogged: 'true', north: 'true' })
 	structure.addBlock([0, 0, 0], 'minecraft:wall_torch', { facing: 'west' })
 
