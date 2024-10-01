@@ -34,52 +34,50 @@ function liquidRenderer(type: string, level: number, atlas: TextureAtlasProvider
 	}]))
 }
 
-function chestRenderer(facing: string, type: string, atlas: TextureAtlasProvider) {
-	const rotation = mat4.create()
-	mat4.translate(rotation, rotation, [0.5, 0.5, 0.5])
-	mat4.rotateY(rotation, rotation, facing === 'west' ? Math.PI / 2 : facing === 'south' ? Math.PI : facing === 'east' ? Math.PI * 3 / 2 : 0)
-	mat4.translate(rotation, rotation, [-0.5, -0.5, -0.5])
-	const id = Identifier.create('chest')
-	return dummy(id, atlas, {}, new BlockModel(id, undefined, {
-		0: 'entity/chest/normal',
-	}, [
-		{
-			from: [1, 0, 1],
-			to: [15, 10, 15],
-			faces: {
-				north: {uv: [10.5, 8.25, 14, 10.75], rotation: 180, texture: '#0'},
-				east: {uv: [7, 8.25, 10.5, 10.75], rotation: 180, texture: '#0'},
-				south: {uv: [3.5, 8.25, 7, 10.75], rotation: 180, texture: '#0'},
-				west: {uv: [0, 8.25, 3.5, 10.75], rotation: 180, texture: '#0'},
-				up: {uv: [7, 4.75, 10.5, 8.25], texture: '#0'},
-				down: {uv: [3.5, 4.75, 7, 8.25], texture: '#0'},
+function chestRenderer(type: string) {
+	return (atlas: TextureAtlasProvider) => {
+		const id = Identifier.create('chest')
+		return dummy(id, atlas, {}, new BlockModel(id, undefined, {
+			0: `entity/chest/${type}`,
+		}, [
+			{
+				from: [1, 0, 1],
+				to: [15, 10, 15],
+				faces: {
+					north: {uv: [10.5, 8.25, 14, 10.75], rotation: 180, texture: '#0'},
+					east: {uv: [7, 8.25, 10.5, 10.75], rotation: 180, texture: '#0'},
+					south: {uv: [3.5, 8.25, 7, 10.75], rotation: 180, texture: '#0'},
+					west: {uv: [0, 8.25, 3.5, 10.75], rotation: 180, texture: '#0'},
+					up: {uv: [7, 4.75, 10.5, 8.25], texture: '#0'},
+					down: {uv: [3.5, 4.75, 7, 8.25], texture: '#0'},
+				},
 			},
-		},
-		{
-			from: [1, 10, 1],
-			to: [15, 14, 15],
-			faces: {
-				north: {uv: [10.5, 3.75, 14, 4.75], rotation: 180, texture: '#0'},
-				east: {uv: [7, 3.75, 10.5, 4.75], rotation: 180, texture: '#0'},
-				south: {uv: [3.5, 3.75, 7, 4.75], rotation: 180, texture: '#0'},
-				west: {uv: [0, 3.75, 3.5, 4.75], rotation: 180, texture: '#0'},
-				up: {uv: [7, 0, 10.5, 3.5], texture: '#0'},
-				down: {uv: [3.5, 0, 7, 3.5], texture: '#0'},
+			{
+				from: [1, 10, 1],
+				to: [15, 14, 15],
+				faces: {
+					north: {uv: [10.5, 3.75, 14, 4.75], rotation: 180, texture: '#0'},
+					east: {uv: [7, 3.75, 10.5, 4.75], rotation: 180, texture: '#0'},
+					south: {uv: [3.5, 3.75, 7, 4.75], rotation: 180, texture: '#0'},
+					west: {uv: [0, 3.75, 3.5, 4.75], rotation: 180, texture: '#0'},
+					up: {uv: [7, 0, 10.5, 3.5], texture: '#0'},
+					down: {uv: [3.5, 0, 7, 3.5], texture: '#0'},
+				},
 			},
-		},
-		{
-			from: [7, 8, 0],
-			to: [9, 12, 2],
-			faces: {
-				north: {uv: [0.25, 0.25, 0.75, 1.25], rotation: 180, texture: '#0'},
-				east: {uv: [0, 0.25, 0.25, 1.25], rotation: 180, texture: '#0'},
-				south: {uv: [1, 0.25, 1.5, 1.25], rotation: 180, texture: '#0'},
-				west: {uv: [0.75, 0.25, 1, 1.25], rotation: 180, texture: '#0'},
-				up: {uv: [0.25, 0, 0.75, 0.25], rotation: 180, texture: '#0'},
-				down: {uv: [0.75, 0, 1.25, 0.25], rotation: 180, texture: '#0'},
+			{
+				from: [7, 7, 0],
+				to: [9, 11, 2],
+				faces: {
+					north: {uv: [0.25, 0.25, 0.75, 1.25], rotation: 180, texture: '#0'},
+					east: {uv: [0, 0.25, 0.25, 1.25], rotation: 180, texture: '#0'},
+					south: {uv: [1, 0.25, 1.5, 1.25], rotation: 180, texture: '#0'},
+					west: {uv: [0.75, 0.25, 1, 1.25], rotation: 180, texture: '#0'},
+					up: {uv: [0.25, 0, 0.75, 0.25], rotation: 180, texture: '#0'},
+					down: {uv: [0.75, 0, 1.25, 0.25], rotation: 180, texture: '#0'},
+				},
 			},
-		},
-	])).transform(rotation)
+		]))
+	}
 }
 
 function decoratedPotRenderer(atlas: TextureAtlasProvider){
@@ -309,6 +307,12 @@ function getInt(block: BlockState, key: string, fallback = '0') {
 	return parseInt(block.getProperty(key) ?? fallback)
 }
 
+const ChestRenderers = new Map(Object.entries({
+	'minecraft:chest': chestRenderer('normal'),
+	'minecraft:ender_chest': chestRenderer('ender'),
+	'minecraft:trapped_chest': chestRenderer('trapped'),
+}))
+
 const SkullRenderers = new Map(Object.entries({
 	'minecraft:skeleton_skull': skullRenderer('skeleton/skeleton', 2),
 	'minecraft:wither_skeleton_skull': skullRenderer('skeleton/wither_skeleton_skull', 2),
@@ -327,10 +331,16 @@ export namespace SpecialRenderers {
 		if (block.is('lava')) {
 			return liquidRenderer('lava', getInt(block, 'level'), atlas, cull)
 		}
-
 		const mesh = new Mesh()
-		if (block.is('chest')) {
-			mesh.merge(chestRenderer(getStr(block, 'facing', 'south'), getStr(block, 'type', 'single'), atlas))
+		const chestRenderer = ChestRenderers.get(block.getName().toString())
+		if (chestRenderer !== undefined) {
+			const chestMesh = chestRenderer(atlas)
+			const facing = getStr(block, 'facing', 'south')
+			const t = mat4.create()
+			mat4.translate(t, t, [0.5, 0.5, 0.5])
+			mat4.rotateY(t, t, facing === 'west' ? Math.PI / 2 : facing === 'south' ? Math.PI : facing === 'east' ? Math.PI * 3 / 2 : 0)
+			mat4.translate(t, t, [-0.5, -0.5, -0.5])
+			mesh.merge(chestMesh.transform(t))
 		}
 		if (block.is('decorated_pot')) {
 			mesh.merge(decoratedPotRenderer(atlas))
