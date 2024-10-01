@@ -299,6 +299,62 @@ function piglinHead(atlas: TextureAtlasProvider) {
 	]).withUvEpsilon(1/128))
 }
 
+function signRenderer(woodType: string) {
+	return (atlas: TextureAtlasProvider) => {
+		const id = Identifier.create('sign')
+		return dummy(id, atlas, {}, new BlockModel(id, undefined, {
+			0: `entity/signs/${woodType}`,
+		}, [
+			{
+				from: [-4, 8, 7],
+				to: [20, 20, 9],
+				faces: {
+					north: {uv: [0.5, 1, 6.5, 7], texture: '#0'},
+					east: {uv: [0, 1, 0.5, 7], texture: '#0'},
+					south: {uv: [7, 1, 13, 7], texture: '#0'},
+					west: {uv: [6.5, 1, 7, 7], texture: '#0'},
+					up: {uv: [6.5, 1, 0.5, 0], texture: '#0'},
+					down: {uv: [12.5, 0, 6.5, 1], texture: '#0'},
+				},
+			},
+			{
+				from: [7, -6, 7],
+				to: [9, 8, 9],
+				faces: {
+					north: {uv: [0.5, 8, 1, 15], texture: '#0'},
+					east: {uv: [0, 8, 0.5, 15], texture: '#0'},
+					south: {uv: [1.5, 8, 2, 15], texture: '#0'},
+					west: {uv: [1, 8, 1.5, 15], texture: '#0'},
+					up: {uv: [1, 8, 0.5, 7], texture: '#0'},
+					down: {uv: [1.5, 7, 1, 8], texture: '#0'},
+				},
+			},
+		]).withUvEpsilon(1/128))
+	}
+}
+
+function wallSignRenderer(woodType: string) {
+	return (atlas: TextureAtlasProvider) => {
+		const id = Identifier.create('sign')
+		return dummy(id, atlas, {}, new BlockModel(id, undefined, {
+			0: `entity/signs/${woodType}`,
+		}, [
+			{
+				from: [-4, 4, 17],
+				to: [20, 16, 19],
+				faces: {
+					north: {uv: [0.5, 1, 6.5, 7], texture: '#0'},
+					east: {uv: [0, 1, 0.5, 7], texture: '#0'},
+					south: {uv: [7, 1, 13, 7], texture: '#0'},
+					west: {uv: [6.5, 1, 7, 7], texture: '#0'},
+					up: {uv: [6.5, 1, 0.5, 0], texture: '#0'},
+					down: {uv: [12.5, 0, 6.5, 1], texture: '#0'},
+				},
+			},
+		]).withUvEpsilon(1/128))
+	}
+}
+
 function getStr(block: BlockState, key: string, fallback = '') {
 	return block.getProperty(key) ?? fallback
 }
@@ -321,6 +377,34 @@ const SkullRenderers = new Map(Object.entries({
 	'minecraft:dragon_head': dragonHead,
 	'minecraft:piglin_head': piglinHead,
 	'minecraft:player_head': skullRenderer('player/wide/steve', 1), // TODO: fix texture
+}))
+
+const SignRenderers = new Map(Object.entries({
+	'minecraft:oak_sign': signRenderer('oak'),
+	'minecraft:spruce_sign': signRenderer('spruce'),
+	'minecraft:birch_sign': signRenderer('birch'),
+	'minecraft:jungle_sign': signRenderer('jungle'),
+	'minecraft:acacia_sign': signRenderer('acacia'),
+	'minecraft:dark_oak_sign': signRenderer('dark_oak'),
+	'minecraft:mangrove_sign': signRenderer('mangrove'),
+	'minecraft:cherry_sign': signRenderer('cherry'),
+	'minecraft:bamboo_sign': signRenderer('bamboo'),
+	'minecraft:crimson_sign': signRenderer('crimson'),
+	'minecraft:warped_sign': signRenderer('warped'),
+}))
+
+const WallSignRenderers = new Map(Object.entries({
+	'minecraft:oak_wall_sign': wallSignRenderer('oak'),
+	'minecraft:spruce_wall_sign': wallSignRenderer('spruce'),
+	'minecraft:birch_wall_sign': wallSignRenderer('birch'),
+	'minecraft:jungle_wall_sign': wallSignRenderer('jungle'),
+	'minecraft:acacia_wall_sign': wallSignRenderer('acacia'),
+	'minecraft:dark_oak_wall_sign': wallSignRenderer('dark_oak'),
+	'minecraft:mangrove_wall_sign': wallSignRenderer('mangrove'),
+	'minecraft:cherry_wall_sign': wallSignRenderer('cherry'),
+	'minecraft:bamboo_wall_sign': wallSignRenderer('bamboo'),
+	'minecraft:crimson_wall_sign': wallSignRenderer('crimson'),
+	'minecraft:warped_wall_sign': wallSignRenderer('warped'),
 }))
 
 export namespace SpecialRenderers {
@@ -354,6 +438,28 @@ export namespace SpecialRenderers {
 			mat4.rotateY(t, t, rotation)
 			mat4.translate(t, t, [-0.5, -0.5, -0.5])
 			mesh.merge(skullMesh.transform(t))
+		}
+		const signRenderer = SignRenderers.get(block.getName().toString())
+		if (signRenderer !== undefined) {
+			const signMesh = signRenderer(atlas)
+			const rotation = getInt(block, 'rotation') / 16 * Math.PI * 2
+			const t = mat4.create()
+			mat4.translate(t, t, [0.5, 0.5, 0.5])
+			mat4.rotateY(t, t, rotation)
+			mat4.scale(t, t, [2/3, 2/3, 2/3])
+			mat4.translate(t, t, [-0.5, -0.5, -0.5])
+			mesh.merge(signMesh.transform(t))
+		}
+		const wallSignRenderer = WallSignRenderers.get(block.getName().toString())
+		if (wallSignRenderer !== undefined) {
+			const wallSignMesh = wallSignRenderer(atlas)
+			const facing = getStr(block, 'facing', 'south')
+			const t = mat4.create()
+			mat4.translate(t, t, [0.5, 0.5, 0.5])
+			mat4.rotateY(t, t, facing === 'west' ? Math.PI / 2 : facing === 'south' ? Math.PI : facing === 'east' ? Math.PI * 3 / 2 : 0)
+			mat4.scale(t, t, [2/3, 2/3, 2/3])
+			mat4.translate(t, t, [-0.5, -0.5, -0.5])
+			mesh.merge(wallSignMesh.transform(t))
 		}
 
 		if (block.getProperties()['waterlogged'] === 'true') {
