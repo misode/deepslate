@@ -441,6 +441,92 @@ function bellRenderer(atlas: TextureAtlasProvider) {
 	]).withUvEpsilon(1/64))
 }
 
+function bedRenderer(color: string) {
+	return (part: string, atlas: TextureAtlasProvider) => {
+		const id = Identifier.create('bed')
+		if (part === 'foot') {
+			return dummy(id, atlas, {}, new BlockModel(id, undefined, {
+				0: `entity/bed/${color}`,
+			}, [
+				{
+					from: [0, 3, 0],
+					to: [16, 9, 16],
+					faces: {
+						north: {uv: [5.5, 5.5, 9.5, 7], rotation: 180, texture: '#0'},
+						east: {uv: [0, 7, 1.5, 11], rotation: 270, texture: '#0'},
+						west: {uv: [5.5, 7, 7, 11], rotation: 90, texture: '#0'},
+						up: {uv: [5.5, 11, 1.5, 7], texture: '#0'},
+						down: {uv: [11, 7, 7, 11], texture: '#0'},
+					},
+				},
+				{
+					from: [0, 0, 0],
+					to: [3, 3, 3],
+					faces: {
+						north: {uv: [12.5, 5.25, 13.25, 6], texture: '#0'},
+						east: {uv: [14.75, 5.25, 15.5, 6], texture: '#0'},
+						south: {uv: [14, 5.25, 14.75, 6], texture: '#0'},
+						west: {uv: [13.25, 5.25, 14, 6], texture: '#0'},
+						up: {uv: [13.25, 4.5, 14, 5.25], texture: '#0'},
+						down: {uv: [14, 4.5, 14.75, 5.25], texture: '#0'},
+					},
+				},
+				{
+					from: [13, 0, 0],
+					to: [16, 3, 3],
+					faces: {
+						north: {uv: [13.25, 3.75, 14, 4.5], texture: '#0'},
+						east: {uv: [12.5, 3.75, 13.25, 4.5], texture: '#0'},
+						south: {uv: [14.75, 3.75, 15.5, 4.5], texture: '#0'},
+						west: {uv: [14, 3.75, 14.75, 4.5], texture: '#0'},
+						up: {uv: [13.25, 3, 14, 3.75], texture: '#0'},
+						down: {uv: [14, 3, 14.75, 3.75], texture: '#0'},
+					},
+				},
+			]).withUvEpsilon(1/128))
+		}
+		return dummy(id, atlas, {}, new BlockModel(id, undefined, {
+			0: `entity/bed/${color}`,
+		}, [
+			{
+				from: [0, 3, 0],
+				to: [16, 9, 16],
+				faces: {
+					east: {uv: [0, 1.5, 1.5, 5.5], rotation: 270, texture: '#0'},
+					south: {uv: [1.5, 0, 5.5, 1.5], rotation: 180, texture: '#0'},
+					west: {uv: [5.5, 1.5, 7, 5.5], rotation: 90, texture: '#0'},
+					up: {uv: [5.5, 5.5, 1.5, 1.5], texture: '#0'},
+					down: {uv: [11, 1.5, 7, 5.5], texture: '#0'},
+				},
+			},
+			{
+				from: [0, 0, 13],
+				to: [3, 3, 16],
+				faces: {
+					north: {uv: [14.75, 0.75, 15.5, 1.5], texture: '#0'},
+					east: {uv: [14, 0.75, 14.75, 1.5], texture: '#0'},
+					south: {uv: [13.25, 0.75, 14, 1.5], texture: '#0'},
+					west: {uv: [12.5, 0.75, 13.25, 1.5], texture: '#0'},
+					up: {uv: [13.25, 0, 14, 0.75], texture: '#0'},
+					down: {uv: [14, 0, 14.75, 0.75], texture: '#0'},
+				},
+			},
+			{
+				from: [13, 0, 13],
+				to: [16, 3, 16],
+				faces: {
+					north: {uv: [14, 2.25, 14.75, 3], texture: '#0'},
+					east: {uv: [13.25, 2.25, 14, 3], texture: '#0'},
+					south: {uv: [12.5, 2.25, 13.25, 3], texture: '#0'},
+					west: {uv: [14.75, 2.25, 15.5, 3], texture: '#0'},
+					up: {uv: [13.25, 1.5, 14, 2.25], texture: '#0'},
+					down: {uv: [14, 1.5, 14.75, 2.25], texture: '#0'},
+				},
+			},
+		]).withUvEpsilon(1/128))
+	}
+}
+
 function getStr(block: BlockState, key: string, fallback = '') {
 	return block.getProperty(key) ?? fallback
 }
@@ -510,6 +596,25 @@ const ShulkerBoxRenderers = new Map(Object.entries({
 	'minecraft:green_shulker_box': shulkerBoxRenderer('green'),
 	'minecraft:red_shulker_box': shulkerBoxRenderer('red'),
 	'minecraft:black_shulker_box': shulkerBoxRenderer('black'),
+}))
+
+const BedRenderers = new Map(Object.entries({
+	'minecraft:white_bed': bedRenderer('white'),
+	'minecraft:orange_bed': bedRenderer('orange'),
+	'minecraft:magenta_bed': bedRenderer('magenta'),
+	'minecraft:light_blue_bed': bedRenderer('light_blue'),
+	'minecraft:yellow_bed': bedRenderer('yellow'),
+	'minecraft:lime_bed': bedRenderer('lime'),
+	'minecraft:pink_bed': bedRenderer('pink'),
+	'minecraft:gray_bed': bedRenderer('gray'),
+	'minecraft:light_gray_bed': bedRenderer('light_gray'),
+	'minecraft:cyan_bed': bedRenderer('cyan'),
+	'minecraft:purple_bed': bedRenderer('purple'),
+	'minecraft:blue_bed': bedRenderer('blue'),
+	'minecraft:brown_bed': bedRenderer('brown'),
+	'minecraft:green_bed': bedRenderer('green'),
+	'minecraft:red_bed': bedRenderer('red'),
+	'minecraft:black_bed': bedRenderer('black'),
 }))
 
 export namespace SpecialRenderers {
@@ -586,6 +691,16 @@ export namespace SpecialRenderers {
 			mat4.translate(t, t, [-0.5, -0.5, -0.5])
 			mesh.merge(bellRenderer(atlas).transform(t))
 		}
+		const bedRenderer = BedRenderers.get(block.getName().toString())
+		if (bedRenderer !== undefined) {
+			const part = getStr(block, 'part', 'head')
+			const facing = getStr(block, 'facing', 'south')
+			const t = mat4.create()
+			mat4.translate(t, t, [0.5, 0.5, 0.5])
+			mat4.rotateY(t, t, facing === 'east' ? Math.PI / 2 : facing === 'north' ? Math.PI : facing === 'west' ? Math.PI * 3 / 2 : 0)
+			mat4.translate(t, t, [-0.5, -0.5, -0.5])
+			mesh.merge(bedRenderer(part, atlas).transform(t))
+		}
 
 		if (block.getProperties()['waterlogged'] === 'true') {
 			mesh.merge(liquidRenderer('water', 0, atlas, cull, 0))
@@ -603,6 +718,17 @@ export namespace SpecialRenderers {
 			mat4.rotateZ(t, t, -5 * Math.PI/180)
 			mat4.scale(t, t, [16, 16, 16])
 			return shieldMesh.transform(t)
+		}
+		const bedRenderer = BedRenderers.get(item.id.toString())
+		if (bedRenderer !== undefined) {
+			const headMesh = getBlockMesh(new BlockState(item.id, { part: 'head' }), atlas, Cull.none())
+			const footMesh = getBlockMesh(new BlockState(item.id, { part: 'foot' }), atlas, Cull.none())
+			const t = mat4.create()
+			mat4.translate(t, t, [0, 0, -1])
+			const combinedMesh = headMesh.merge(footMesh.transform(t))
+			mat4.identity(t)
+			mat4.scale(t, t, [16, 16, 16])
+			return combinedMesh.transform(t)
 		}
 
 		// Assumes block and item ID are the same
