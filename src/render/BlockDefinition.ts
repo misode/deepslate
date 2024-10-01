@@ -69,7 +69,6 @@ export class BlockDefinition {
 
 			if (variant.x || variant.y) {
 				const t = mat4.create()
-				mat4.identity(t)
 				mat4.translate(t, t, [8, 8, 8])
 				mat4.rotateY(t, t, -glMatrix.toRadian(variant.y ?? 0))
 				mat4.rotateX(t, t, -glMatrix.toRadian(variant.x ?? 0))
@@ -80,7 +79,6 @@ export class BlockDefinition {
 		}
 
 		const t = mat4.create()
-		mat4.identity(t)
 		mat4.scale(t, t, [0.0625, 0.0625, 0.0625])
 		return mesh.transform(t)
 	}

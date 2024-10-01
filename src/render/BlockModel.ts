@@ -88,7 +88,6 @@ export class BlockModel {
 	public getDisplayTransform(display: Display) {
 		const transform = this.display?.[display]
 		const t = mat4.create()
-		mat4.identity(t)
 		mat4.translate(t, t, [8, 8, 8])
 		if (transform?.translation) {
 			mat4.translate(t, t, transform.translation)
@@ -178,7 +177,6 @@ export class BlockModel {
 		}
 	
 		const t = mat4.create()
-		mat4.identity(t)
 		if (e.rotation) {
 			const origin = vec3.fromValues(...e.rotation.origin)
 			mat4.translate(t, t, origin)

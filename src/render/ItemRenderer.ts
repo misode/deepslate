@@ -3,7 +3,6 @@ import { Identifier } from '../core/index.js'
 import { ItemStack } from '../core/ItemStack.js'
 import { Cull, SpecialRenderers, type Color } from '../index.js'
 import type { BlockModelProvider } from './BlockModel.js'
-import { BlockModel } from './BlockModel.js'
 import { getItemColor } from './ItemColors.js'
 import type { Mesh } from './Mesh.js'
 import { Renderer } from './Renderer.js'
@@ -50,32 +49,10 @@ export class ItemRenderer extends Renderer {
 			tint = getItemColor(this.item)
 		}
 		const mesh = model.getMesh(this.resources, Cull.none(), tint)
-		const specialMesh = SpecialRenderers.getMesh(this.item.id.toString(), {}, this.resources, Cull.none())
-		if (!specialMesh.isEmpty()) {
-			// undo the scaling done by the special renderer
-			const t = mat4.create()
-			mat4.identity(t)
-			mat4.scale(t, t, [16, 16, 16])
-			specialMesh.transform(t)
-			mesh.merge(specialMesh)
-		}
-		if (this.item.is('shield')) {
-			// Hack to transform shields properly
-			const tempModel = new BlockModel(this.item.id, undefined, {}, [], {
-				gui: {
-					rotation: [15, -30, 5],
-					translation: [1, 2.5, 0],
-					scale: [0.65, 0.65, 0.65],
-				},
-			})
-			mesh.transform(tempModel.getDisplayTransform('gui'))
-		} else {
-			mesh.transform(model.getDisplayTransform('gui'))
-		}
-		mesh.quads.forEach(q => {
-			const normal = q.normal()
-			q.forEach(v => v.normal = normal)
-		})
+		const specialMesh = SpecialRenderers.getItemMesh(this.item, this.resources)
+		mesh.merge(specialMesh)
+		mesh.transform(model.getDisplayTransform('gui'))
+		mesh.computeNormals()
 		mesh.rebuild(this.gl, { pos: true, color: true, texture: true, normal: true })
 		return mesh
 	}

@@ -1,8 +1,9 @@
 import { mat4 } from 'gl-matrix'
-import { Direction, Identifier } from '../core/index.js'
+import type { ItemStack } from '../core/index.js'
+import { BlockState, Direction, Identifier } from '../core/index.js'
 import { BlockDefinition } from './BlockDefinition.js'
 import { BlockModel } from './BlockModel.js'
-import type { Cull } from './Cull.js'
+import { Cull } from './Cull.js'
 import { Mesh } from './Mesh.js'
 import type { TextureAtlasProvider } from './TextureAtlas.js'
 
@@ -171,7 +172,7 @@ function dragonHead(uvProvider: TextureAtlasProvider) {
 	mat4.translate(transformation, transformation, [0.5, 0.5, 0.5])
 	mat4.scale(transformation, transformation, [0.75, 0.75, 0.75])
 	mat4.rotateY(transformation, transformation, Math.PI)
-	mat4.translate(transformation, transformation, [-0.5, -0.6, -0.5])
+	mat4.translate(transformation, transformation, [-0.5, -0.7, -0.5])
 	return dummy(id, uvProvider, {}, new BlockModel(id, undefined, {
 		0: 'entity/enderdragon/dragon',
 	}, [
@@ -296,7 +297,7 @@ function piglinHead(uvProvider: TextureAtlasProvider) {
 				down: {uv: [14.25, 1.5, 14, 2.5], texture: '#0'},
 			},
 		},
-	]))
+	]).withUvEpsilon(1/128))
 }
 
 const RENDERERS: {
@@ -329,14 +330,34 @@ const RENDERERS: {
 }
 
 export namespace SpecialRenderers {
-	export function getMesh(id: string, props: { [key: string]: string }, uvProvider: TextureAtlasProvider, cull: Cull): Mesh {
+	export function getBlockMesh(block: BlockState, atlas: TextureAtlasProvider, cull: Cull): Mesh {
 		const mesh = new Mesh()
-		if (id in RENDERERS) {
-			mesh.merge(RENDERERS[id](props, uvProvider, cull))
+		const renderer = RENDERERS[block.getName().toString()]
+		if (renderer !== undefined) {
+			mesh.merge(renderer(block.getProperties(), atlas, cull))
 		}
-		if (props['waterlogged'] === 'true') {
-			mesh.merge(liquidRenderer('water', 0, uvProvider, cull, 0))
+		if (block.getProperties()['waterlogged'] === 'true') {
+			mesh.merge(liquidRenderer('water', 0, atlas, cull, 0))
 		}
 		return mesh
+	}
+
+	export function getItemMesh(item: ItemStack, atlas: TextureAtlasProvider): Mesh {
+		if (item.is('shield')) {
+			const shieldMesh = shieldRenderer(atlas)
+			const t = mat4.create()
+			mat4.translate(t, t, [-3, 1, 0])
+			mat4.rotateX(t, t, -10 * Math.PI/180)
+			mat4.rotateY(t, t, -10 * Math.PI/180)
+			mat4.rotateZ(t, t, -5 * Math.PI/180)
+			mat4.scale(t, t, [16, 16, 16])
+			return shieldMesh.transform(t)
+		}
+
+		// Assumes block and item ID are the same
+		const blockMesh = getBlockMesh(new BlockState(item.id, {}), atlas, Cull.none())
+		const t = mat4.create()
+		mat4.scale(t, t, [16, 16, 16])
+		return blockMesh.transform(t)
 	}
 }

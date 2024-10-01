@@ -84,6 +84,13 @@ export class Mesh {
 		return this
 	}
 
+	public computeNormals() {
+		for (const quad of this.quads) {
+			const normal = quad.normal()
+			quad.forEach(v => v.normal = normal)
+		}
+	}
+
 	public rebuild(gl: WebGLRenderingContext, options: { pos?: boolean, color?: boolean, texture?: boolean, normal?: boolean, blockPos?: boolean }) {
 		const rebuildBuffer = (buffer: WebGLBuffer | undefined, type: number, data: BufferSource): WebGLBuffer | undefined => {
 			if (!buffer) {
