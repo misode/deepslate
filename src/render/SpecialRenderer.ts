@@ -409,6 +409,38 @@ function shulkerBoxRenderer(color: string) {
 	}
 }
 
+function bellRenderer(atlas: TextureAtlasProvider) {
+	const id = Identifier.create('bell')
+	return dummy(id, atlas, {}, new BlockModel(id, undefined, {
+		0: 'entity/bell/bell_body',
+	}, [
+		{
+			from: [5, 3, 5],
+			to: [11, 10, 11],
+			faces: {
+				north: {uv: [3, 3, 6, 6.5], texture: '#0'},
+				east: {uv: [0, 3, 3, 6.5], texture: '#0'},
+				south: {uv: [9, 3, 12, 6.5], texture: '#0'},
+				west: {uv: [6, 3, 9, 6.5], texture: '#0'},
+				up: {uv: [6, 3, 3, 0], texture: '#0'},
+				down: {uv: [9, 0, 6, 3], texture: '#0'},
+			},
+		},
+		{
+			from: [4, 10, 4],
+			to: [12, 12, 12],
+			faces: {
+				north: {uv: [4, 10.5, 8, 11.5], texture: '#0'},
+				east: {uv: [0, 10.5, 4, 11.5], texture: '#0'},
+				south: {uv: [12, 10.5, 16, 11.5], texture: '#0'},
+				west: {uv: [8, 10.5, 12, 11.5], texture: '#0'},
+				up: {uv: [8, 10.5, 4, 6.5], texture: '#0'},
+				down: {uv: [12, 6.5, 8, 10.5], texture: '#0'},
+			},
+		},
+	]).withUvEpsilon(1/64))
+}
+
 function getStr(block: BlockState, key: string, fallback = '') {
 	return block.getProperty(key) ?? fallback
 }
@@ -546,6 +578,13 @@ export namespace SpecialRenderers {
 			}
 			mat4.translate(t, t, [-0.5, -0.5, -0.5])
 			mesh.merge(shulkerBoxRenderer(atlas).transform(t))
+		}
+		if (block.is('bell')) {
+			const t = mat4.create()
+			mat4.translate(t, t, [0.5, 0.5, 0.5])
+			mat4.scale(t, t, [1, -1, -1])
+			mat4.translate(t, t, [-0.5, -0.5, -0.5])
+			mesh.merge(bellRenderer(atlas).transform(t))
 		}
 
 		if (block.getProperties()['waterlogged'] === 'true') {
