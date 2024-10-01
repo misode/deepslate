@@ -355,6 +355,26 @@ function wallSignRenderer(woodType: string) {
 	}
 }
 
+function conduitRenderer(atlas: TextureAtlasProvider) {
+	const id = Identifier.create('conduit')
+	return dummy(id, atlas, {}, new BlockModel(id, undefined, {
+		0: 'entity/conduit/base',
+	}, [
+		{
+			from: [5, 5, 5],
+			to: [11, 11, 11],
+			faces: {
+				north: {uv: [3, 6, 6, 12], texture: '#0'},
+				east: {uv: [0, 6, 3, 12], texture: '#0'},
+				south: {uv: [9, 6, 12, 12], texture: '#0'},
+				west: {uv: [6, 6, 9, 12], texture: '#0'},
+				up: {uv: [6, 6, 3, 0], texture: '#0'},
+				down: {uv: [9, 0, 6, 6], texture: '#0'},
+			},
+		},
+	]).withUvEpsilon(1/128))
+}
+
 function getStr(block: BlockState, key: string, fallback = '') {
 	return block.getProperty(key) ?? fallback
 }
@@ -460,6 +480,9 @@ export namespace SpecialRenderers {
 			mat4.scale(t, t, [2/3, 2/3, 2/3])
 			mat4.translate(t, t, [-0.5, -0.5, -0.5])
 			mesh.merge(wallSignMesh.transform(t))
+		}
+		if (block.is('conduit')) {
+			mesh.merge(conduitRenderer(atlas))
 		}
 
 		if (block.getProperties()['waterlogged'] === 'true') {
