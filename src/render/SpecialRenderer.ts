@@ -179,7 +179,6 @@ function dragonHead(atlas: TextureAtlasProvider) {
 		{
 			from: [2, 4, -16],
 			to: [14, 9, 0],
-			rotation: {angle: 0, axis: 'y', origin: [0, -3, 0]},
 			faces: {
 				north: {uv: [12, 3.75, 12.75, 4.0625], texture: '#0'},
 				east: {uv: [11, 3.75, 12, 4.0625], texture: '#0'},
@@ -390,7 +389,6 @@ function hangingSignRenderer(woodType: string) {
 			{
 				from: [1, 0, 7],
 				to: [15, 10, 9],
-				rotation: {angle: 0, axis: 'y', origin: [1, 0, 7]},
 				faces: {
 					north: {uv: [0.5, 7, 4, 12], texture: '#0'},
 					east: {uv: [0, 7, 0.5, 12], texture: '#0'},
@@ -449,7 +447,6 @@ function wallHangingSignRenderer(woodType: string) {
 			{
 				from: [1, 0, 7],
 				to: [15, 10, 9],
-				rotation: {angle: 0, axis: 'y', origin: [1, 0, 7]},
 				faces: {
 					north: {uv: [0.5, 7, 4, 12], texture: '#0'},
 					east: {uv: [0, 7, 0.5, 12], texture: '#0'},
@@ -462,7 +459,6 @@ function wallHangingSignRenderer(woodType: string) {
 			{
 				from: [0, 14, 6],
 				to: [16, 16, 10],
-				rotation: {angle: 0, axis: 'y', origin: [0, 14, 7]},
 				faces: {
 					north: {uv: [1, 2, 5, 3], texture: '#0'},
 					east: {uv: [0, 2, 1, 3], texture: '#0'},
@@ -563,6 +559,86 @@ function shulkerBoxRenderer(color: string) {
 				},
 			},
 		]).withUvEpsilon(1/128))
+	}
+}
+
+function bannerRenderer(color: string) {
+	return (atlas: TextureAtlasProvider) => {
+		const id = Identifier.create('banner')
+		return dummy(id, atlas, {}, new BlockModel(id, undefined, {
+			0: 'entity/banner_base',
+		}, [
+			{
+				from: [-2, -8, 9],
+				to: [18, 32, 10],
+				faces: {
+					north: {uv: [0.25, 0.25, 5.25, 10.25], texture: '#0'},
+					east: {uv: [0, 0.25, 0.25, 10.25], texture: '#0'},
+					south: {uv: [5.5, 0.25, 10.5, 10.25], texture: '#0'},
+					west: {uv: [5.25, 0.25, 5.5, 10.25], texture: '#0'},
+					up: {uv: [5.25, 0.25, 0.25, 0], texture: '#0'},
+					down: {uv: [10.25, 0, 5.25, 0.25], texture: '#0'},
+				},
+			},
+			{
+				from: [7, -12, 7],
+				to: [9, 30, 9],
+				faces: {
+					north: {uv: [11.5, 0.5, 12, 11], texture: '#0'},
+					east: {uv: [11, 0.5, 11.5, 11], texture: '#0'},
+					south: {uv: [12.5, 0.5, 13, 11], texture: '#0'},
+					west: {uv: [12, 0.5, 12.5, 11], texture: '#0'},
+					up: {uv: [12, 0.5, 11.5, 0], texture: '#0'},
+					down: {uv: [12.5, 0, 12, 0.5], texture: '#0'},
+				},
+			},
+			{
+				from: [-2, 30, 7],
+				to: [18, 32, 9],
+				faces: {
+					north: {uv: [0.5, 11, 5.5, 11.5], texture: '#0'},
+					east: {uv: [0, 11, 0.5, 11.5], texture: '#0'},
+					south: {uv: [6, 11, 11, 11.5], texture: '#0'},
+					west: {uv: [5.5, 11, 6, 11.5], texture: '#0'},
+					up: {uv: [5.5, 11, 0.5, 10.5], texture: '#0'},
+					down: {uv: [10.5, 10.5, 5.5, 11], texture: '#0'},
+				},
+			},
+		]))
+	}
+}
+
+function wallBannerRenderer(color: string) {
+	return (atlas: TextureAtlasProvider) => {
+		const id = Identifier.create('banner')
+		return dummy(id, atlas, {}, new BlockModel(id, undefined, {
+			0: 'entity/banner_base',
+		}, [
+			{
+				from: [-2, -8, -1.5],
+				to: [18, 32, -0.5],
+				faces: {
+					north: {uv: [0.25, 0.25, 5.25, 10.25], texture: '#0'},
+					east: {uv: [0, 0.25, 0.25, 10.25], texture: '#0'},
+					south: {uv: [5.5, 0.25, 10.5, 10.25], texture: '#0'},
+					west: {uv: [5.25, 0.25, 5.5, 10.25], texture: '#0'},
+					up: {uv: [5.25, 0.25, 0.25, 0], texture: '#0'},
+					down: {uv: [10.25, 0, 5.25, 0.25], texture: '#0'},
+				},
+			},
+			{
+				from: [-2, 30, -3.5],
+				to: [18, 32, -1.5],
+				faces: {
+					north: {uv: [0.5, 11, 5.5, 11.5], texture: '#0'},
+					east: {uv: [0, 11, 0.5, 11.5], texture: '#0'},
+					south: {uv: [6, 11, 11, 11.5], texture: '#0'},
+					west: {uv: [5.5, 11, 6, 11.5], texture: '#0'},
+					up: {uv: [5.5, 11, 0.5, 10.5], texture: '#0'},
+					down: {uv: [10.5, 10.5, 5.5, 11], texture: '#0'},
+				},
+			},
+		]))
 	}
 }
 
@@ -765,6 +841,14 @@ const BedRenderers = new Map(DyeColors.map(color =>
 	[`minecraft:${color}_bed`, bedRenderer(color)]
 ))
 
+const BannerRenderers = new Map(DyeColors.map(color =>
+	[`minecraft:${color}_banner`, bannerRenderer(color)]
+))
+
+const WallBannerRenderers = new Map(DyeColors.map(color =>
+	[`minecraft:${color}_wall_banner`, wallBannerRenderer(color)]
+))
+
 export namespace SpecialRenderers {
 	export function getBlockMesh(block: BlockState, atlas: TextureAtlasProvider, cull: Cull): Mesh {
 		if (block.is('water')) {
@@ -868,6 +952,26 @@ export namespace SpecialRenderers {
 			mat4.rotateY(t, t, facing === 'east' ? Math.PI / 2 : facing === 'north' ? Math.PI : facing === 'west' ? Math.PI * 3 / 2 : 0)
 			mat4.translate(t, t, [-0.5, -0.5, -0.5])
 			mesh.merge(bedRenderer(part, atlas).transform(t))
+		}
+		const bannerRenderer = BannerRenderers.get(block.getName().toString())
+		if (bannerRenderer !== undefined) {
+			const rotation = getInt(block, 'rotation') / 16 * Math.PI * 2
+			const t = mat4.create()
+			mat4.translate(t, t, [0.5, 1.5, 0.5])
+			mat4.rotateY(t, t, rotation)
+			mat4.scale(t, t, [2/3, 2/3, 2/3])
+			mat4.translate(t, t, [-0.5, -1.5, -0.5])
+			mesh.merge(bannerRenderer(atlas).transform(t))
+		}
+		const wallBannerRenderer = WallBannerRenderers.get(block.getName().toString())
+		if (wallBannerRenderer !== undefined) {
+			const facing = getStr(block, 'facing', 'south')
+			const t = mat4.create()
+			mat4.translate(t, t, [0.5, 0.5, 0.5])
+			mat4.rotateY(t, t, facing === 'east' ? Math.PI / 2 : facing === 'north' ? Math.PI : facing === 'west' ? Math.PI * 3 / 2 : 0)
+			mat4.scale(t, t, [2/3, 2/3, 2/3])
+			mat4.translate(t, t, [-0.5, -1.45, -0.5])
+			mesh.merge(wallBannerRenderer(atlas).transform(t))
 		}
 
 		if (block.getProperties()['waterlogged'] === 'true') {
