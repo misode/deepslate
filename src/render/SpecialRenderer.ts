@@ -355,6 +355,163 @@ function wallSignRenderer(woodType: string) {
 	}
 }
 
+function hangingSignRenderer(woodType: string) {
+	return (attached: boolean, atlas: TextureAtlasProvider) => {
+		const id = Identifier.create('sign')
+		if (attached) {
+			return dummy(id, atlas, {}, new BlockModel(id, undefined, {
+				0: `entity/signs/hanging/${woodType}`,
+			}, [
+				{
+					from: [1, 0, 7],
+					to: [15, 10, 9],
+					faces: {
+						north: {uv: [0.5, 7, 4, 12], texture: '#0'},
+						east: {uv: [0, 7, 0.5, 12], texture: '#0'},
+						south: {uv: [4.5, 7, 8, 12], texture: '#0'},
+						west: {uv: [4, 7, 4.5, 12], texture: '#0'},
+						up: {uv: [4, 7, 0.5, 6], texture: '#0'},
+						down: {uv: [7.5, 6, 4, 7], texture: '#0'},
+					},
+				},
+				{
+					from: [2, 10, 8],
+					to: [14, 16, 8],
+					faces: {
+						north: {uv: [3.5, 3, 6.5, 6], texture: '#0'},
+						south: {uv: [3.5, 3, 6.5, 6], texture: '#0'},
+					},
+				},
+			]).withUvEpsilon(1/128))
+		}
+		return dummy(id, atlas, {}, new BlockModel(id, undefined, {
+			0: `entity/signs/hanging/${woodType}`,
+		}, [
+			{
+				from: [1, 0, 7],
+				to: [15, 10, 9],
+				rotation: {angle: 0, axis: 'y', origin: [1, 0, 7]},
+				faces: {
+					north: {uv: [0.5, 7, 4, 12], texture: '#0'},
+					east: {uv: [0, 7, 0.5, 12], texture: '#0'},
+					south: {uv: [4.5, 7, 8, 12], texture: '#0'},
+					west: {uv: [4, 7, 4.5, 12], texture: '#0'},
+					up: {uv: [4, 7, 0.5, 6], texture: '#0'},
+					down: {uv: [7.5, 6, 4, 7], texture: '#0'},
+				},
+			},
+			{
+				from: [1.5, 10, 8],
+				to: [4.5, 16, 8],
+				rotation: {angle: 45, axis: 'y', origin: [3, 12, 8]},
+				faces: {
+					north: {uv: [0, 3, 0.75, 6], texture: '#0'},
+					south: {uv: [0, 3, 0.75, 6], texture: '#0'},
+				},
+			},
+			{
+				from: [3, 10, 6.5],
+				to: [3, 16, 9.5],
+				rotation: {angle: 45, axis: 'y', origin: [3, 12, 8]},
+				faces: {
+					east: {uv: [1.5, 3, 2.25, 6], texture: '#0'},
+					west: {uv: [1.5, 3, 2.25, 6], texture: '#0'},
+				},
+			},
+			{
+				from: [11.5, 10, 8],
+				to: [14.5, 16, 8],
+				rotation: {angle: 45, axis: 'y', origin: [13, 12, 8]},
+				faces: {
+					north: {uv: [0, 3, 0.75, 6], texture: '#0'},
+					south: {uv: [0, 3, 0.75, 6], texture: '#0'},
+				},
+			},
+			{
+				from: [13, 10, 6.5],
+				to: [13, 16, 9.5],
+				rotation: {angle: 45, axis: 'y', origin: [13, 12, 8]},
+				faces: {
+					east: {uv: [1.5, 3, 2.25, 6], texture: '#0'},
+					west: {uv: [1.5, 3, 2.25, 6], texture: '#0'},
+				},
+			},
+		]).withUvEpsilon(1/128))
+	}
+}
+
+function wallHangingSignRenderer(woodType: string) {
+	return (atlas: TextureAtlasProvider) => {
+		const id = Identifier.create('sign')
+		return dummy(id, atlas, {}, new BlockModel(id, undefined, {
+			0: `entity/signs/hanging/${woodType}`,
+		}, [
+			{
+				from: [1, 0, 7],
+				to: [15, 10, 9],
+				rotation: {angle: 0, axis: 'y', origin: [1, 0, 7]},
+				faces: {
+					north: {uv: [0.5, 7, 4, 12], texture: '#0'},
+					east: {uv: [0, 7, 0.5, 12], texture: '#0'},
+					south: {uv: [4.5, 7, 8, 12], texture: '#0'},
+					west: {uv: [4, 7, 4.5, 12], texture: '#0'},
+					up: {uv: [4, 7, 0.5, 6], texture: '#0'},
+					down: {uv: [7.5, 6, 4, 7], texture: '#0'},
+				},
+			},
+			{
+				from: [0, 14, 6],
+				to: [16, 16, 10],
+				rotation: {angle: 0, axis: 'y', origin: [0, 14, 7]},
+				faces: {
+					north: {uv: [1, 2, 5, 3], texture: '#0'},
+					east: {uv: [0, 2, 1, 3], texture: '#0'},
+					south: {uv: [6, 2, 10, 3], texture: '#0'},
+					west: {uv: [5, 2, 6, 3], texture: '#0'},
+					up: {uv: [5, 2, 1, 0], texture: '#0'},
+					down: {uv: [9, 0, 5, 2], texture: '#0'},
+				},
+			},
+			{
+				from: [1.5, 10, 8],
+				to: [4.5, 16, 8],
+				rotation: {angle: 45, axis: 'y', origin: [3, 12, 8]},
+				faces: {
+					north: {uv: [0, 3, 0.75, 6], texture: '#0'},
+					south: {uv: [0, 3, 0.75, 6], texture: '#0'},
+				},
+			},
+			{
+				from: [3, 10, 6.5],
+				to: [3, 16, 9.5],
+				rotation: {angle: 45, axis: 'y', origin: [3, 12, 8]},
+				faces: {
+					east: {uv: [1.5, 3, 2.25, 6], texture: '#0'},
+					west: {uv: [1.5, 3, 2.25, 6], texture: '#0'},
+				},
+			},
+			{
+				from: [11.5, 10, 8],
+				to: [14.5, 16, 8],
+				rotation: {angle: 45, axis: 'y', origin: [13, 12, 8]},
+				faces: {
+					north: {uv: [0, 3, 0.75, 6], texture: '#0'},
+					south: {uv: [0, 3, 0.75, 6], texture: '#0'},
+				},
+			},
+			{
+				from: [13, 10, 6.5],
+				to: [13, 16, 9.5],
+				rotation: {angle: 45, axis: 'y', origin: [13, 12, 8]},
+				faces: {
+					east: {uv: [1.5, 3, 2.25, 6], texture: '#0'},
+					west: {uv: [1.5, 3, 2.25, 6], texture: '#0'},
+				},
+			},
+		]).withUvEpsilon(1/128))
+	}
+}
+
 function conduitRenderer(atlas: TextureAtlasProvider) {
 	const id = Identifier.create('conduit')
 	return dummy(id, atlas, {}, new BlockModel(id, undefined, {
@@ -551,71 +708,62 @@ const SkullRenderers = new Map(Object.entries({
 	'minecraft:player_head': skullRenderer('player/wide/steve', 1), // TODO: fix texture
 }))
 
-const SignRenderers = new Map(Object.entries({
-	'minecraft:oak_sign': signRenderer('oak'),
-	'minecraft:spruce_sign': signRenderer('spruce'),
-	'minecraft:birch_sign': signRenderer('birch'),
-	'minecraft:jungle_sign': signRenderer('jungle'),
-	'minecraft:acacia_sign': signRenderer('acacia'),
-	'minecraft:dark_oak_sign': signRenderer('dark_oak'),
-	'minecraft:mangrove_sign': signRenderer('mangrove'),
-	'minecraft:cherry_sign': signRenderer('cherry'),
-	'minecraft:bamboo_sign': signRenderer('bamboo'),
-	'minecraft:crimson_sign': signRenderer('crimson'),
-	'minecraft:warped_sign': signRenderer('warped'),
-}))
+const WoodTypes = [
+	'oak',
+	'spruce',
+	'birch',
+	'jungle',
+	'acacia',
+	'dark_oak',
+	'mangrove',
+	'cherry',
+	'bamboo',
+	'crimson',
+	'warped',
+]
 
-const WallSignRenderers = new Map(Object.entries({
-	'minecraft:oak_wall_sign': wallSignRenderer('oak'),
-	'minecraft:spruce_wall_sign': wallSignRenderer('spruce'),
-	'minecraft:birch_wall_sign': wallSignRenderer('birch'),
-	'minecraft:jungle_wall_sign': wallSignRenderer('jungle'),
-	'minecraft:acacia_wall_sign': wallSignRenderer('acacia'),
-	'minecraft:dark_oak_wall_sign': wallSignRenderer('dark_oak'),
-	'minecraft:mangrove_wall_sign': wallSignRenderer('mangrove'),
-	'minecraft:cherry_wall_sign': wallSignRenderer('cherry'),
-	'minecraft:bamboo_wall_sign': wallSignRenderer('bamboo'),
-	'minecraft:crimson_wall_sign': wallSignRenderer('crimson'),
-	'minecraft:warped_wall_sign': wallSignRenderer('warped'),
-}))
+const SignRenderers = new Map(WoodTypes.map(type =>
+	[`minecraft:${type}_sign`, signRenderer(type)]
+))
 
-const ShulkerBoxRenderers = new Map(Object.entries({
-	'minecraft:white_shulker_box': shulkerBoxRenderer('white'),
-	'minecraft:orange_shulker_box': shulkerBoxRenderer('orange'),
-	'minecraft:magenta_shulker_box': shulkerBoxRenderer('magenta'),
-	'minecraft:light_blue_shulker_box': shulkerBoxRenderer('light_blue'),
-	'minecraft:yellow_shulker_box': shulkerBoxRenderer('yellow'),
-	'minecraft:lime_shulker_box': shulkerBoxRenderer('lime'),
-	'minecraft:pink_shulker_box': shulkerBoxRenderer('pink'),
-	'minecraft:gray_shulker_box': shulkerBoxRenderer('gray'),
-	'minecraft:light_gray_shulker_box': shulkerBoxRenderer('light_gray'),
-	'minecraft:cyan_shulker_box': shulkerBoxRenderer('cyan'),
-	'minecraft:purple_shulker_box': shulkerBoxRenderer('purple'),
-	'minecraft:blue_shulker_box': shulkerBoxRenderer('blue'),
-	'minecraft:brown_shulker_box': shulkerBoxRenderer('brown'),
-	'minecraft:green_shulker_box': shulkerBoxRenderer('green'),
-	'minecraft:red_shulker_box': shulkerBoxRenderer('red'),
-	'minecraft:black_shulker_box': shulkerBoxRenderer('black'),
-}))
+const WallSignRenderers = new Map(WoodTypes.map(type =>
+	[`minecraft:${type}_wall_sign`, wallSignRenderer(type)]
+))
 
-const BedRenderers = new Map(Object.entries({
-	'minecraft:white_bed': bedRenderer('white'),
-	'minecraft:orange_bed': bedRenderer('orange'),
-	'minecraft:magenta_bed': bedRenderer('magenta'),
-	'minecraft:light_blue_bed': bedRenderer('light_blue'),
-	'minecraft:yellow_bed': bedRenderer('yellow'),
-	'minecraft:lime_bed': bedRenderer('lime'),
-	'minecraft:pink_bed': bedRenderer('pink'),
-	'minecraft:gray_bed': bedRenderer('gray'),
-	'minecraft:light_gray_bed': bedRenderer('light_gray'),
-	'minecraft:cyan_bed': bedRenderer('cyan'),
-	'minecraft:purple_bed': bedRenderer('purple'),
-	'minecraft:blue_bed': bedRenderer('blue'),
-	'minecraft:brown_bed': bedRenderer('brown'),
-	'minecraft:green_bed': bedRenderer('green'),
-	'minecraft:red_bed': bedRenderer('red'),
-	'minecraft:black_bed': bedRenderer('black'),
-}))
+const HangingSignRenderers = new Map(WoodTypes.map(type =>
+	[`minecraft:${type}_hanging_sign`, hangingSignRenderer(type)]
+))
+
+const WallHangingSignRenderers = new Map(WoodTypes.map(type =>
+	[`minecraft:${type}_wall_hanging_sign`, wallHangingSignRenderer(type)]
+))
+
+const DyeColors = [
+	'white',
+	'orange',
+	'magenta',
+	'light_blue',
+	'yellow',
+	'lime',
+	'pink',
+	'gray',
+	'light_gray',
+	'cyan',
+	'purple',
+	'blue',
+	'brown',
+	'green',
+	'red',
+	'black',
+]
+
+const ShulkerBoxRenderers = new Map(DyeColors.map(color =>
+	[`minecraft:${color}_shulker_box`, shulkerBoxRenderer(color)]
+))
+
+const BedRenderers = new Map(DyeColors.map(color =>
+	[`minecraft:${color}_bed`, bedRenderer(color)]
+))
 
 export namespace SpecialRenderers {
 	export function getBlockMesh(block: BlockState, atlas: TextureAtlasProvider, cull: Cull): Mesh {
@@ -666,6 +814,26 @@ export namespace SpecialRenderers {
 			mat4.scale(t, t, [2/3, 2/3, 2/3])
 			mat4.translate(t, t, [-0.5, -0.5, -0.5])
 			mesh.merge(wallSignRenderer(atlas).transform(t))
+		}
+		const hangingSignRenderer = HangingSignRenderers.get(block.getName().toString())
+		if (hangingSignRenderer !== undefined) {
+			const attached = getStr(block, 'attached', 'false') === 'true'
+			const rotation = getInt(block, 'rotation') / 16 * Math.PI * 2
+			const t = mat4.create()
+			mat4.translate(t, t, [0.5, 0.5, 0.5])
+			mat4.rotateY(t, t, rotation)
+			mat4.scale(t, t, [2/3, 2/3, 2/3])
+			mat4.translate(t, t, [-0.5, -0.5, -0.5])
+			mesh.merge(hangingSignRenderer(attached, atlas).transform(t))
+		}
+		const wallHangingSignRenderer = WallHangingSignRenderers.get(block.getName().toString())
+		if (wallHangingSignRenderer !== undefined) {
+			const facing = getStr(block, 'facing', 'south')
+			const t = mat4.create()
+			mat4.translate(t, t, [0.5, 0.5, 0.5])
+			mat4.rotateY(t, t, facing === 'west' ? Math.PI / 2 : facing === 'south' ? Math.PI : facing === 'east' ? Math.PI * 3 / 2 : 0)
+			mat4.translate(t, t, [-0.5, -0.5, -0.5])
+			mesh.merge(wallHangingSignRenderer(atlas).transform(t))
 		}
 		if (block.is('conduit')) {
 			mesh.merge(conduitRenderer(atlas))
