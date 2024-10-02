@@ -1029,7 +1029,9 @@ export namespace SpecialRenderers {
 			mat4.translate(t, t, [0, 0, -16])
 			return headMesh.merge(footMesh.transform(t))
 		}
-
+		if (item.is('bell') || SignRenderers.has(item.id.toString()) || HangingSignRenderers.has(item.id.toString())) {
+			return new Mesh()
+		}
 		// Assumes block and item ID are the same
 		return getMesh(new BlockState(item.id), atlas, Cull.none())
 	}
