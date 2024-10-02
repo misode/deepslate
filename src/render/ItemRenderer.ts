@@ -49,20 +49,10 @@ export class ItemRenderer extends Renderer {
 			tint = getItemColor(this.item)
 		}
 		const mesh = model.getMesh(this.resources, Cull.none(), tint)
-		const specialMesh = SpecialRenderers.getMesh(this.item.id.toString(), {}, this.resources, Cull.none())
-		if (!specialMesh.isEmpty()) {
-			// undo the scaling done by the special renderer
-			const t = mat4.create()
-			mat4.identity(t)
-			mat4.scale(t, t, [16, 16, 16])
-			specialMesh.transform(t)
-			mesh.merge(specialMesh)
-		}
+		const specialMesh = SpecialRenderers.getItemMesh(this.item, this.resources)
+		mesh.merge(specialMesh)
 		mesh.transform(model.getDisplayTransform('gui'))
-		mesh.quads.forEach(q => {
-			const normal = q.normal()
-			q.forEach(v => v.normal = normal)
-		})
+		mesh.computeNormals()
 		mesh.rebuild(this.gl, { pos: true, color: true, texture: true, normal: true })
 		return mesh
 	}

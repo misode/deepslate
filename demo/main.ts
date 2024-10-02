@@ -126,15 +126,17 @@ Promise.all([
 
 	const itemCanvas = document.getElementById('item-display') as HTMLCanvasElement
 	const itemGl = itemCanvas.getContext('webgl')!
-	const itemRenderer = new ItemRenderer(itemGl, Identifier.parse('stone'), resources)
-
 	const itemInput = document.getElementById('item-input') as HTMLInputElement
+	itemInput.value = localStorage.getItem('deepslate_demo_item') ?? 'stone'
+	const itemRenderer = new ItemRenderer(itemGl, Identifier.parse(itemInput.value), resources)
+
 	itemInput.addEventListener('keyup', () => {
 		try {
 			const id = itemInput.value
 			itemRenderer.setItem(new ItemStack(Identifier.parse(id), 1))
 			itemRenderer.drawItem()
 			itemInput.classList.remove('invalid')
+			localStorage.setItem('deepslate_demo_item', id)
 		} catch (e) {
 			console.error(e)
 			itemInput.classList.add('invalid')
@@ -146,10 +148,10 @@ Promise.all([
 
 	const structure = new Structure([3, 2, 1])
 	const size = structure.getSize()
-	structure.addBlock([1, 0, 0], 'minecraft:stone')
-	structure.addBlock([2, 0, 0], 'minecraft:grass_block', { snowy: 'false' })
-	structure.addBlock([1, 1, 0], 'minecraft:cake', { bites: '3' })
-	structure.addBlock([2, 1, 0], 'minecraft:acacia_fence', { waterlogged: 'true' })
+	structure.addBlock([1, 0, 0], 'minecraft:grass_block', { snowy: 'false' })
+	structure.addBlock([2, 0, 0], 'minecraft:stone')
+	structure.addBlock([1, 1, 0], 'minecraft:skeleton_skull', { rotation: '15' })
+	structure.addBlock([2, 1, 0], 'minecraft:acacia_fence', { waterlogged: 'true', north: 'true' })
 	structure.addBlock([0, 0, 0], 'minecraft:wall_torch', { facing: 'west' })
 
 	const structureCanvas = document.getElementById('structure-display') as HTMLCanvasElement
