@@ -34,12 +34,9 @@ export interface BlockDefinitionProvider {
 
 export class BlockDefinition {
 	constructor(
-		private readonly id: Identifier,
 		private readonly variants: { [key: string]: ModelVariantEntry } | undefined,
 		private readonly multipart: ModelMultiPart[] | undefined,
-	) {
-		this.variants = variants
-	}
+	) {}
 
 	public getModelVariants(props: { [key: string]: string }): ModelVariant[] {
 		if (this.variants) {
@@ -54,7 +51,7 @@ export class BlockDefinition {
 		return []
 	}
 
-	public getMesh(name: Identifier, props: { [key: string]: string }, textureUVProvider: TextureAtlasProvider, blockModelProvider: BlockModelProvider, cull: Cull) {
+	public getMesh(name: Identifier | undefined, props: { [key: string]: string }, atlas: TextureAtlasProvider, blockModelProvider: BlockModelProvider, cull: Cull) {
 		const variants = this.getModelVariants(props)
 		const mesh = new Mesh()
 
@@ -64,8 +61,8 @@ export class BlockDefinition {
 			if (!blockModel) {
 				throw new Error(`Cannot find block model ${variant.model}`)
 			}
-			const tint = BlockColors[name.path]?.(props)
-			const variantMesh = blockModel.getMesh(textureUVProvider, newCull, tint)
+			const tint = name ? BlockColors[name.path]?.(props) : undefined
+			const variantMesh = blockModel.getMesh(atlas, newCull, tint)
 
 			if (variant.x || variant.y) {
 				const t = mat4.create()
@@ -101,7 +98,7 @@ export class BlockDefinition {
 		})
 	}
 
-	public static fromJson(id: string, data: any) {
-		return new BlockDefinition(Identifier.parse(id), data.variants, data.multipart)
+	public static fromJson(data: any) {
+		return new BlockDefinition(data.variants, data.multipart)
 	}
 }

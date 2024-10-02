@@ -88,12 +88,12 @@ Promise.all([
 
 	const blockDefinitions: Record<string, BlockDefinition> = {}
 	Object.keys(blockstates).forEach(id => {
-		blockDefinitions['minecraft:' + id] = BlockDefinition.fromJson(id, blockstates[id])
+		blockDefinitions['minecraft:' + id] = BlockDefinition.fromJson(blockstates[id])
 	})
 
 	const blockModels: Record<string, BlockModel> = {}
 	Object.keys(models).forEach(id => {
-		blockModels['minecraft:' + id] = BlockModel.fromJson(id, models[id])
+		blockModels['minecraft:' + id] = BlockModel.fromJson(models[id])
 	})
 	Object.values(blockModels).forEach((m: any) => m.flatten({ getBlockModel: id => blockModels[id] }))
 

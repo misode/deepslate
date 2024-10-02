@@ -1,23 +1,15 @@
 import { mat4 } from 'gl-matrix'
 import type { ItemStack } from '../core/index.js'
-import { BlockState, Direction, Identifier } from '../core/index.js'
-import { BlockDefinition } from './BlockDefinition.js'
+import { BlockState, Direction } from '../core/index.js'
+import { BlockColors } from './BlockColors.js'
 import { BlockModel } from './BlockModel.js'
 import { Cull } from './Cull.js'
 import { Mesh } from './Mesh.js'
 import type { TextureAtlasProvider } from './TextureAtlas.js'
 
-function dummy(id: Identifier, atlas: TextureAtlasProvider, cull: Cull, model: BlockModel) {
-	const definition = new BlockDefinition(id, {'': { model: 'dummy' } }, undefined)
-	const modelProvider = { getBlockModel: () => model }
-	model.flatten(modelProvider)
-	return definition.getMesh(id, {}, atlas, modelProvider, cull)
-}
-
 function liquidRenderer(type: string, level: number, atlas: TextureAtlasProvider, cull: Cull, tintindex?: number) {
 	const y = cull['up'] ? 16 : [14.2, 12.5, 10.5, 9, 7, 5.3, 3.7, 1.9, 16, 16, 16, 16, 16, 16, 16, 16][level]
-	const id = Identifier.create(type)
-	return dummy(id, atlas, cull, new BlockModel(id, undefined, {
+	return new BlockModel(undefined, {
 		still: `block/${type}_still`,
 		flow: `block/${type}_flow`,
 	}, [{
@@ -31,13 +23,12 @@ function liquidRenderer(type: string, level: number, atlas: TextureAtlasProvider
 			south: { texture: '#flow', tintindex, cullface: Direction.SOUTH },
 			west: { texture: '#flow', tintindex, cullface: Direction.WEST },
 		},
-	}]))
+	}]).getMesh(atlas, cull, BlockColors[type]?.({}))
 }
 
 function chestRenderer(type: string) {
 	return (atlas: TextureAtlasProvider) => {
-		const id = Identifier.create('chest')
-		return dummy(id, atlas, {}, new BlockModel(id, undefined, {
+		return new BlockModel(undefined, {
 			0: `entity/chest/${type}`,
 		}, [
 			{
@@ -76,13 +67,12 @@ function chestRenderer(type: string) {
 					down: {uv: [0.75, 0, 1.25, 0.25], rotation: 180, texture: '#0'},
 				},
 			},
-		]))
+		]).getMesh(atlas, Cull.none())
 	}
 }
 
 function decoratedPotRenderer(atlas: TextureAtlasProvider){
-	const id = Identifier.create('decorated_pot')
-	return dummy(id, atlas, {}, new BlockModel(id, undefined, {
+	return new BlockModel(undefined, {
 		0: 'entity/decorated_pot/decorated_pot_side',
 		1: 'entity/decorated_pot/decorated_pot_base',
 	}, [
@@ -120,12 +110,11 @@ function decoratedPotRenderer(atlas: TextureAtlasProvider){
 				down: {uv: [8, 0, 12, 4], texture: '#1'},
 			},
 		},
-	]))
+	]).getMesh(atlas, Cull.none())
 }
 
 function shieldRenderer(atlas: TextureAtlasProvider) {
-	const id = Identifier.create('shield')
-	return dummy(id, atlas, {}, new BlockModel(id, undefined, {
+	return new BlockModel(undefined, {
 		0: 'entity/shield_base_nopattern',
 	}, [
 		{
@@ -140,13 +129,12 @@ function shieldRenderer(atlas: TextureAtlasProvider) {
 				down: {uv: [3.25, 0, 6.25, 0.25], texture: '#0'},
 			},
 		},
-	]))
+	]).getMesh(atlas, Cull.none())
 }
 
 function skullRenderer(texture: string, n: number) {
 	return (atlas: TextureAtlasProvider) => {
-		const id = Identifier.create('skull')
-		return dummy(id, atlas, {}, new BlockModel(id, undefined, {
+		return new BlockModel(undefined, {
 			0: `entity/${texture}`,
 		}, [
 			{
@@ -161,18 +149,18 @@ function skullRenderer(texture: string, n: number) {
 					down: {uv: [4, 0*n, 6, 2*n], texture: '#0'},
 				},
 			},
-		]))
+		])
+			.getMesh(atlas, Cull.none())
 	}
 }
 
 function dragonHead(atlas: TextureAtlasProvider) {
-	const id = Identifier.create('dragon_head')
 	const transformation = mat4.create()
 	mat4.translate(transformation, transformation, [0.5, 0.5, 0.5])
 	mat4.scale(transformation, transformation, [0.75, 0.75, 0.75])
 	mat4.rotateY(transformation, transformation, Math.PI)
 	mat4.translate(transformation, transformation, [-0.5, -0.7, -0.5])
-	return dummy(id, atlas, {}, new BlockModel(id, undefined, {
+	return new BlockModel(undefined, {
 		0: 'entity/enderdragon/dragon',
 	}, [
 		// TODO: add scales and nostrils
@@ -213,12 +201,11 @@ function dragonHead(atlas: TextureAtlasProvider) {
 				down: {uv: [13.5, 4.0625, 12.75, 5.0625], texture: '#0'},
 			},
 		},
-	]).withUvEpsilon(1/256)).transform(transformation)
+	]).withUvEpsilon(1/256).getMesh(atlas, Cull.none()).transform(transformation)
 }
 
 function piglinHead(atlas: TextureAtlasProvider) {
-	const id = Identifier.create('piglin_head')
-	return dummy(id, atlas, {}, new BlockModel(id, undefined, {
+	return new BlockModel(undefined, {
 		0: 'entity/piglin/piglin',
 	}, [
 		{
@@ -295,13 +282,12 @@ function piglinHead(atlas: TextureAtlasProvider) {
 				down: {uv: [14.25, 1.5, 14, 2.5], texture: '#0'},
 			},
 		},
-	]).withUvEpsilon(1/128))
+	]).withUvEpsilon(1/128).getMesh(atlas, Cull.none())
 }
 
 function signRenderer(woodType: string) {
 	return (atlas: TextureAtlasProvider) => {
-		const id = Identifier.create('sign')
-		return dummy(id, atlas, {}, new BlockModel(id, undefined, {
+		return new BlockModel(undefined, {
 			0: `entity/signs/${woodType}`,
 		}, [
 			{
@@ -328,14 +314,13 @@ function signRenderer(woodType: string) {
 					down: {uv: [1.5, 7, 1, 8], texture: '#0'},
 				},
 			},
-		]).withUvEpsilon(1/128))
+		]).withUvEpsilon(1/128).getMesh(atlas, Cull.none())
 	}
 }
 
 function wallSignRenderer(woodType: string) {
 	return (atlas: TextureAtlasProvider) => {
-		const id = Identifier.create('sign')
-		return dummy(id, atlas, {}, new BlockModel(id, undefined, {
+		return new BlockModel(undefined, {
 			0: `entity/signs/${woodType}`,
 		}, [
 			{
@@ -350,15 +335,14 @@ function wallSignRenderer(woodType: string) {
 					down: {uv: [12.5, 0, 6.5, 1], texture: '#0'},
 				},
 			},
-		]).withUvEpsilon(1/128))
+		]).withUvEpsilon(1/128).getMesh(atlas, Cull.none())
 	}
 }
 
 function hangingSignRenderer(woodType: string) {
 	return (attached: boolean, atlas: TextureAtlasProvider) => {
-		const id = Identifier.create('sign')
 		if (attached) {
-			return dummy(id, atlas, {}, new BlockModel(id, undefined, {
+			return new BlockModel(undefined, {
 				0: `entity/signs/hanging/${woodType}`,
 			}, [
 				{
@@ -381,9 +365,9 @@ function hangingSignRenderer(woodType: string) {
 						south: {uv: [3.5, 3, 6.5, 6], texture: '#0'},
 					},
 				},
-			]).withUvEpsilon(1/128))
+			]).withUvEpsilon(1/128).getMesh(atlas, Cull.none())
 		}
-		return dummy(id, atlas, {}, new BlockModel(id, undefined, {
+		return new BlockModel(undefined, {
 			0: `entity/signs/hanging/${woodType}`,
 		}, [
 			{
@@ -434,14 +418,13 @@ function hangingSignRenderer(woodType: string) {
 					west: {uv: [1.5, 3, 2.25, 6], texture: '#0'},
 				},
 			},
-		]).withUvEpsilon(1/128))
+		]).withUvEpsilon(1/128).getMesh(atlas, Cull.none())
 	}
 }
 
 function wallHangingSignRenderer(woodType: string) {
 	return (atlas: TextureAtlasProvider) => {
-		const id = Identifier.create('sign')
-		return dummy(id, atlas, {}, new BlockModel(id, undefined, {
+		return new BlockModel(undefined, {
 			0: `entity/signs/hanging/${woodType}`,
 		}, [
 			{
@@ -504,13 +487,12 @@ function wallHangingSignRenderer(woodType: string) {
 					west: {uv: [1.5, 3, 2.25, 6], texture: '#0'},
 				},
 			},
-		]).withUvEpsilon(1/128))
+		]).withUvEpsilon(1/128).getMesh(atlas, Cull.none())
 	}
 }
 
 function conduitRenderer(atlas: TextureAtlasProvider) {
-	const id = Identifier.create('conduit')
-	return dummy(id, atlas, {}, new BlockModel(id, undefined, {
+	return new BlockModel(undefined, {
 		0: 'entity/conduit/base',
 	}, [
 		{
@@ -525,13 +507,12 @@ function conduitRenderer(atlas: TextureAtlasProvider) {
 				down: {uv: [9, 0, 6, 6], texture: '#0'},
 			},
 		},
-	]).withUvEpsilon(1/128))
+	]).withUvEpsilon(1/128).getMesh(atlas, Cull.none())
 }
 
 function shulkerBoxRenderer(color: string) {
 	return (atlas: TextureAtlasProvider) => {
-		const id = Identifier.create('shulker_box')
-		return dummy(id, atlas, {}, new BlockModel(id, undefined, {
+		return new BlockModel(undefined, {
 			0: `entity/shulker/shulker_${color}`,
 		}, [
 			{
@@ -558,14 +539,13 @@ function shulkerBoxRenderer(color: string) {
 					down: {uv: [12, 0, 8, 4], texture: '#0'},
 				},
 			},
-		]).withUvEpsilon(1/128))
+		]).withUvEpsilon(1/128).getMesh(atlas, Cull.none())
 	}
 }
 
 function bannerRenderer(color: string) {
 	return (atlas: TextureAtlasProvider) => {
-		const id = Identifier.create('banner')
-		return dummy(id, atlas, {}, new BlockModel(id, undefined, {
+		return new BlockModel(undefined, {
 			0: 'entity/banner_base',
 		}, [
 			{
@@ -604,14 +584,13 @@ function bannerRenderer(color: string) {
 					down: {uv: [10.5, 10.5, 5.5, 11], texture: '#0'},
 				},
 			},
-		]))
+		]).getMesh(atlas, Cull.none())
 	}
 }
 
 function wallBannerRenderer(color: string) {
 	return (atlas: TextureAtlasProvider) => {
-		const id = Identifier.create('banner')
-		return dummy(id, atlas, {}, new BlockModel(id, undefined, {
+		return new BlockModel(undefined, {
 			0: 'entity/banner_base',
 		}, [
 			{
@@ -638,13 +617,12 @@ function wallBannerRenderer(color: string) {
 					down: {uv: [10.5, 10.5, 5.5, 11], texture: '#0'},
 				},
 			},
-		]))
+		]).getMesh(atlas, Cull.none())
 	}
 }
 
 function bellRenderer(atlas: TextureAtlasProvider) {
-	const id = Identifier.create('bell')
-	return dummy(id, atlas, {}, new BlockModel(id, undefined, {
+	return new BlockModel(undefined, {
 		0: 'entity/bell/bell_body',
 	}, [
 		{
@@ -671,14 +649,13 @@ function bellRenderer(atlas: TextureAtlasProvider) {
 				down: {uv: [12, 6.5, 8, 10.5], texture: '#0'},
 			},
 		},
-	]).withUvEpsilon(1/64))
+	]).withUvEpsilon(1/64).getMesh(atlas, Cull.none())
 }
 
 function bedRenderer(color: string) {
 	return (part: string, atlas: TextureAtlasProvider) => {
-		const id = Identifier.create('bed')
 		if (part === 'foot') {
-			return dummy(id, atlas, {}, new BlockModel(id, undefined, {
+			return new BlockModel(undefined, {
 				0: `entity/bed/${color}`,
 			}, [
 				{
@@ -716,9 +693,9 @@ function bedRenderer(color: string) {
 						down: {uv: [14, 3, 14.75, 3.75], texture: '#0'},
 					},
 				},
-			]).withUvEpsilon(1/128))
+			]).withUvEpsilon(1/128).getMesh(atlas, Cull.none())
 		}
-		return dummy(id, atlas, {}, new BlockModel(id, undefined, {
+		return new BlockModel(undefined, {
 			0: `entity/bed/${color}`,
 		}, [
 			{
@@ -756,7 +733,7 @@ function bedRenderer(color: string) {
 					down: {uv: [14, 1.5, 14.75, 2.25], texture: '#0'},
 				},
 			},
-		]).withUvEpsilon(1/128))
+		]).withUvEpsilon(1/128).getMesh(atlas, Cull.none())
 	}
 }
 
@@ -850,7 +827,7 @@ const WallBannerRenderers = new Map(DyeColors.map(color =>
 ))
 
 export namespace SpecialRenderers {
-	export function getBlockMesh(block: BlockState, atlas: TextureAtlasProvider, cull: Cull): Mesh {
+	function getMesh(block: BlockState, atlas: TextureAtlasProvider, cull: Cull): Mesh {
 		if (block.is('water')) {
 			return liquidRenderer('water', getInt(block, 'level'), atlas, cull, 0)
 		}
@@ -862,9 +839,9 @@ export namespace SpecialRenderers {
 		if (chestRenderer !== undefined) {
 			const facing = getStr(block, 'facing', 'south')
 			const t = mat4.create()
-			mat4.translate(t, t, [0.5, 0.5, 0.5])
+			mat4.translate(t, t, [8, 8, 8])
 			mat4.rotateY(t, t, facing === 'west' ? Math.PI / 2 : facing === 'south' ? Math.PI : facing === 'east' ? Math.PI * 3 / 2 : 0)
-			mat4.translate(t, t, [-0.5, -0.5, -0.5])
+			mat4.translate(t, t, [-8, -8, -8])
 			mesh.merge(chestRenderer(atlas).transform(t))
 		}
 		if (block.is('decorated_pot')) {
@@ -874,29 +851,29 @@ export namespace SpecialRenderers {
 		if (skullRenderer !== undefined) {
 			const rotation = getInt(block, 'rotation') / 16 * Math.PI * 2
 			const t = mat4.create()
-			mat4.translate(t, t, [0.5, 0.5, 0.5])
+			mat4.translate(t, t, [8, 8, 8])
 			mat4.rotateY(t, t, rotation)
-			mat4.translate(t, t, [-0.5, -0.5, -0.5])
+			mat4.translate(t, t, [-8, -8, -8])
 			mesh.merge(skullRenderer(atlas).transform(t))
 		}
 		const signRenderer = SignRenderers.get(block.getName().toString())
 		if (signRenderer !== undefined) {
 			const rotation = getInt(block, 'rotation') / 16 * Math.PI * 2
 			const t = mat4.create()
-			mat4.translate(t, t, [0.5, 0.5, 0.5])
+			mat4.translate(t, t, [8, 8, 8])
 			mat4.rotateY(t, t, rotation)
 			mat4.scale(t, t, [2/3, 2/3, 2/3])
-			mat4.translate(t, t, [-0.5, -0.5, -0.5])
+			mat4.translate(t, t, [-8, -8, -8])
 			mesh.merge(signRenderer(atlas).transform(t))
 		}
 		const wallSignRenderer = WallSignRenderers.get(block.getName().toString())
 		if (wallSignRenderer !== undefined) {
 			const facing = getStr(block, 'facing', 'south')
 			const t = mat4.create()
-			mat4.translate(t, t, [0.5, 0.5, 0.5])
+			mat4.translate(t, t, [8, 8, 8])
 			mat4.rotateY(t, t, facing === 'west' ? Math.PI / 2 : facing === 'south' ? Math.PI : facing === 'east' ? Math.PI * 3 / 2 : 0)
 			mat4.scale(t, t, [2/3, 2/3, 2/3])
-			mat4.translate(t, t, [-0.5, -0.5, -0.5])
+			mat4.translate(t, t, [-8, -8, -8])
 			mesh.merge(wallSignRenderer(atlas).transform(t))
 		}
 		const hangingSignRenderer = HangingSignRenderers.get(block.getName().toString())
@@ -904,19 +881,19 @@ export namespace SpecialRenderers {
 			const attached = getStr(block, 'attached', 'false') === 'true'
 			const rotation = getInt(block, 'rotation') / 16 * Math.PI * 2
 			const t = mat4.create()
-			mat4.translate(t, t, [0.5, 0.5, 0.5])
+			mat4.translate(t, t, [8, 8, 8])
 			mat4.rotateY(t, t, rotation)
 			mat4.scale(t, t, [2/3, 2/3, 2/3])
-			mat4.translate(t, t, [-0.5, -0.5, -0.5])
+			mat4.translate(t, t, [-8, -8, -8])
 			mesh.merge(hangingSignRenderer(attached, atlas).transform(t))
 		}
 		const wallHangingSignRenderer = WallHangingSignRenderers.get(block.getName().toString())
 		if (wallHangingSignRenderer !== undefined) {
 			const facing = getStr(block, 'facing', 'south')
 			const t = mat4.create()
-			mat4.translate(t, t, [0.5, 0.5, 0.5])
+			mat4.translate(t, t, [8, 8, 8])
 			mat4.rotateY(t, t, facing === 'west' ? Math.PI / 2 : facing === 'south' ? Math.PI : facing === 'east' ? Math.PI * 3 / 2 : 0)
-			mat4.translate(t, t, [-0.5, -0.5, -0.5])
+			mat4.translate(t, t, [-8, -8, -8])
 			mesh.merge(wallHangingSignRenderer(atlas).transform(t))
 		}
 		if (block.is('conduit')) {
@@ -926,21 +903,21 @@ export namespace SpecialRenderers {
 		if (shulkerBoxRenderer !== undefined) {
 			const facing = getStr(block, 'facing', 'up')
 			const t = mat4.create()
-			mat4.translate(t, t, [0.5, 0.5, 0.5])
+			mat4.translate(t, t, [8, 8, 8])
 			if (facing === 'down') {
 				mat4.rotateX(t, t, Math.PI)
 			} else if (facing !== 'up') {
 				mat4.rotateY(t, t, facing === 'east' ? Math.PI / 2 : facing === 'north' ? Math.PI : facing === 'west' ? Math.PI * 3 / 2 : 0)
 				mat4.rotateX(t, t, Math.PI/2)
 			}
-			mat4.translate(t, t, [-0.5, -0.5, -0.5])
+			mat4.translate(t, t, [-8, -8, -8])
 			mesh.merge(shulkerBoxRenderer(atlas).transform(t))
 		}
 		if (block.is('bell')) {
 			const t = mat4.create()
-			mat4.translate(t, t, [0.5, 0.5, 0.5])
+			mat4.translate(t, t, [8, 8, 8])
 			mat4.scale(t, t, [1, -1, -1])
-			mat4.translate(t, t, [-0.5, -0.5, -0.5])
+			mat4.translate(t, t, [-8, -8, -8])
 			mesh.merge(bellRenderer(atlas).transform(t))
 		}
 		const bedRenderer = BedRenderers.get(block.getName().toString())
@@ -948,36 +925,45 @@ export namespace SpecialRenderers {
 			const part = getStr(block, 'part', 'head')
 			const facing = getStr(block, 'facing', 'south')
 			const t = mat4.create()
-			mat4.translate(t, t, [0.5, 0.5, 0.5])
+			mat4.translate(t, t, [8, 8, 8])
 			mat4.rotateY(t, t, facing === 'east' ? Math.PI / 2 : facing === 'north' ? Math.PI : facing === 'west' ? Math.PI * 3 / 2 : 0)
-			mat4.translate(t, t, [-0.5, -0.5, -0.5])
+			mat4.translate(t, t, [-8, -8, -8])
 			mesh.merge(bedRenderer(part, atlas).transform(t))
 		}
 		const bannerRenderer = BannerRenderers.get(block.getName().toString())
 		if (bannerRenderer !== undefined) {
 			const rotation = getInt(block, 'rotation') / 16 * Math.PI * 2
 			const t = mat4.create()
-			mat4.translate(t, t, [0.5, 1.5, 0.5])
+			mat4.translate(t, t, [8, 24, 8])
 			mat4.rotateY(t, t, rotation)
 			mat4.scale(t, t, [2/3, 2/3, 2/3])
-			mat4.translate(t, t, [-0.5, -1.5, -0.5])
+			mat4.translate(t, t, [-8, -24, -8])
 			mesh.merge(bannerRenderer(atlas).transform(t))
 		}
 		const wallBannerRenderer = WallBannerRenderers.get(block.getName().toString())
 		if (wallBannerRenderer !== undefined) {
 			const facing = getStr(block, 'facing', 'south')
 			const t = mat4.create()
-			mat4.translate(t, t, [0.5, 0.5, 0.5])
+			mat4.translate(t, t, [8, 8, 8])
 			mat4.rotateY(t, t, facing === 'east' ? Math.PI / 2 : facing === 'north' ? Math.PI : facing === 'west' ? Math.PI * 3 / 2 : 0)
 			mat4.scale(t, t, [2/3, 2/3, 2/3])
-			mat4.translate(t, t, [-0.5, -1.45, -0.5])
+			mat4.translate(t, t, [-8, -23.2, -8])
 			mesh.merge(wallBannerRenderer(atlas).transform(t))
 		}
 
 		if (block.getProperties()['waterlogged'] === 'true') {
-			mesh.merge(liquidRenderer('water', 0, atlas, cull, 0))
+			const waterMesh = liquidRenderer('water', 0, atlas, cull, 0)
+			console.log(waterMesh)
+			mesh.merge(waterMesh)
 		}
 		return mesh
+	}
+
+	export function getBlockMesh(block: BlockState, atlas: TextureAtlasProvider, cull: Cull): Mesh {
+		const mesh = getMesh(block, atlas, cull)
+		const t = mat4.create()
+		mat4.scale(t, t, [0.0625, 0.0625, 0.0625])
+		return mesh.transform(t)
 	}
 
 	export function getItemMesh(item: ItemStack, atlas: TextureAtlasProvider): Mesh {
@@ -988,25 +974,18 @@ export namespace SpecialRenderers {
 			mat4.rotateX(t, t, -10 * Math.PI/180)
 			mat4.rotateY(t, t, -10 * Math.PI/180)
 			mat4.rotateZ(t, t, -5 * Math.PI/180)
-			mat4.scale(t, t, [16, 16, 16])
 			return shieldMesh.transform(t)
 		}
 		const bedRenderer = BedRenderers.get(item.id.toString())
 		if (bedRenderer !== undefined) {
-			const headMesh = getBlockMesh(new BlockState(item.id, { part: 'head' }), atlas, Cull.none())
-			const footMesh = getBlockMesh(new BlockState(item.id, { part: 'foot' }), atlas, Cull.none())
+			const headMesh = getMesh(new BlockState(item.id, { part: 'head' }), atlas, Cull.none())
+			const footMesh = getMesh(new BlockState(item.id, { part: 'foot' }), atlas, Cull.none())
 			const t = mat4.create()
-			mat4.translate(t, t, [0, 0, -1])
-			const combinedMesh = headMesh.merge(footMesh.transform(t))
-			mat4.identity(t)
-			mat4.scale(t, t, [16, 16, 16])
-			return combinedMesh.transform(t)
+			mat4.translate(t, t, [0, 0, -16])
+			return headMesh.merge(footMesh.transform(t))
 		}
 
 		// Assumes block and item ID are the same
-		const blockMesh = getBlockMesh(new BlockState(item.id, {}), atlas, Cull.none())
-		const t = mat4.create()
-		mat4.scale(t, t, [16, 16, 16])
-		return blockMesh.transform(t)
+		return getMesh(new BlockState(item.id), atlas, Cull.none())
 	}
 }

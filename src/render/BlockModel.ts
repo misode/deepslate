@@ -77,7 +77,6 @@ export class BlockModel {
 	private uvEpsilon = 1/16
 
 	constructor(
-		private readonly id: Identifier,
 		private parent: Identifier | undefined,
 		private textures: { [key: string]: string } | undefined,
 		private elements: BlockModelElement[] | undefined,
@@ -104,7 +103,7 @@ export class BlockModel {
 		return t
 	}
 
-	public getMesh(uvProvider: TextureAtlasProvider, cull: Cull, tint?: Color | ((index: number) => Color)) {
+	public getMesh(atlas: TextureAtlasProvider, cull: Cull, tint?: Color | ((index: number) => Color)) {
 		const mesh = new Mesh()
 		const getTint = (index?: number): Color => {
 			if (tint === undefined) return [1, 1, 1]
@@ -113,12 +112,12 @@ export class BlockModel {
 			return tint
 		}
 		for (const e of this.elements ?? []) {
-			mesh.merge(this.getElementMesh(e, uvProvider, cull, getTint))
+			mesh.merge(this.getElementMesh(e, atlas, cull, getTint))
 		}
 		return mesh
 	}
 
-	public getElementMesh(e: BlockModelElement, uvProvider: TextureAtlasProvider, cull: Cull, getTint: (index?: number) => Color) {
+	public getElementMesh(e: BlockModelElement, atlas: TextureAtlasProvider, cull: Cull, getTint: (index?: number) => Color) {
 		const mesh = new Mesh()
 		const [x0, y0, z0] = e.from
 		const [x1, y1, z1] = e.to
@@ -133,7 +132,7 @@ export class BlockModel {
 			const tint = getTint(face.tintindex)
 			quad.setColor(tint)
 
-			const [u0, v0, u1, v1] = uvProvider.getTextureUV(this.getTexture(face.texture))
+			const [u0, v0, u1, v1] = atlas.getTextureUV(this.getTexture(face.texture))
 			const du = (u1 - u0) / 16
 			const dv = (v1 - v0) / 16
 			const duu = du * this.uvEpsilon
@@ -276,8 +275,8 @@ export class BlockModel {
 		return accessor.getBlockModel(this.parent)
 	}
 
-	public static fromJson(id: string, data: any) {
+	public static fromJson(data: any) {
 		const parent = data.parent === undefined ? undefined : Identifier.parse(data.parent)
-		return new BlockModel(Identifier.parse(id), parent, data.textures, data.elements, data.display)
+		return new BlockModel(parent, data.textures, data.elements, data.display)
 	}
 }
