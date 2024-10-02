@@ -154,16 +154,15 @@ function skullRenderer(texture: string, n: number) {
 	}
 }
 
-function dragonHead(atlas: TextureAtlasProvider) {
+function dragonHeadRenderer(atlas: TextureAtlasProvider) {
 	const transformation = mat4.create()
-	mat4.translate(transformation, transformation, [0.5, 0.5, 0.5])
+	mat4.translate(transformation, transformation, [8, 8, 8])
 	mat4.scale(transformation, transformation, [0.75, 0.75, 0.75])
 	mat4.rotateY(transformation, transformation, Math.PI)
-	mat4.translate(transformation, transformation, [-0.5, -0.7, -0.5])
+	mat4.translate(transformation, transformation, [-8, -11.2, -8])
 	return new BlockModel(undefined, {
 		0: 'entity/enderdragon/dragon',
 	}, [
-		// TODO: add scales and nostrils
 		{
 			from: [2, 4, -16],
 			to: [14, 9, 0],
@@ -201,10 +200,58 @@ function dragonHead(atlas: TextureAtlasProvider) {
 				down: {uv: [13.5, 4.0625, 12.75, 5.0625], texture: '#0'},
 			},
 		},
+		{
+			from: [3, 16, 4],
+			to: [5, 20, 10],
+			faces: {
+				north: {uv: [0.375, 0.375, 0.5, 0.625], texture: '#0'},
+				east: {uv: [0, 0.375, 0.375, 0.625], texture: '#0'},
+				south: {uv: [0.875, 0.375, 1, 0.625], texture: '#0'},
+				west: {uv: [0.5, 0.375, 0.875, 0.625], texture: '#0'},
+				up: {uv: [0.5, 0.375, 0.375, 0], texture: '#0'},
+				down: {uv: [0.625, 0, 0.5, 0.375], texture: '#0'},
+			},
+		},
+		{
+			from: [11, 16, 4],
+			to: [13, 20, 10],
+			faces: {
+				north: {uv: [0.375, 0.375, 0.5, 0.625], texture: '#0'},
+				east: {uv: [0, 0.375, 0.375, 0.625], texture: '#0'},
+				south: {uv: [0.875, 0.375, 1, 0.625], texture: '#0'},
+				west: {uv: [0.5, 0.375, 0.875, 0.625], texture: '#0'},
+				up: {uv: [0.5, 0.375, 0.375, 0], texture: '#0'},
+				down: {uv: [0.625, 0, 0.5, 0.375], texture: '#0'},
+			},
+		},
+		{
+			from: [3, 9, -14],
+			to: [5, 11, -10],
+			faces: {
+				north: {uv: [7.25, 0.25, 7.375, 0.375], texture: '#0'},
+				east: {uv: [7, 0.25, 7.25, 0.375], texture: '#0'},
+				south: {uv: [7.625, 0.25, 7.75, 0.375], texture: '#0'},
+				west: {uv: [7.375, 0.25, 7.625, 0.375], texture: '#0'},
+				up: {uv: [7.375, 0.25, 7.25, 0], texture: '#0'},
+				down: {uv: [7.5, 0, 7.375, 0.25], texture: '#0'},
+			},
+		},
+		{
+			from: [11, 9, -14],
+			to: [13, 11, -10],
+			faces: {
+				north: {uv: [7.25, 0.25, 7.375, 0.375], texture: '#0'},
+				east: {uv: [7, 0.25, 7.25, 0.375], texture: '#0'},
+				south: {uv: [7.625, 0.25, 7.75, 0.375], texture: '#0'},
+				west: {uv: [7.375, 0.25, 7.625, 0.375], texture: '#0'},
+				up: {uv: [7.375, 0.25, 7.25, 0], texture: '#0'},
+				down: {uv: [7.5, 0, 7.375, 0.25], texture: '#0'},
+			},
+		},
 	]).withUvEpsilon(1/256).getMesh(atlas, Cull.none()).transform(transformation)
 }
 
-function piglinHead(atlas: TextureAtlasProvider) {
+function piglinHeadRenderer(atlas: TextureAtlasProvider) {
 	return new BlockModel(undefined, {
 		0: 'entity/piglin/piglin',
 	}, [
@@ -753,11 +800,11 @@ const ChestRenderers = new Map(Object.entries({
 
 const SkullRenderers = new Map(Object.entries({
 	'minecraft:skeleton_skull': skullRenderer('skeleton/skeleton', 2),
-	'minecraft:wither_skeleton_skull': skullRenderer('skeleton/wither_skeleton_skull', 2),
+	'minecraft:wither_skeleton_skull': skullRenderer('skeleton/wither_skeleton', 2),
 	'minecraft:zombie_head': skullRenderer('zombie/zombie', 1),
 	'minecraft:creeper_head': skullRenderer('creeper/creeper', 2),
-	'minecraft:dragon_head': dragonHead,
-	'minecraft:piglin_head': piglinHead,
+	'minecraft:dragon_head': dragonHeadRenderer,
+	'minecraft:piglin_head': piglinHeadRenderer,
 	'minecraft:player_head': skullRenderer('player/wide/steve', 1), // TODO: fix texture
 }))
 
@@ -952,9 +999,7 @@ export namespace SpecialRenderers {
 		}
 
 		if (block.getProperties()['waterlogged'] === 'true') {
-			const waterMesh = liquidRenderer('water', 0, atlas, cull, 0)
-			console.log(waterMesh)
-			mesh.merge(waterMesh)
+			mesh.merge(liquidRenderer('water', 0, atlas, cull, 0))
 		}
 		return mesh
 	}
