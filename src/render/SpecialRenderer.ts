@@ -998,7 +998,7 @@ export namespace SpecialRenderers {
 			mesh.merge(wallBannerRenderer(atlas).transform(t))
 		}
 
-		if (block.getProperties()['waterlogged'] === 'true') {
+		if (block.isWaterlogged()) {
 			mesh.merge(liquidRenderer('water', 0, atlas, cull, 0))
 		}
 		return mesh

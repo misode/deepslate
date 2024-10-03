@@ -33,7 +33,11 @@ export class BlockState {
 	}
 
 	public isWaterlogged() {
-		return this.is(BlockState.WATER) || this.is(BlockState.LAVA) || this.properties['waterlogged'] === 'true'
+		return this.is(BlockState.WATER) || this.is(BlockState.LAVA)
+			|| this.is('bubble_column')
+			|| this.is('kelp') || this.is('kelp_plant')
+			|| this.is('seagrass') || this.is('tall_seagrass')
+			|| this.properties['waterlogged'] === 'true'
 	}
 
 	public equals(other: BlockState) {
