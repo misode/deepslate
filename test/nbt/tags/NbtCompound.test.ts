@@ -76,4 +76,20 @@ describe('NbtCompound', () => {
 		const string = compound.toString()
 		expect(string).toEqual('{"hello \\"world\\"":4b}')
 	})
+
+	it('toPrettyString (key escaping)', () => {
+		const compound = new NbtCompound()
+			.set('hello "world"', new NbtByte(4))
+		const string = compound.toPrettyString()
+		expect(string).toEqual('{\n  "hello \\"world\\"": 4b\n}')
+	})
+
+	it('toPrettyString (nested and quoted keys)', () => {
+		const compound = new NbtCompound()
+			.set('wrapper', new NbtCompound()
+				.set('first', new NbtByte(3))
+				.set('second key', new NbtString('hello world')))
+		const string = compound.toPrettyString()
+		expect(string).toEqual('{\n  wrapper: {\n    first: 3b,\n    "second key": "hello world"\n  }\n}')
+	})
 })

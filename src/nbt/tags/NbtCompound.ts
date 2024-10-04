@@ -176,9 +176,12 @@ export class NbtCompound extends NbtTag {
 		if (this.size === 0) return '{}'
 		const i = indent.repeat(depth)
 		const ii = indent.repeat(depth + 1)
-		return '{\n' + Object.values(this.map((key, value) => {
-			return [key, ii + key + ': ' + value.toPrettyString(indent, depth + 1)]
-		})).join(',\n') + '\n' + i + '}'
+		const pairs = []
+		for (const [key, tag] of this.properties.entries()) {
+			const needsQuotes = key.split('').some(c => !StringReader.isAllowedInUnquotedString(c))
+			pairs.push((needsQuotes ? JSON.stringify(key) : key) + ': ' + tag.toPrettyString(indent, depth + 1))
+		}
+		return '{\n' + pairs.map(p => ii + p).join(',\n') + '\n' + i + '}'
 	}
 
 	public override toSimplifiedJson() {
