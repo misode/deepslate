@@ -529,7 +529,7 @@ export namespace DensityFunction {
 			super()
 		}
 		public compute(context: Context) {
-			return this.offsetNoise?.sample(context.x * 0.25, context.y * 0.25, context.z * 0.25) ?? 0
+			return (this.offsetNoise?.sample(context.x * 0.25, context.y * 0.25, context.z * 0.25) ?? 0) * 4
 		}
 		public maxValue() {
 			return (this.offsetNoise?.maxValue ?? 2) * 4 
