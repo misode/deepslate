@@ -9,8 +9,8 @@ export class PerlinNoise {
 	public readonly lowestFreqValueFactor: number
 	public readonly maxValue: number
 
-	constructor(random: Random, firstOctave: number, amplitudes: number[]) {
-		if (random instanceof XoroshiroRandom){
+	constructor(random: Random, firstOctave: number, amplitudes: number[], forceLegacy: boolean = false) {
+		if (random instanceof XoroshiroRandom && !forceLegacy){
 			const forkedRandom = random.forkPositional()
 
 			this.noiseLevels = Array(amplitudes.length)
