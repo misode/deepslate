@@ -1,4 +1,4 @@
-import { Holder, Identifier, Registry } from '../../core/index.js'
+import { BlockPos, Holder, Identifier, Registry } from '../../core/index.js'
 import { LegacyRandom } from '../../math/index.js'
 import { Json } from '../../util/index.js'
 import { StructurePlacement } from './StructurePlacement.js'
@@ -19,7 +19,7 @@ export class StructureSet {
 		return new StructureSet(structures, placement)
 	}
 
-	public getStructureInChunk(chunkX: number, chunkZ: number, context: WorldgenStructure.GenerationContext): Identifier | undefined {
+	public getStructureInChunk(chunkX: number, chunkZ: number, context: WorldgenStructure.GenerationContext): {id: Identifier, pos: BlockPos} | undefined {
 		this.placement.prepare(context.biomeSource, context.randomState.sampler, context.seed)
 
 		if (!this.placement.isStructureChunk(context.seed, chunkX, chunkZ)) {
@@ -29,8 +29,9 @@ export class StructureSet {
 		if (this.structures.length === 0) return undefined
 
 		if (this.structures.length === 1) {
-			if (this.structures[0].structure.value().tryGenerate(chunkX, chunkZ, context)) {
-				return this.structures[0].structure.key()
+			const pos = this.structures[0].structure.value().tryGenerate(chunkX, chunkZ, context)
+			if (pos !== undefined) {
+				return {id: this.structures[0].structure.key()!, pos}
 			}
 		} else {
 
@@ -50,8 +51,9 @@ export class StructureSet {
 					}
 				}
 
-				if (entry!.structure.value().tryGenerate(chunkX, chunkZ, context)) {
-					return entry!.structure.key()
+				const pos = entry!.structure.value().tryGenerate(chunkX, chunkZ, context)
+				if (pos !== undefined) {
+					return {id: entry!.structure.key()!, pos}
 				}
 
 				list.splice(id!, 1)

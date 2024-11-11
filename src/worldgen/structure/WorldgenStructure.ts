@@ -59,14 +59,14 @@ export abstract class WorldgenStructure {
 		return BlockPos.create(posX, this.getLowestY(context, posX, posZ, width, depth), posZ)
 	}
 
-	public tryGenerate(chunkX: number, chunkZ: number, context: WorldgenStructure.GenerationContext): boolean {
+	public tryGenerate(chunkX: number, chunkZ: number, context: WorldgenStructure.GenerationContext): BlockPos | undefined {
 		const random = LegacyRandom.fromLargeFeatureSeed(context.seed, chunkX, chunkZ)
 
 		const pos = this.findGenerationPoint(chunkX, chunkZ, random, context)
-		if (pos === undefined) return false
+		if (pos === undefined) return undefined
 		const biome = context.biomeSource.getBiome(pos[0]>>2, pos[1], pos[2]>>2, context.randomState.sampler)
 
-		return [...this.settings.validBiomes.getEntries()].findIndex((b) => b.key()?.equals(biome)) >= 0
+		return [...this.settings.validBiomes.getEntries()].findIndex((b) => b.key()?.equals(biome)) >= 0 ? pos : undefined
 	}
 }
 
