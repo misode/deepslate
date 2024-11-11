@@ -33,9 +33,9 @@ export class NoiseChunkGenerator {
 	public getBaseHeight(blockX: number, blockZ: number, heightmap: Heightmap, randomState: RandomState){
 		let predicate: (state: BlockState) => boolean
 		if (heightmap === 'OCEAN_FLOOR' || heightmap === 'OCEAN_FLOOR_WG'){
-			predicate = (state: BlockState) => !state.equals(BlockState.AIR)
-		} else {
 			predicate = (state: BlockState) => state.equals(BlockState.STONE)
+		} else {
+			predicate = (state: BlockState) => !state.equals(BlockState.AIR)
 		}
 		return this.iterateNoiseColumn(randomState, blockX, blockZ, undefined, predicate, BlockState.STONE) ?? this.settings.noise.minY
 	}
