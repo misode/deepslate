@@ -1,4 +1,4 @@
-import { BlockModelProvider, Color, Cull, DefaultItemComponentProvider, Identifier, ItemRenderingContext, ItemStack, Json, Mesh, TextureAtlasProvider, clamp } from "../index.js"
+import { BlockModelProvider, Color, Cull, Identifier, ItemRenderingContext, ItemStack, Json, Mesh, TextureAtlasProvider, clamp } from "../index.js"
 import { ItemTint } from "./ItemTint.js"
 
 
@@ -6,7 +6,7 @@ export interface ItemModelProvider {
 	getItemModel(id: Identifier): ItemModel | null
 }
 
-interface ItemModelResources extends BlockModelProvider, TextureAtlasProvider, DefaultItemComponentProvider {}
+interface ItemModelResources extends BlockModelProvider, TextureAtlasProvider {}
 
 export abstract class ItemModel {
 
@@ -39,7 +39,7 @@ export namespace ItemModel {
 					const caseRoot = Json.readObject(caseObj) ?? {}
 					return [Json.readString(caseRoot.when) ?? '', ItemModel.fromJson(caseRoot.model)]
 				})),
-				ItemModel.fromJson(root.fallback)
+				root.fallback ? ItemModel.fromJson(root.fallback) : undefined
 			)
 			case 'range_dispatch': return new RangeDispatch(
 				RangeDispatch.propertyFromJson(root),
@@ -48,10 +48,10 @@ export namespace ItemModel {
 					const entryRoot = Json.readObject(entryObj) ?? {}
 					return {threshold: Json.readNumber(entryRoot.threshold) ?? 0, model: ItemModel.fromJson(entryRoot.model)}
 				}) ?? [],
-				ItemModel.fromJson(root.fallback)
+				root.fallback ? ItemModel.fromJson(root.fallback) : undefined
 			)
-			case 'special':
-			case 'bundle/selected_item':
+			case 'special': return new Special()
+			case 'bundle/selected_item': return new BundleSelectedItem()
 			default:
 				throw new Error(`Invalid item model type ${type}`)
 		}
@@ -231,7 +231,7 @@ export namespace ItemModel {
 			const value = this.property(item, context) * this.scale
 			let model = this.fallback
 			for (const entry of this.entries) {
-				if (entry.threshold < value) {
+				if (entry.threshold <= value) {
 					model = entry.model
 				} else {
 					break
@@ -288,6 +288,18 @@ export namespace ItemModel {
 				default:
 					throw new Error(`Invalid select property ${property}`)
 			}
+		}
+	}
+
+	class Special extends ItemModel {
+		public getMesh(item: ItemStack, resources: ItemModelResources, context: ItemRenderingContext): Mesh {
+			return new Mesh()
+		}
+	}
+
+	class BundleSelectedItem extends ItemModel {
+		public getMesh(item: ItemStack, resources: ItemModelResources, context: ItemRenderingContext): Mesh {
+			return new Mesh()
 		}
 	}
 }

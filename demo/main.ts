@@ -1,6 +1,8 @@
 import { mat4 } from 'gl-matrix'
-import type { Resources, Voxel } from '../src/index.js'
-import { BlockDefinition, BlockModel, Identifier, ItemRenderer, ItemStack, NormalNoise, Structure, StructureRenderer, TextureAtlas, upperPowerOfTwo, VoxelRenderer, XoroshiroRandom } from '../src/index.js'
+import type { ItemRendererResources, NbtTag, Resources, Voxel } from '../src/index.js'
+import { BlockDefinition, BlockModel, Identifier, ItemRenderer, ItemStack, NormalNoise, Structure, StructureRenderer, TextureAtlas, VoxelRenderer, XoroshiroRandom, jsonToNbt, upperPowerOfTwo } from '../src/index.js'
+import { } from '../src/nbt/Util.js'
+import { ItemModel } from '../src/render/ItemModel.js'
 
 
 class InteractiveCanvas {
@@ -66,6 +68,8 @@ Promise.all([
 	fetch(`${MCMETA}registries/item/data.min.json`).then(r => r.json()),
 	fetch(`${MCMETA}summary/assets/block_definition/data.min.json`).then(r => r.json()),
 	fetch(`${MCMETA}summary/assets/model/data.min.json`).then(r => r.json()),
+	fetch(`${MCMETA}summary/data/item_definition/data.min.json`).then(r => r.json()),
+	fetch(`${MCMETA}summary/item_components/data.min.json`).then(r => r.json()),
 	fetch(`${MCMETA}atlas/all/data.min.json`).then(r => r.json()),
 	new Promise<HTMLImageElement>(res => {
 		const image = new Image()
@@ -73,7 +77,7 @@ Promise.all([
 		image.crossOrigin = 'Anonymous'
 		image.src = `${MCMETA}atlas/all/atlas.png`
 	}),
-]).then(([items, blockstates, models, uvMap, atlas]) => {
+]).then(([items, blockstates, models, item_models, item_components, uvMap, atlas]) => {
 	
 	// === Prepare assets for item and structure rendering ===
 
@@ -97,6 +101,22 @@ Promise.all([
 	})
 	Object.values(blockModels).forEach((m: any) => m.flatten({ getBlockModel: id => blockModels[id] }))
 
+
+	const itemModels: Record<string, ItemModel> = {}
+	Object.keys(item_models).forEach(id => {
+		itemModels['minecraft:' + id] = ItemModel.fromJson(item_models[id].model)
+	})
+
+
+	const itemComponents: Record<string, Map<string, NbtTag>> = {}
+	Object.keys(item_components).forEach(id => {
+		const components = new Map<string, NbtTag>()
+		Object.keys(item_components[id]).forEach(c_id => {
+			components.set(c_id, jsonToNbt(item_components[id][c_id]))
+		})
+		itemComponents['minecraft:' + id] = components
+	})
+
 	const atlasCanvas = document.createElement('canvas')
 	const atlasSize = upperPowerOfTwo(Math.max(atlas.width, atlas.height))
 	atlasCanvas.width = atlasSize
@@ -112,7 +132,7 @@ Promise.all([
 	})
 	const textureAtlas = new TextureAtlas(atlasData, idMap)
 
-	const resources: Resources = {
+	const resources: Resources & ItemRendererResources = {
 		getBlockDefinition(id) { return blockDefinitions[id.toString()] },
 		getBlockModel(id) { return blockModels[id.toString()] },
 		getTextureUV(id) { return textureAtlas.getTextureUV(id) },
@@ -120,6 +140,7 @@ Promise.all([
 		getBlockFlags(id) { return { opaque: false } },
 		getBlockProperties(id) { return null },
 		getDefaultBlockProperties(id) { return null },
+		getItemModel(id) { return itemModels[id.toString()] },
 	}
 
 	// === Item rendering ===
@@ -128,12 +149,20 @@ Promise.all([
 	const itemGl = itemCanvas.getContext('webgl')!
 	const itemInput = document.getElementById('item-input') as HTMLInputElement
 	itemInput.value = localStorage.getItem('deepslate_demo_item') ?? 'stone'
-	const itemRenderer = new ItemRenderer(itemGl, Identifier.parse(itemInput.value), resources)
+	const itemId = Identifier.parse(itemInput.value)
+	const itemStack = new ItemStack(itemId, 1).withDefaultComponents(itemComponents[itemId.toString()])
+	const itemRenderer = new ItemRenderer(itemGl, itemStack, resources)
 
 	itemInput.addEventListener('keyup', () => {
 		try {
 			const id = itemInput.value
-			itemRenderer.setItem(new ItemStack(Identifier.parse(id), 1))
+			const itemId = Identifier.parse(itemInput.value)
+			if (!itemComponents[itemId.toString()]){
+				itemInput.classList.add('invalid')
+				return
+			}
+			const itemStack = new ItemStack(itemId, 1).withDefaultComponents(itemComponents[itemId.toString()])
+			itemRenderer.setItem(itemStack)
 			itemRenderer.drawItem()
 			itemInput.classList.remove('invalid')
 			localStorage.setItem('deepslate_demo_item', id)

@@ -2,43 +2,29 @@ import type { NbtTag } from '../nbt/index.js'
 import { NbtCompound, NbtInt, NbtString } from '../nbt/index.js'
 import { Identifier } from './Identifier.js'
 
-export interface DefaultItemComponentProvider {
-	hasDefaultComponent(item: Identifier, component: Identifier): boolean
-	getDefaultComponent<T>(item: Identifier, component: Identifier): T | undefined
-}
-
-
 export class ItemStack {
 	constructor(
 		public id: Identifier,
 		public count: number,
-		public components: Map<string, NbtTag | '!'> = new Map(),
-		public defaultProvider?: DefaultItemComponentProvider
+		public components: Map<string, NbtTag> = new Map(),
 	) {}
 
-	public getComponent<T>(key: string | Identifier, reader: (tag: NbtTag) => T): T | undefined {
+	public getComponent<T>(key: string | Identifier, reader: (tag: NbtTag) => T) {
 		if (typeof key === 'string') {
 			key = Identifier.parse(key)
 		}
 		const value = this.components.get(key.toString())
-		if (value === '!') {
-			return undefined
-		}
 		if (value) {
 			return reader(value)
 		}
-		return this.defaultProvider?.getDefaultComponent(this.id, key)
+		return undefined
 	}
 
-	public hasComponent(key: string | Identifier): boolean {
+	public hasComponent(key: string | Identifier) {
 		if (typeof key === 'string') {
 			key = Identifier.parse(key)
 		}
-		const value = this.components.get(key.toString())
-		if (value === '!') {
-			return false
-		}
-		return value !== undefined || (this.defaultProvider?.hasDefaultComponent(this.id, key) ?? false)
+		return this.components.has(key.toString())
 	}
 
 	public clone(): ItemStack {
@@ -80,6 +66,20 @@ export class ItemStack {
 		return true
 	}
 
+	public withDefaultComponents(defaultComponents: Map<string, NbtTag>): ItemStack {
+		const components = new Map(defaultComponents)
+
+		for (const [key, value] of this.components) {
+			if (key.startsWith('!')) {
+				components.delete(key.slice(1))
+			} else {
+				components.set(key, value)
+			}
+		}
+
+		return new ItemStack(this.id, this.count, components)
+	}
+
 	public toString() {
 		let result = this.id.toString()
 		if (this.components.size > 0) {
@@ -98,7 +98,7 @@ export class ItemStack {
 			result.set('count', new NbtInt(this.count))
 		}
 		if (this.components.size > 0) {
-			result.set('components', new NbtCompound(new Map(Array.from(this.components).map(e => e[1] === '!' ? [`!${e[0]}`, new NbtCompound()] : e as [string, NbtTag]))))
+			result.set('components', new NbtCompound(this.components))
 		}
 		return result
 	}
@@ -106,14 +106,8 @@ export class ItemStack {
 	public static fromNbt(nbt: NbtCompound) {
 		const id = Identifier.parse(nbt.getString('id'))
 		const count = nbt.hasNumber('count') ? nbt.getNumber('count') : 1
-		const components: Map<string, NbtTag | '!'> = new Map(Object.entries(
-			nbt.getCompound('components').map((key, value): [string, NbtTag | '!'] => {
-				if (key.startsWith('!')){
-					return [Identifier.parse(key.substring(1)).toString(), '!']
-				} else {
-					return [Identifier.parse(key).toString(), value]
-				}
-			})
+		const components = new Map(Object.entries(
+			nbt.getCompound('components').map((key, value) => [Identifier.parse(key).toString(), value])
 		))
 		return new ItemStack(id, count, components)
 	}
