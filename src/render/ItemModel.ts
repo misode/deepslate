@@ -1,4 +1,5 @@
-import { BlockModelProvider, Cull, DefaultItemComponentProvider, Identifier, ItemRenderingContext, ItemStack, Json, Mesh, TextureAtlasProvider, clamp } from "../index.js"
+import { BlockModelProvider, Color, Cull, DefaultItemComponentProvider, Identifier, ItemRenderingContext, ItemStack, Json, Mesh, TextureAtlasProvider, clamp } from "../index.js"
+import { ItemTint } from "./ItemTint.js"
 
 
 export interface ItemModelProvider {
@@ -20,28 +21,28 @@ export namespace ItemModel {
 		const root = Json.readObject(obj) ?? {}
 		const type = Json.readString(root.type)?.replace(/^minecraft:/, '')
 		switch (type) {
-			case 'model': return new ModelItemModel(
+			case 'model': return new Model(
 				Identifier.parse(Json.readString(root.model) ?? ''),
-				// TODO model tints
+				Json.readArray(root.tints, ItemTint.fromJson) ?? []
 			)
-			case 'composite': return new CompositeItemModel(
+			case 'composite': return new Composite(
 				Json.readArray(root.models, ItemModel.fromJson) ?? []
 			)
-			case 'condition': return new ConditionItemModel(
-				ConditionItemModel.propertyFromJson(root),
+			case 'condition': return new Condition(
+				Condition.propertyFromJson(root),
 				ItemModel.fromJson(root.on_true),
 				ItemModel.fromJson(root.on_false)
 			)
-			case 'select': return new SelectItemModel(
-				SelectItemModel.propertyFromJson(root),
+			case 'select': return new Select(
+				Select.propertyFromJson(root),
 				new Map(Json.readArray(root.cases, caseObj => {
 					const caseRoot = Json.readObject(caseObj) ?? {}
 					return [Json.readString(caseRoot.when) ?? '', ItemModel.fromJson(caseRoot.model)]
 				})),
 				ItemModel.fromJson(root.fallback)
 			)
-			case 'range_dispatch': return new RangeDispatchItemModel(
-				RangeDispatchItemModel.propertyFromJson(root),
+			case 'range_dispatch': return new RangeDispatch(
+				RangeDispatch.propertyFromJson(root),
 				Json.readNumber(root.scale) ?? 1,
 				Json.readArray(root.entries, entryObj => {
 					const entryRoot = Json.readObject(entryObj) ?? {}
@@ -56,9 +57,10 @@ export namespace ItemModel {
 		}
 	}
 
-	class ModelItemModel extends ItemModel {
+	class Model extends ItemModel {
 		constructor(
-			private modelId: Identifier
+			private modelId: Identifier,
+			private tints: ItemTint[]
 		) {
 			super()
 		}
@@ -68,14 +70,23 @@ export namespace ItemModel {
 			if (!model) {
 				throw new Error(`Model ${this.modelId} does not exist (trying to render ${item.toString()})`)
 			}
-			let tint = undefined // TODO model tints
+
+			let tint = (i: number): Color => {
+				if (i < this.tints.length) {
+					return this.tints[i].getTint(item)
+				} else {
+					return [1, 1, 1]
+				}
+			}
+			
 			const mesh = model.getMesh(resources, Cull.none(), tint) 
 			mesh.transform(model.getDisplayTransform(context.display_context ?? 'gui'))
 			return mesh
 		}
+
 	}
 
-	class CompositeItemModel extends ItemModel {
+	class Composite extends ItemModel {
 		constructor(
 			private models: ItemModel[]
 		) {
@@ -89,7 +100,7 @@ export namespace ItemModel {
 		}
 	}
 
-	class ConditionItemModel extends ItemModel {
+	class Condition extends ItemModel {
 		constructor(
 			private property: (item: ItemStack, context: ItemRenderingContext) => boolean,
 			private onTrue: ItemModel,
@@ -140,7 +151,7 @@ export namespace ItemModel {
 		}		
 	}
 
-	class SelectItemModel extends ItemModel {
+	class Select extends ItemModel {
 		constructor(
 			private property: (item: ItemStack, context: ItemRenderingContext) => string,
 			private cases: Map<string, ItemModel>,
@@ -203,7 +214,7 @@ export namespace ItemModel {
 		}
 	}
 
-	class RangeDispatchItemModel extends ItemModel {
+	class RangeDispatch extends ItemModel {
 		private entries: {threshold: number, model: ItemModel}[]
 
 		constructor(

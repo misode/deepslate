@@ -1,3 +1,4 @@
+import { NbtTag } from "../index.js"
 import { Json } from "./Json.js"
 
 export type Color = [number, number, number]
@@ -9,6 +10,14 @@ export namespace Color {
 		const array = Json.readArray(obj, o => Json.readNumber(o) ?? 0)
 		if (array === undefined || array.length !== 3) return undefined
 		return array as [number, number, number]
+	}
+
+	export function fromNbt(nbt: NbtTag): Color | undefined {
+		if (nbt.isNumber()) return intToRgb(nbt.getAsNumber())
+		if (!nbt.isIntArray()) return undefined
+		const values = nbt.getItems()
+		if (values.length < 3) return undefined
+		return values.map(i => i.getAsNumber()) as Color
 	}
 
 	export function intToRgb(n: number): Color {
