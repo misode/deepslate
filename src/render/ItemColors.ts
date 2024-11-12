@@ -1,8 +1,7 @@
 import type { ItemStack } from '../core/index.js'
 import { Identifier, PotionContents } from '../core/index.js'
 import { NbtIntArray } from '../index.js'
-import type { Color } from '../util/index.js'
-import { intToRgb } from '../util/index.js'
+import { Color } from '../util/index.js'
 import { BlockColors } from './BlockColors.js'
 
 type Tint = Color | ((index: number) => Color)
@@ -24,7 +23,7 @@ function getDyedColor(item: ItemStack, fallback: number) {
 	const dyedColor = item.getComponent('dyed_color', tag => {
 		return tag.isCompound() ? tag.getNumber('rgb') : tag.getAsNumber()
 	})
-	return intToRgb(dyedColor ?? fallback)
+	return Color.intToRgb(dyedColor ?? fallback)
 }
 
 register([
@@ -58,10 +57,10 @@ register([
 	})
 	const color: Color = (() => {
 		if (!colors || colors.length === 0) {
-			return intToRgb(9079434)
+			return Color.intToRgb(9079434)
 		}
 		if (colors.length === 1) {
-			return intToRgb(colors.get(0)!.getAsNumber())
+			return Color.intToRgb(colors.get(0)!.getAsNumber())
 		}
 		let [r, g, b] = [0, 0, 0]
 		for (const color of colors.getItems()) {
@@ -176,7 +175,7 @@ const SpawnEggs: [string, number, number][] = [
 
 for (const egg of SpawnEggs) {
 	register([`${egg[0]}_spawn_egg`], () => {
-		return (index: number) => intToRgb(index === 0 ? egg[1] : egg[2])
+		return (index: number) => Color.intToRgb(index === 0 ? egg[1] : egg[2])
 	})
 }
 
@@ -199,12 +198,12 @@ for (const id of [
 
 register([
 	'mangrove_leaves',
-], () => intToRgb(9619016))
+], () => Color.intToRgb(9619016))
 
 register([
 	'filled_map',
 ], item => {
 	const mapColor = item.getComponent('map_color', tag => tag.getAsNumber())
-	const color = intToRgb(mapColor ?? 4603950)
+	const color = Color.intToRgb(mapColor ?? 4603950)
 	return (index: number) => index === 0 ? [1, 1, 1] : color
 })

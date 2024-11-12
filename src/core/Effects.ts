@@ -1,7 +1,6 @@
 import type { NbtCompound, NbtTag } from '../nbt/index.js'
 import { NbtType } from '../nbt/index.js'
-import type { Color } from '../util/index.js'
-import { intToRgb } from '../util/index.js'
+import { Color } from '../util/index.js'
 import { Identifier } from './Identifier.js'
 
 export const EFFECT_COLORS = new Map<string, number>([
@@ -139,7 +138,7 @@ export namespace PotionContents {
 
 	export function getColor(contents: PotionContents): Color {
 		if (contents.customColor) {
-			return intToRgb(contents.customColor)
+			return Color.intToRgb(contents.customColor)
 		}
 		const effects = getAllEffects(contents)
 		return mixEffectColors(effects)
@@ -162,7 +161,7 @@ export namespace PotionContents {
 		for (const effect of effects) {
 			const color = EFFECT_COLORS.get(effect.effect.toString())
 			if (color === undefined) continue
-			const rgb = intToRgb(color)
+			const rgb = Color.intToRgb(color)
 			const amplifier = effect.amplifier + 1
 			r += amplifier * rgb[0]
 			g += amplifier * rgb[1]
@@ -170,7 +169,7 @@ export namespace PotionContents {
 			total += amplifier
 		}
 		if (total === 0) {
-			return intToRgb(-13083194)
+			return Color.intToRgb(-13083194)
 		}
 		r = r / total
 		g = g / total

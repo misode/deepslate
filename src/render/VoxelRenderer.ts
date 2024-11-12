@@ -1,6 +1,6 @@
 import type { mat4 } from 'gl-matrix'
 import { Vector } from '../math/index.js'
-import type { Color } from '../util/index.js'
+import type { Color } from '../util/Color.js'
 import { mutateWithDefault } from '../util/index.js'
 import { Mesh } from './Mesh.js'
 import { Quad } from './Quad.js'

@@ -69,7 +69,7 @@ export namespace ItemModel {
 				throw new Error(`Model ${this.modelId} does not exist (trying to render ${item.toString()})`)
 			}
 			let tint = undefined // TODO model tints
-			const mesh = model.getMesh(resources, Cull.none()) 
+			const mesh = model.getMesh(resources, Cull.none(), tint) 
 			mesh.transform(model.getDisplayTransform(context.display_context ?? 'gui'))
 			return mesh
 		}

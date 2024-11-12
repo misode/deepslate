@@ -1,14 +1,13 @@
 import { clamp } from '../math/index.js'
-import type { Color } from '../util/index.js'
-import { intToRgb } from '../util/index.js'
+import { Color } from '../util/index.js'
 
 const grass: Color = [124 / 255, 189 / 255, 107 / 255]
-const spruce = intToRgb(6396257)
-const birch = intToRgb(8431445)
-const foliage = intToRgb(4764952)
-const water = intToRgb(4159204)
-const attached_stem = intToRgb(8431445)
-const lily_pad = intToRgb(2129968)
+const spruce = Color.intToRgb(6396257)
+const birch = Color.intToRgb(8431445)
+const foliage = Color.intToRgb(4764952)
+const water = Color.intToRgb(4159204)
+const attached_stem = Color.intToRgb(8431445)
+const lily_pad = Color.intToRgb(2129968)
 
 const redstone = (power: number): Color => {
 	const a = power / 15
