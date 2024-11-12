@@ -14,3 +14,5 @@ export * from './NbtShort.js'
 export * from './NbtString.js'
 export * from './NbtTag.js'
 export * from './NbtType.js'
+export * from './Util.js'
+
