@@ -11,7 +11,7 @@ import type { TextureAtlasProvider, UV } from './TextureAtlas.js'
 
 type Axis = 'x' | 'y' | 'z'
 
-type Display = 'thirdperson_righthand' | 'thirdperson_lefthand' | 'firstperson_righthand' | 'firstperson_lefthand' | 'gui' | 'head' | 'ground' | 'fixed'
+export type Display = 'thirdperson_righthand' | 'thirdperson_lefthand' | 'firstperson_righthand' | 'firstperson_lefthand' | 'gui' | 'head' | 'ground' | 'fixed' | 'none'
 
 type BlockModelFace = {
 	texture: string,

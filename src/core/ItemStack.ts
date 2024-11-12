@@ -3,8 +3,8 @@ import { NbtCompound, NbtInt, NbtString } from '../nbt/index.js'
 import { Identifier } from './Identifier.js'
 
 export interface DefaultItemComponentProvider {
-	hasComponent(key: Identifier): boolean
-	getComponent<T>(key: Identifier): T | undefined
+	hasDefaultComponent(item: Identifier, component: Identifier): boolean
+	getDefaultComponent<T>(item: Identifier, component: Identifier): T | undefined
 }
 
 
@@ -13,9 +13,10 @@ export class ItemStack {
 		public id: Identifier,
 		public count: number,
 		public components: Map<string, NbtTag | '!'> = new Map(),
+		public defaultProvider?: DefaultItemComponentProvider
 	) {}
 
-	public getComponent<T>(key: string | Identifier, reader: (tag: NbtTag) => T, defaultProvider?: DefaultItemComponentProvider): T | undefined {
+	public getComponent<T>(key: string | Identifier, reader: (tag: NbtTag) => T): T | undefined {
 		if (typeof key === 'string') {
 			key = Identifier.parse(key)
 		}
@@ -26,10 +27,10 @@ export class ItemStack {
 		if (value) {
 			return reader(value)
 		}
-		return defaultProvider?.getComponent(key)
+		return this.defaultProvider?.getDefaultComponent(this.id, key)
 	}
 
-	public hasComponent(key: string | Identifier, defaultProvider?: DefaultItemComponentProvider): boolean {
+	public hasComponent(key: string | Identifier): boolean {
 		if (typeof key === 'string') {
 			key = Identifier.parse(key)
 		}
@@ -37,7 +38,7 @@ export class ItemStack {
 		if (value === '!') {
 			return false
 		}
-		return value !== undefined || (defaultProvider?.hasComponent(key) ?? false)
+		return value !== undefined || (this.defaultProvider?.hasDefaultComponent(this.id, key) ?? false)
 	}
 
 	public clone(): ItemStack {
