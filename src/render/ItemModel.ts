@@ -1,4 +1,4 @@
-import { BlockModelProvider, Cull, DefaultItemComponentProvider, Identifier, ItemRenderingContext, ItemStack, Json, Mesh, TextureAtlasProvider } from "../index.js"
+import { BlockModelProvider, Cull, DefaultItemComponentProvider, Identifier, ItemRenderingContext, ItemStack, Json, Mesh, TextureAtlasProvider, clamp } from "../index.js"
 
 
 export interface ItemModelProvider {
@@ -40,7 +40,15 @@ export namespace ItemModel {
 				})),
 				ItemModel.fromJson(root.fallback)
 			)
-			case 'range_dispatch':
+			case 'range_dispatch': return new RangeDispatchItemModel(
+				RangeDispatchItemModel.propertyFromJson(root),
+				Json.readNumber(root.scale) ?? 1,
+				Json.readArray(root.entries, entryObj => {
+					const entryRoot = Json.readObject(entryObj) ?? {}
+					return {threshold: Json.readNumber(entryRoot.threshold) ?? 0, model: ItemModel.fromJson(entryRoot.model)}
+				}) ?? [],
+				ItemModel.fromJson(root.fallback)
+			)
 			case 'special':
 			case 'bundle/selected_item':
 			default:
@@ -123,9 +131,9 @@ export namespace ItemModel {
 					const index = Json.readInt(root.index) ?? 0
 					return (item, context) => item.getComponent('custom_model_data', tag => {
 						if (!tag.isCompound()) return false
-						const flag = tag.getList('flags').get(index)?.getAsNumber()
+						const flag = tag.getList('flags').getNumber(index)
 						return flag !== undefined && flag !== 0
-					}) ?? false
+					}) ?? false // TODO: verify default
 				default:
 					throw new Error(`Invalid condition property ${property}`)
 			}
@@ -187,10 +195,87 @@ export namespace ItemModel {
 					return (item, context) => item.getComponent('custom_model_data', tag => {
 						if (!tag.isCompound()) return undefined
 						return tag.getList('strings').getString(index)
-					}) ?? ''
+					}) ?? '' // TODO: verify default
 				default:
 					throw new Error(`Invalid select property ${property}`)
 	
+			}
+		}
+	}
+
+	class RangeDispatchItemModel extends ItemModel {
+		private entries: {threshold: number, model: ItemModel}[]
+
+		constructor(
+			private property: (item: ItemStack, context: ItemRenderingContext) => number,
+			private scale: number,
+			entries: {threshold: number, model: ItemModel}[],
+			private fallback?: ItemModel
+		) {
+			super()
+			this.entries = entries.sort((a, b) => a.threshold - b.threshold)
+		}
+
+		public getMesh(item: ItemStack, resources: ItemModelResources, context: ItemRenderingContext): Mesh {
+			const value = this.property(item, context) * this.scale
+			let model = this.fallback
+			for (const entry of this.entries) {
+				if (entry.threshold < value) {
+					model = entry.model
+				} else {
+					break
+				}
+			}
+			return model?.getMesh(item, resources, context) ?? MISSING_MESH
+		}
+
+		static propertyFromJson(root: {[x: string]: unknown}): (item: ItemStack, context: ItemRenderingContext) => number{
+			const property = Json.readString(root.property)?.replace(/^minecraft:/, '')
+
+			switch (property){	
+				case 'bundle/fullness':
+					throw new Error('Not implemented')
+				case 'damage': {
+					const normalize = Json.readBoolean(root.normalize) ?? true
+					return (item, context) => {
+						const damage = item.getComponent('damage', tag => tag.getAsNumber())
+						const max_damage = item.getComponent('max_damage', tag => tag.getAsNumber())
+						if (damage === undefined || max_damage === undefined) return 0 // TODO: verify default
+						if (normalize) return clamp(damage / max_damage, 0, 1)
+						return clamp(damage, 0, max_damage)
+					}
+				}
+				case 'count': {
+					const normalize = Json.readBoolean(root.normalize) ?? true
+					return (item, context) => {
+						const max_stack_size = item.getComponent('max_stack_size', tag => tag.getAsNumber()) ?? 1
+						if (normalize) return clamp(item.count / max_stack_size, 0, 1)
+						return clamp(item.count, 0, max_stack_size)
+					}
+				}
+				case 'cooldown': return (item, context) => context.cooldown_normalized ?? 0 // TODO: verify default
+				case 'time': return (item, context) => ((context.game_time ?? 0) % 24000) / 24000 // TODO: handle wobble, natural only?
+				case 'compass': return (item, context) => context.compass_angle ?? 0 // TODO: calculate properly? handle wobble?
+				case 'crossbow/pull': return (item, context) => context['crossbow/pull'] ?? 0 // TODO: verify default
+				case 'use_duration':
+					const remaining = Json.readBoolean(root.remaining) ?? true
+					return (item, context) => {
+						if (remaining) return (context.max_use_duration ?? 0) - (context.use_duration ?? 0)
+						return context.use_duration ?? 0
+					} // TODO: verify default
+				case 'use_cycle':
+					const period = Json.readNumber(root.period) ?? 1
+					return (item, context) => {
+						return ((context.max_use_duration ?? 0) - (context.use_duration ?? 0)) % period
+					} // TODO: verify default
+				case 'custom_model_data':
+					const index = Json.readInt(root.index) ?? 0
+					return (item, context) => item.getComponent('custom_model_data', tag => {
+						if (!tag.isCompound()) return undefined
+						return tag.getList('floats').getNumber(index)
+					}) ?? 0 // TODO: verify default
+				default:
+					throw new Error(`Invalid select property ${property}`)
 			}
 		}
 	}

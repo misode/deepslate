@@ -13,17 +13,24 @@ interface ModelRendererOptions {
 interface ItemRendererResources extends BlockModelProvider, TextureAtlasProvider, ItemModelProvider, DefaultItemComponentProvider {}
 
 export type ItemRenderingContext = {
-	'display_context'?: Display
+	display_context?: Display,
 
-	'using_item'?: boolean,
+	using_item?: boolean,
 	'fishing_rod/cast'?: boolean,
 	'bundle/has_selected_item'?: boolean,
-	'xmas'?: boolean,
-	'selected'?: boolean,
-	'carried'?: boolean,
-	'shift_down'?: boolean,
+	xmas?: boolean,
+	selected?: boolean,
+	carried?: boolean,
+	shift_down?: boolean,
 
-	'main_hand'?: string
+	main_hand?: 'left' | 'right',
+
+	cooldown_normalized?: number,
+	game_time?: number,
+	compass_angle?: number,
+	use_duration?: number,
+	max_use_duration?: number,
+	'crossbow/pull'?: number
 }
 
 export class ItemRenderer extends Renderer {
