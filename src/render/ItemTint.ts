@@ -27,7 +27,7 @@ export namespace ItemTint {
 			case 'potion': return new Potion(
 				Color.fromJson(root.default) ?? INVALID_COLOR
 			)
-			case 'map_color': return new Firework(
+			case 'map_color': return new MapColor(
 				Color.fromJson(root.default) ?? INVALID_COLOR
 			)
 			case 'custom_model_data': return new CustomModelData(
@@ -88,8 +88,12 @@ export namespace ItemTint {
 
 		public getTint(item: ItemStack): Color {
 			const colors = item.getComponent('firework_explosion', tag => {
-				return tag.isCompound() ? tag.getIntArray('colors') : new NbtIntArray()
+				if (!tag.isCompound()) return new NbtIntArray()
+				const colorsTag = tag.get('colors')
+				if (colorsTag && colorsTag.isListOrArray()) return colorsTag
+				return new NbtIntArray()
 			})
+			console.log(colors)
 			const color: Color = (() => {
 				if (!colors || colors.length === 0) {
 					return this.default_color

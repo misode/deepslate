@@ -57,7 +57,7 @@ export class ItemRenderer extends Renderer {
 	private getItemMesh(context: ItemRenderingContext = {}) {
 		const itemModelId = this.item.getComponent('item_model', tag => tag.getAsString())
 		if (itemModelId === undefined){
-			throw new Error(`Item ${this.item.toString()} does not have item_model component`)
+			return new Mesh()
 		}
 
 		const itemModel = this.resources.getItemModel(Identifier.parse(itemModelId))
@@ -70,7 +70,7 @@ export class ItemRenderer extends Renderer {
 		mesh.computeNormals()
 		mesh.rebuild(this.gl, { pos: true, color: true, texture: true, normal: true })
 		return mesh
-		
+
 	}
 
 	protected override getPerspective() {
