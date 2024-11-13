@@ -1,3 +1,5 @@
+import { StringReader } from '../index.js'
+import { NbtParser } from '../nbt/NbtParser.js'
 import type { NbtTag } from '../nbt/index.js'
 import { NbtCompound, NbtInt, NbtString } from '../nbt/index.js'
 import { Identifier } from './Identifier.js'
@@ -89,6 +91,52 @@ export class ItemStack {
 			result += ` ${this.count}`
 		}
 		return result
+	}
+
+	public static fromString(string: string) {
+		const reader = new StringReader(string)
+		while (reader.canRead() && reader.peek() !== '[') {
+			reader.skip()
+		}
+		const itemId = Identifier.parse(reader.getRead())
+		if (!reader.canRead()){
+			return new ItemStack(itemId, 1)
+		}
+
+		const components = new Map<string, NbtTag>()
+		reader.skip()
+		if (reader.peek() === ']'){
+			return new ItemStack(itemId, 1, components)
+		}
+		do{
+			if (reader.peek() === '!'){
+				reader.skip()
+				const start = reader.cursor
+				while (reader.canRead() && reader.peek() !== ']' && reader.peek() !== ',') {
+					reader.skip()
+				}
+				components.set('!' + Identifier.parse(reader.getRead(start)).toString(), new NbtCompound())
+			} else {
+				const start = reader.cursor
+				while (reader.canRead() && reader.peek() !== '=') {
+					reader.skip()
+				}
+				const component = Identifier.parse(reader.getRead(start)).toString()
+				if (!reader.canRead()) break;
+				reader.skip()
+				const tag = NbtParser.readTag(reader)
+				components.set(component, tag)
+			}
+			if (!reader.canRead()) break;
+			if (reader.peek() === ']'){
+				return new ItemStack(itemId, 1, components)
+			}
+			if (reader.peek() !== ','){
+				throw new Error('Expected , or ]')
+			}
+			reader.skip()
+		} while (reader.canRead())
+		throw new Error('Missing closing ]')
 	}
 
 	public toNbt() {

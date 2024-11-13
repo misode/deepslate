@@ -149,19 +149,20 @@ Promise.all([
 	const itemGl = itemCanvas.getContext('webgl')!
 	const itemInput = document.getElementById('item-input') as HTMLInputElement
 	itemInput.value = localStorage.getItem('deepslate_demo_item') ?? 'stone'
-	const itemId = Identifier.parse(itemInput.value)
-	const itemStack = new ItemStack(itemId, 1).withDefaultComponents(itemComponents[itemId.toString()])
+	const baseItemStack = ItemStack.fromString(itemInput.value)
+	const itemStack = baseItemStack.withDefaultComponents(itemComponents[baseItemStack.id.toString()])
 	const itemRenderer = new ItemRenderer(itemGl, itemStack, resources)
 
 	itemInput.addEventListener('keyup', () => {
 		try {
 			const id = itemInput.value
-			const itemId = Identifier.parse(itemInput.value)
-			if (!itemComponents[itemId.toString()]){
+			const baseItemStack = ItemStack.fromString(itemInput.value)
+			if (!itemComponents[baseItemStack.id.toString()]){
 				itemInput.classList.add('invalid')
 				return
 			}
-			const itemStack = new ItemStack(itemId, 1).withDefaultComponents(itemComponents[itemId.toString()])
+			const itemStack = baseItemStack.withDefaultComponents(itemComponents[baseItemStack.id.toString()])
+			itemGl.clear(itemGl.DEPTH_BUFFER_BIT | itemGl.COLOR_BUFFER_BIT);
 			itemRenderer.setItem(itemStack)
 			itemRenderer.drawItem()
 			itemInput.classList.remove('invalid')
