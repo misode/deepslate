@@ -59,6 +59,7 @@
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
+    "dayjs": "^1.11.13",
     "gl-matrix": "^3.3.0",
     "md5": "^2.3.0",
     "pako": "^2.0.3"

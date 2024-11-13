@@ -1,7 +1,9 @@
+import dayjs from "dayjs"
+import tz from "dayjs/plugin/timezone.js"
 import { BlockModelProvider, Color, Cull, Identifier, ItemRenderingContext, ItemStack, Json, Mesh, TextureAtlasProvider, clamp } from "../index.js"
 import { ItemTint } from "./ItemTint.js"
 import { SpecialModel } from "./SpecialModel.js"
-
+tz // don't remove import
 
 export interface ItemModelProvider {
 	getItemModel(id: Identifier): ItemModel | null
@@ -124,10 +126,9 @@ export namespace ItemModel {
 				case 'using_item':
 				case 'fishing_rod/cast':
 				case 'bundle/has_selected_item':
-				case 'xmas':
 				case 'selected':
 				case 'carried':
-				case 'shift_down':					
+				case 'extended_view':
 					return (item, context) => context[property] ?? false
 				case 'broken': return (item, context) => {
 						const damage = item.getComponent('damage', tag => tag.getAsNumber())
@@ -141,7 +142,11 @@ export namespace ItemModel {
 					}
 				case 'has_component': 
 					const componentId = Identifier.parse(Json.readString(root.component) ?? '')
-					return (item, context) => item.hasComponent(componentId)
+					const ignore_default = Json.readBoolean(root.ignore_default) ?? false
+					return (item, context) => item.hasComponent(componentId, !ignore_default)
+				case 'keybind_down':
+					const keybind = Json.readString(root.keybind) ?? ''
+					return (item, context) => context.keybind_down?.includes(keybind) ?? false
 				case 'custom_model_data':
 					const index = Json.readInt(root.index) ?? 0
 					return (item, context) => item.getComponent('custom_model_data', tag => {
@@ -198,13 +203,25 @@ export namespace ItemModel {
 						return Identifier.parse(tag.getString('material')).toString()
 					}) ?? '' // TODO: verify default value
 				case 'block_state':
-					const block_state_property = Json.readString('block_state_property') ?? ''
+					const block_state_property = Json.readString(root.block_state_property) ?? ''
 					return (item, context) => item.getComponent('block_state', tag => {
 						if (!tag.isCompound()) {
 							return undefined
 						}
 						return tag.getString(block_state_property)
 					}) ?? '' // TODO: verify default value
+				case 'local_time':
+					const time_zone = Json.readString(root.time_zone)
+					const pattern = Json.readString(root.pattern) ?? 'yyyy-MM-dd'
+					return (item, context) => {
+						let time = dayjs(context.local_time)
+						if (time_zone) {
+							time = time.tz(time_zone)
+						}
+						return time.format(pattern)
+					}
+				case 'holder_type':
+					return (item, context) => context.holder_type?.toString() ?? ''
 				case 'custom_model_data':
 					const index = Json.readInt(root.index) ?? 0
 					return (item, context) => item.getComponent('custom_model_data', tag => {

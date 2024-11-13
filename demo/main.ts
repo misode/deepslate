@@ -1,6 +1,6 @@
 import { mat4 } from 'gl-matrix'
 import type { ItemRendererResources, NbtTag, Resources, Voxel } from '../src/index.js'
-import { BlockDefinition, BlockModel, Identifier, ItemRenderer, ItemStack, NormalNoise, Structure, StructureRenderer, TextureAtlas, VoxelRenderer, XoroshiroRandom, jsonToNbt, upperPowerOfTwo } from '../src/index.js'
+import { BlockDefinition, BlockModel, Identifier, Item, ItemRenderer, ItemStack, NormalNoise, Structure, StructureRenderer, TextureAtlas, VoxelRenderer, XoroshiroRandom, jsonToNbt, upperPowerOfTwo } from '../src/index.js'
 import { } from '../src/nbt/Util.js'
 import { ItemModel } from '../src/render/ItemModel.js'
 
@@ -108,13 +108,12 @@ Promise.all([
 	})
 
 
-	const itemComponents: Record<string, Map<string, NbtTag>> = {}
 	Object.keys(item_components).forEach(id => {
 		const components = new Map<string, NbtTag>()
 		Object.keys(item_components[id]).forEach(c_id => {
 			components.set(c_id, jsonToNbt(item_components[id][c_id]))
 		})
-		itemComponents['minecraft:' + id] = components
+		Item.getRegistry().register(Identifier.create(id), new Item(components))
 	})
 
 	const atlasCanvas = document.createElement('canvas')
@@ -149,19 +148,13 @@ Promise.all([
 	const itemGl = itemCanvas.getContext('webgl')!
 	const itemInput = document.getElementById('item-input') as HTMLInputElement
 	itemInput.value = localStorage.getItem('deepslate_demo_item') ?? 'stone'
-	const baseItemStack = ItemStack.fromString(itemInput.value)
-	const itemStack = baseItemStack.withDefaultComponents(itemComponents[baseItemStack.id.toString()])
+	const itemStack = ItemStack.fromString(itemInput.value)
 	const itemRenderer = new ItemRenderer(itemGl, itemStack, resources)
 
 	itemInput.addEventListener('keyup', () => {
 		try {
 			const id = itemInput.value
-			const baseItemStack = ItemStack.fromString(itemInput.value)
-			if (!itemComponents[baseItemStack.id.toString()]){
-				itemInput.classList.add('invalid')
-				return
-			}
-			const itemStack = baseItemStack.withDefaultComponents(itemComponents[baseItemStack.id.toString()])
+			const itemStack = ItemStack.fromString(itemInput.value)
 			itemGl.clear(itemGl.DEPTH_BUFFER_BIT | itemGl.COLOR_BUFFER_BIT);
 			itemRenderer.setItem(itemStack)
 			itemRenderer.drawItem()

@@ -18,12 +18,15 @@ export type ItemRenderingContext = {
 	using_item?: boolean,
 	'fishing_rod/cast'?: boolean,
 	'bundle/has_selected_item'?: boolean,
-	xmas?: boolean,
 	selected?: boolean,
 	carried?: boolean,
-	shift_down?: boolean,
+	extended_view?: boolean,
+
+	keybind_down?: string[],
 
 	main_hand?: 'left' | 'right',
+	local_time?: number, //milliseconds
+	holder_type?: Identifier,
 
 	cooldown_normalized?: number,
 	game_time?: number,

@@ -2,47 +2,61 @@ import { NbtParser } from '../nbt/NbtParser.js'
 import type { NbtTag } from '../nbt/index.js'
 import { NbtCompound, NbtInt, NbtString } from '../nbt/index.js'
 import { StringReader } from '../util/index.js'
+import { Holder } from './Holder.js'
 import { Identifier } from './Identifier.js'
+import { Item } from './Item.js'
 
 export class ItemStack {
+	public readonly item: Holder<Item | undefined>
+
 	constructor(
-		public id: Identifier,
+		id: Identifier,
 		public count: number,
 		public components: Map<string, NbtTag> = new Map(),
-	) {}
+	) {
+		this.item = Holder.reference(Item.getRegistry(), id, false)
+	}
 
-	public getComponent<T>(key: string | Identifier, reader: (tag: NbtTag) => T) {
+	public getComponent<T>(key: string | Identifier, reader: (tag: NbtTag) => T, includeDefaultComponents: boolean = true): T | undefined {
 		if (typeof key === 'string') {
 			key = Identifier.parse(key)
+		}
+
+		if (this.components.has('!' + key.toString())){
+			return undefined
 		}
 		const value = this.components.get(key.toString())
 		if (value) {
 			return reader(value)
 		}
-		return undefined
+		return includeDefaultComponents ? this.item.value()?.getComponent(key, reader) : undefined
 	}
 
-	public hasComponent(key: string | Identifier) {
+	public hasComponent(key: string | Identifier, includeDefaultComponents: boolean = true): boolean {
 		if (typeof key === 'string') {
 			key = Identifier.parse(key)
 		}
-		return this.components.has(key.toString())
+		if (this.components.has('!' + key.toString())){
+			return false
+		}
+
+		return this.components.has(key.toString()) || (includeDefaultComponents && (this.item.value()?.hasComponent(key) ?? false))
 	}
 
 	public clone(): ItemStack {
 		// Component values are not cloned because they are assumed to be immutable
 		const components = new Map(this.components)
-		return new ItemStack(this.id, this.count, components)
+		return new ItemStack(this.item.key()!, this.count, components)
 	}
 
 	public is(other: string | Identifier | ItemStack) {
 		if (typeof other === 'string') {
-			return this.id.equals(Identifier.parse(other))
+			return this.item.key()!.equals(Identifier.parse(other))
 		}
 		if (other instanceof Identifier) {
-			return this.id.equals(other)
+			return this.item.key()!.equals(other)
 		}
-		return this.id.equals(other.id)
+		return this.item.key()!.equals(other.item.key())
 	}
 
 	public equals(other: unknown) {
@@ -56,7 +70,7 @@ export class ItemStack {
 	}
 
 	public isSameItemSameComponents(other: ItemStack) {
-		if (!this.id.equals(other.id) || this.components.size !== other.components.size) {
+		if (!this.item.key()!.equals(other.item.key()) || this.components.size !== other.components.size) {
 			return false
 		}
 		for (const [key, value] of this.components) {
@@ -68,22 +82,8 @@ export class ItemStack {
 		return true
 	}
 
-	public withDefaultComponents(defaultComponents: Map<string, NbtTag>): ItemStack {
-		const components = new Map(defaultComponents)
-
-		for (const [key, value] of this.components) {
-			if (key.startsWith('!')) {
-				components.delete(key.slice(1))
-			} else {
-				components.set(key, value)
-			}
-		}
-
-		return new ItemStack(this.id, this.count, components)
-	}
-
 	public toString() {
-		let result = this.id.toString()
+		let result = this.item.key()!.toString()
 		if (this.components.size > 0) {
 			result += `[${[...this.components.entries()].map(([k, v]) => `${k}=${v.toString()}`).join(',')}]`
 		}
@@ -142,7 +142,7 @@ export class ItemStack {
 
 	public toNbt() {
 		const result = new NbtCompound()
-			.set('id', new NbtString(this.id.toString()))
+			.set('id', new NbtString(this.item.key()!.toString()))
 		if (this.count > 1) {
 			result.set('count', new NbtInt(this.count))
 		}
