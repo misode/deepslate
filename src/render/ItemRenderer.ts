@@ -34,7 +34,7 @@ export type ItemRenderingContext = {
 }
 
 export class ItemRenderer extends Renderer {
-	private mesh: Mesh
+	private mesh!: Mesh
 	private readonly atlasTexture: WebGLTexture
 
 
@@ -45,30 +45,34 @@ export class ItemRenderer extends Renderer {
 		options?: ModelRendererOptions,
 	) {
 		super(gl)
-		this.mesh = this.getItemMesh()
+		this.updateMesh()
 		this.atlasTexture = this.createAtlasTexture(this.resources.getTextureAtlas())
 	}
 
 	public setItem(item: ItemStack) {
 		this.item = item
-		this.mesh = this.getItemMesh()
+		this.updateMesh()
 	}
 
-	private getItemMesh(context: ItemRenderingContext = {}) {
-		const itemModelId = this.item.getComponent('item_model', tag => tag.getAsString())
+	private updateMesh() {
+		this.mesh = ItemRenderer.getItemMesh(this.item, this.resources)
+		this.mesh.computeNormals()
+		this.mesh.rebuild(this.gl, { pos: true, color: true, texture: true, normal: true })
+	}
+
+	public static getItemMesh(item: ItemStack, resources: ItemRendererResources, context: ItemRenderingContext = {}) {
+		const itemModelId = item.getComponent('item_model', tag => tag.getAsString())
 		if (itemModelId === undefined){
 			return new Mesh()
 		}
 
-		const itemModel = this.resources.getItemModel(Identifier.parse(itemModelId))
+		const itemModel = resources.getItemModel(Identifier.parse(itemModelId))
 		if (!itemModel) {
-			throw new Error(`Item model ${itemModelId} does not exist (defined by item ${this.item.toString()})`)
+			throw new Error(`Item model ${itemModelId} does not exist (defined by item ${item.toString()})`)
 		}
 
-		const mesh = itemModel.getMesh(this.item, this.resources, context)
+		const mesh = itemModel.getMesh(item, resources, context)
 
-		mesh.computeNormals()
-		mesh.rebuild(this.gl, { pos: true, color: true, texture: true, normal: true })
 		return mesh
 
 	}

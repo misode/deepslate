@@ -1,5 +1,6 @@
 import { BlockModelProvider, Color, Cull, Identifier, ItemRenderingContext, ItemStack, Json, Mesh, TextureAtlasProvider, clamp } from "../index.js"
 import { ItemTint } from "./ItemTint.js"
+import { SpecialModel } from "./SpecialModel.js"
 
 
 export interface ItemModelProvider {
@@ -50,7 +51,10 @@ export namespace ItemModel {
 				}) ?? [],
 				root.fallback ? ItemModel.fromJson(root.fallback) : undefined
 			)
-			case 'special': return new Special()
+			case 'special': return new Special(
+				SpecialModel.fromJson(root.model),
+				Identifier.parse(Json.readString(root.base) ?? '')
+			)
 			case 'bundle/selected_item': return new BundleSelectedItem()
 			default:
 				throw new Error(`Invalid item model type ${type}`)
@@ -292,6 +296,13 @@ export namespace ItemModel {
 	}
 
 	class Special extends ItemModel {
+		constructor(
+			private specialModel: SpecialModel,
+			private base: Identifier
+		) {
+			super()
+		}
+
 		public getMesh(item: ItemStack, resources: ItemModelResources, context: ItemRenderingContext): Mesh {
 			return new Mesh()
 		}

@@ -1,6 +1,5 @@
 import { mat4 } from 'gl-matrix'
-import type { ItemStack } from '../core/index.js'
-import { BlockState, Direction } from '../core/index.js'
+import { BlockState, Direction, Identifier, ItemStack } from '../core/index.js'
 import { BlockColors } from './BlockColors.js'
 import { BlockModel } from './BlockModel.js'
 import { Cull } from './Cull.js'
@@ -699,11 +698,11 @@ function bellRenderer(atlas: TextureAtlasProvider) {
 	]).withUvEpsilon(1/64).getMesh(atlas, Cull.none())
 }
 
-function bedRenderer(color: string) {
+function bedRenderer(texture: Identifier) {
 	return (part: string, atlas: TextureAtlasProvider) => {
 		if (part === 'foot') {
 			return new BlockModel(undefined, {
-				0: `entity/bed/${color}`,
+				0: texture.withPrefix('entity/bed/').toString(),
 			}, [
 				{
 					from: [0, 3, 0],
@@ -743,7 +742,7 @@ function bedRenderer(color: string) {
 			]).withUvEpsilon(1/128).getMesh(atlas, Cull.none())
 		}
 		return new BlockModel(undefined, {
-			0: `entity/bed/${color}`,
+			0: texture.withPrefix('entity/bed/').toString(),
 		}, [
 			{
 				from: [0, 3, 0],
@@ -862,7 +861,7 @@ const ShulkerBoxRenderers = new Map(DyeColors.map(color =>
 ))
 
 const BedRenderers = new Map(DyeColors.map(color =>
-	[`minecraft:${color}_bed`, bedRenderer(color)]
+	[`minecraft:${color}_bed`, bedRenderer(Identifier.create(color))]
 ))
 
 const BannerRenderers = new Map(DyeColors.map(color =>
