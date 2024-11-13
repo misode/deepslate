@@ -7,12 +7,12 @@ import { Identifier } from './Identifier.js'
 import { Item } from './Item.js'
 
 export class ItemStack {
-	public readonly item: Holder<Item | undefined>
+	private readonly item: Holder<Item | undefined>
 
 	constructor(
-		id: Identifier,
+		public readonly id: Identifier,
 		public count: number,
-		public components: Map<string, NbtTag> = new Map(),
+		public readonly components: Map<string, NbtTag> = new Map(),
 	) {
 		this.item = Holder.reference(Item.getRegistry(), id, false)
 	}
@@ -46,17 +46,17 @@ export class ItemStack {
 	public clone(): ItemStack {
 		// Component values are not cloned because they are assumed to be immutable
 		const components = new Map(this.components)
-		return new ItemStack(this.item.key()!, this.count, components)
+		return new ItemStack(this.id, this.count, components)
 	}
 
 	public is(other: string | Identifier | ItemStack) {
 		if (typeof other === 'string') {
-			return this.item.key()!.equals(Identifier.parse(other))
+			return this.id.equals(Identifier.parse(other))
 		}
 		if (other instanceof Identifier) {
-			return this.item.key()!.equals(other)
+			return this.id.equals(other)
 		}
-		return this.item.key()!.equals(other.item.key())
+		return this.id.equals(other.item.key())
 	}
 
 	public equals(other: unknown) {
@@ -70,7 +70,7 @@ export class ItemStack {
 	}
 
 	public isSameItemSameComponents(other: ItemStack) {
-		if (!this.item.key()!.equals(other.item.key()) || this.components.size !== other.components.size) {
+		if (!this.id.equals(other.item.key()) || this.components.size !== other.components.size) {
 			return false
 		}
 		for (const [key, value] of this.components) {
@@ -83,7 +83,7 @@ export class ItemStack {
 	}
 
 	public toString() {
-		let result = this.item.key()!.toString()
+		let result = this.id.toString()
 		if (this.components.size > 0) {
 			result += `[${[...this.components.entries()].map(([k, v]) => `${k}=${v.toString()}`).join(',')}]`
 		}
@@ -142,7 +142,7 @@ export class ItemStack {
 
 	public toNbt() {
 		const result = new NbtCompound()
-			.set('id', new NbtString(this.item.key()!.toString()))
+			.set('id', new NbtString(this.id.toString()))
 		if (this.count > 1) {
 			result.set('count', new NbtInt(this.count))
 		}
