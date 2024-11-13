@@ -1,8 +1,11 @@
 import dayjs from "dayjs"
 import tz from "dayjs/plugin/timezone.js"
-import { BlockModelProvider, Color, Cull, Identifier, ItemRenderingContext, ItemStack, Json, Mesh, TextureAtlasProvider, clamp } from "../index.js"
+import { Identifier, ItemStack, } from "../core/index.js"
+import { clamp } from "../math/index.js"
+import { Color, Json } from "../util/index.js"
 import { ItemTint } from "./ItemTint.js"
 import { SpecialModel } from "./SpecialModel.js"
+import { BlockModelProvider, Cull, ItemRenderingContext, Mesh, TextureAtlasProvider } from "./index.js"
 tz // don't remove import
 
 export interface ItemModelProvider {

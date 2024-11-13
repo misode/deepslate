@@ -1,4 +1,5 @@
-import { Identifier, NbtTag, Registry } from "../index.js"
+import { NbtTag } from "../nbt/index.js"
+import { Identifier, Registry } from "./index.js"
 
 
 export class Item {
