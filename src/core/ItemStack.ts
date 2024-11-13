@@ -1,7 +1,7 @@
-import { StringReader } from '../index.js'
 import { NbtParser } from '../nbt/NbtParser.js'
 import type { NbtTag } from '../nbt/index.js'
 import { NbtCompound, NbtInt, NbtString } from '../nbt/index.js'
+import { StringReader } from '../util/index.js'
 import { Identifier } from './Identifier.js'
 
 export class ItemStack {
@@ -95,6 +95,7 @@ export class ItemStack {
 
 	public static fromString(string: string) {
 		const reader = new StringReader(string)
+		
 		while (reader.canRead() && reader.peek() !== '[') {
 			reader.skip()
 		}
