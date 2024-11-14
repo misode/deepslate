@@ -268,7 +268,21 @@ export namespace ItemModel {
 
 			switch (property){	
 				case 'bundle/fullness':
-					throw new Error('Not implemented')
+					function calculateBundleWeight(item: ItemStack): number{
+						const bundle_contents = item.getComponent('bundle_contents', tag => {
+							if (!tag.isListOrArray()) return undefined
+							return tag.map(t => t.isCompound() ? ItemStack.fromNbt(t) : undefined)
+						})
+						if (bundle_contents === undefined) return 0
+						return bundle_contents.reduce((weight, item) => {
+							if (item === undefined) return weight
+							if (item.hasComponent('bundle_contents')) return weight + calculateBundleWeight(item) + 1/16
+							if (item.getComponent('bees', tag => tag.isListOrArray() && tag.length > 0)) return weight + 1
+							return weight + item.count / (item.getComponent('max_stack_size', tag => tag.getAsNumber()) ?? 1)
+						}, 0)
+					}
+
+					return (item, context) => calculateBundleWeight(item)
 				case 'damage': {
 					const normalize = Json.readBoolean(root.normalize) ?? true
 					return (item, context) => {
@@ -348,7 +362,7 @@ export namespace ItemModel {
 
 			console.log(selectedItem)
 			
-			return selectedItem !== undefined ? ItemRenderer.getItemMesh(selectedItem, resources, context) : new Mesh()
+			return selectedItem !== undefined ? ItemRenderer.getItemMesh(selectedItem, resources, {...context, 'bundle/selected_item': undefined}) : new Mesh()
 		}
 	}
 }

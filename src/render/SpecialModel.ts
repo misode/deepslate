@@ -221,36 +221,4 @@ export namespace SpecialModel {
 			return this.renderer(false, resources)
 		}
 	}
-
 }
-
-
-
-/*
-
-	export function getItemMesh(item: ItemStack, atlas: TextureAtlasProvider): Mesh {
-		if (item.is('shield')) {
-			const shieldMesh = shieldRenderer(atlas)
-			const t = mat4.create()
-			mat4.translate(t, t, [-3, 1, 0])
-			mat4.rotateX(t, t, -10 * Math.PI/180)
-			mat4.rotateY(t, t, -10 * Math.PI/180)
-			mat4.rotateZ(t, t, -5 * Math.PI/180)
-			return shieldMesh.transform(t)
-		}
-		const bedRenderer = BedRenderers.get(item.id.toString())
-		if (bedRenderer !== undefined) {
-			const headMesh = getMesh(new BlockState(item.id, { part: 'head' }), atlas, Cull.none())
-			const footMesh = getMesh(new BlockState(item.id, { part: 'foot' }), atlas, Cull.none())
-			const t = mat4.create()
-			mat4.translate(t, t, [0, 0, -16])
-			return headMesh.merge(footMesh.transform(t))
-		}
-		if (item.is('bell') || SignRenderers.has(item.id.toString()) || HangingSignRenderers.has(item.id.toString())) {
-			return new Mesh()
-		}
-		// Assumes block and item ID are the same
-		return getMesh(new BlockState(item.id), atlas, Cull.none())
-	}
-
-*/
