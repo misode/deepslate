@@ -324,7 +324,13 @@ export namespace ItemModel {
 		}
 
 		public getMesh(item: ItemStack, resources: ItemModelResources, context: ItemRenderingContext): Mesh {
-			return new Mesh()
+			const mesh = this.specialModel.getMesh(item, resources)
+			const model = resources.getBlockModel(this.base)
+			if (!model) {
+				throw new Error(`Base model ${this.base} does not exist (trying to render ${item.toString()})`)
+			}
+			mesh.transform(model.getDisplayTransform(context.display_context ?? 'gui'))
+			return mesh
 		}
 	}
 
@@ -334,3 +340,4 @@ export namespace ItemModel {
 		}
 	}
 }
+
