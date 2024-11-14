@@ -105,7 +105,11 @@ export namespace SpecialModel {
 		}
 
 		public getMesh(item: ItemStack, resources: TextureAtlasProvider): Mesh {
-			return this.renderer(resources)
+			const t = mat4.create()
+			mat4.translate(t, t, [8, 8, 8])
+			mat4.rotateY(t, t, Math.PI)
+			mat4.translate(t, t, [-8, -8, -8])
+			return this.renderer(resources).transform(t)
 		}
 	}
 

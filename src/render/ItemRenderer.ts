@@ -25,7 +25,6 @@ export type ItemRenderingContext = {
 	keybind_down?: string[],
 
 	main_hand?: 'left' | 'right',
-	local_time?: number, //milliseconds
 	holder_type?: Identifier,
 
 	cooldown_normalized?: number,

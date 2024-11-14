@@ -1,12 +1,9 @@
-import dayjs from "dayjs"
-import tz from "dayjs/plugin/timezone.js"
 import { Identifier, ItemStack, } from "../core/index.js"
 import { clamp } from "../math/index.js"
 import { Color, Json } from "../util/index.js"
 import { ItemTint } from "./ItemTint.js"
 import { SpecialModel } from "./SpecialModel.js"
 import { Cull, ItemRenderer, ItemRendererResources, ItemRenderingContext, Mesh } from "./index.js"
-tz // don't remove import
 
 export interface ItemModelProvider {
 	getItemModel(id: Identifier): ItemModel | null
@@ -212,16 +209,7 @@ export namespace ItemModel {
 						}
 						return tag.getString(block_state_property)
 					}) ?? '' // TODO: verify default value
-				case 'local_time':
-					const time_zone = Json.readString(root.time_zone)
-					const pattern = Json.readString(root.pattern) ?? 'yyyy-MM-dd'
-					return (item, context) => {
-						let time = dayjs(context.local_time)
-						if (time_zone) {
-							time = time.tz(time_zone)
-						}
-						return time.format(pattern)
-					}
+				case 'local_time': return (item, context) => 'NOT IMPLEMENTED'
 				case 'holder_type':
 					return (item, context) => context.holder_type?.toString() ?? ''
 				case 'custom_model_data':
@@ -352,15 +340,11 @@ export namespace ItemModel {
 			const selectedItemIndex = context['bundle/selected_item']
 			if (selectedItemIndex === undefined || selectedItemIndex < 0) return new Mesh()
 			const selectedItem = item.getComponent('bundle_contents', tag => {
-				console.log(tag)
 				if (!tag.isListOrArray()) return undefined
 				const selectedItemTag = tag.get(selectedItemIndex)
-				console.log(selectedItemTag)
 				if (selectedItemTag === undefined || !selectedItemTag.isCompound()) return undefined
 				return ItemStack.fromNbt(selectedItemTag)
 			})
-
-			console.log(selectedItem)
 			
 			return selectedItem !== undefined ? ItemRenderer.getItemMesh(selectedItem, resources, {...context, 'bundle/selected_item': undefined}) : new Mesh()
 		}
