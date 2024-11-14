@@ -15,7 +15,6 @@ export interface ItemRendererResources extends BlockModelProvider, TextureAtlasP
 export type ItemRenderingContext = {
 	display_context?: Display,
 
-	using_item?: boolean,
 	'fishing_rod/cast'?: boolean,
 	'bundle/selected_item'?: number,
 	selected?: boolean,

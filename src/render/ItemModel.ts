@@ -121,12 +121,13 @@ export namespace ItemModel {
 			const property = Json.readString(root.property)?.replace(/^minecraft:/, '')
 
 			switch (property){
-				case 'using_item':
 				case 'fishing_rod/cast':
 				case 'selected':
 				case 'carried':
 				case 'extended_view':
 					return (item, context) => context[property] ?? false
+				case 'using_item':
+					return (item, context) => (context.use_duration ?? -1) >= 0
 				case 'bundle/has_selected_item':
 					return (item, context) => (context['bundle/selected_item'] ?? -1) >= 0
 				case 'broken': return (item, context) => {
@@ -346,7 +347,13 @@ export namespace ItemModel {
 				return ItemStack.fromNbt(selectedItemTag)
 			})
 			
-			return selectedItem !== undefined ? ItemRenderer.getItemMesh(selectedItem, resources, {...context, 'bundle/selected_item': undefined}) : new Mesh()
+			return selectedItem !== undefined ? ItemRenderer.getItemMesh(selectedItem, resources, {
+				...context,
+				'bundle/selected_item': -1,
+				selected: false,
+				carried: false,
+				use_duration: -1
+			}) : new Mesh()
 		}
 	}
 }
