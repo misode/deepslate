@@ -1,16 +1,10 @@
 import { NbtTag } from "../nbt/index.js"
-import { Identifier, Registry } from "./index.js"
+import { Identifier } from "./index.js"
+import { Registry } from "./Registry.js"
 
 
 export class Item {
-	private static REGISTRY: Registry<Item>
-
-	public static getRegistry() {
-		if (this.REGISTRY === undefined){
-			this.REGISTRY = Registry.createAndRegister<Item>('item')
-		}
-		return this.REGISTRY
-	}
+	public static REGISTRY = Registry.createAndRegister<Item>('item')
 
 	constructor(
 		public components: Map<string, NbtTag> = new Map(),

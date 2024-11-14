@@ -14,7 +14,7 @@ export class ItemStack {
 		public count: number,
 		public readonly components: Map<string, NbtTag> = new Map(),
 	) {
-		this.item = Holder.reference(Item.getRegistry(), id, false)
+		this.item = Holder.reference(Item.REGISTRY, id, false)
 	}
 
 	public getComponent<T>(key: string | Identifier, reader: (tag: NbtTag) => T, includeDefaultComponents: boolean = true): T | undefined {

@@ -113,7 +113,7 @@ Promise.all([
 		Object.keys(item_components[id]).forEach(c_id => {
 			components.set(c_id, jsonToNbt(item_components[id][c_id]))
 		})
-		Item.getRegistry().register(Identifier.create(id), new Item(components))
+		Item.REGISTRY.register(Identifier.create(id), new Item(components))
 	})
 
 	const atlasCanvas = document.createElement('canvas')
