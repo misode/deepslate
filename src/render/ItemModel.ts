@@ -5,18 +5,16 @@ import { clamp } from "../math/index.js"
 import { Color, Json } from "../util/index.js"
 import { ItemTint } from "./ItemTint.js"
 import { SpecialModel } from "./SpecialModel.js"
-import { BlockModelProvider, Cull, ItemRenderingContext, Mesh, TextureAtlasProvider } from "./index.js"
+import { Cull, ItemRenderer, ItemRendererResources, ItemRenderingContext, Mesh } from "./index.js"
 tz // don't remove import
 
 export interface ItemModelProvider {
 	getItemModel(id: Identifier): ItemModel | null
 }
 
-interface ItemModelResources extends BlockModelProvider, TextureAtlasProvider {}
-
 export abstract class ItemModel {
 
-	public abstract getMesh(item: ItemStack, resources: ItemModelResources, context: ItemRenderingContext): Mesh
+	public abstract getMesh(item: ItemStack, resources: ItemRendererResources, context: ItemRenderingContext): Mesh
 
 }
 
@@ -74,7 +72,7 @@ export namespace ItemModel {
 			super()
 		}
 
-		public getMesh(item: ItemStack, resources: ItemModelResources, context: ItemRenderingContext): Mesh{
+		public getMesh(item: ItemStack, resources: ItemRendererResources, context: ItemRenderingContext): Mesh{
 			const model = resources.getBlockModel(this.modelId)
 			if (!model) {
 				throw new Error(`Model ${this.modelId} does not exist (trying to render ${item.toString()})`)
@@ -102,7 +100,7 @@ export namespace ItemModel {
 			super()
 		}
 
-		public getMesh(item: ItemStack, resources: ItemModelResources, context: ItemRenderingContext): Mesh {
+		public getMesh(item: ItemStack, resources: ItemRendererResources, context: ItemRenderingContext): Mesh {
 			const mesh = new Mesh()
 			this.models.forEach(model => mesh.merge(model.getMesh(item, resources, context)))	
 			return mesh
@@ -118,7 +116,7 @@ export namespace ItemModel {
 			super()
 		}
 
-		public getMesh(item: ItemStack, resources: ItemModelResources, context: ItemRenderingContext): Mesh {
+		public getMesh(item: ItemStack, resources: ItemRendererResources, context: ItemRenderingContext): Mesh {
 			return (this.property(item, context) ? this.onTrue : this.onFalse).getMesh(item, resources, context)
 		}
 
@@ -128,16 +126,17 @@ export namespace ItemModel {
 			switch (property){
 				case 'using_item':
 				case 'fishing_rod/cast':
-				case 'bundle/has_selected_item':
 				case 'selected':
 				case 'carried':
 				case 'extended_view':
 					return (item, context) => context[property] ?? false
+				case 'bundle/has_selected_item':
+					return (item, context) => (context['bundle/selected_item'] ?? -1) >= 0
 				case 'broken': return (item, context) => {
-						const damage = item.getComponent('damage', tag => tag.getAsNumber())
-						const max_damage = item.getComponent('max_damage', tag => tag.getAsNumber())
-						return (damage !== undefined && max_damage !== undefined && damage >= max_damage - 1)
-					}
+					const damage = item.getComponent('damage', tag => tag.getAsNumber())
+					const max_damage = item.getComponent('max_damage', tag => tag.getAsNumber())
+					return (damage !== undefined && max_damage !== undefined && damage >= max_damage - 1)
+				}
 				case 'damaged': return (item, context) => {
 						const damage = item.getComponent('damage', tag => tag.getAsNumber())
 						const max_damage = item.getComponent('max_damage', tag => tag.getAsNumber())
@@ -172,7 +171,7 @@ export namespace ItemModel {
 			super()
 		}
 
-		public getMesh(item: ItemStack, resources: ItemModelResources, context: ItemRenderingContext): Mesh {
+		public getMesh(item: ItemStack, resources: ItemRendererResources, context: ItemRenderingContext): Mesh {
 			const value = this.property(item, context)
 			return (this.cases.get(value) ?? this.fallback)?.getMesh(item, resources, context) ?? MISSING_MESH
 		}
@@ -251,7 +250,7 @@ export namespace ItemModel {
 			this.entries = entries.sort((a, b) => a.threshold - b.threshold)
 		}
 
-		public getMesh(item: ItemStack, resources: ItemModelResources, context: ItemRenderingContext): Mesh {
+		public getMesh(item: ItemStack, resources: ItemRendererResources, context: ItemRenderingContext): Mesh {
 			const value = this.property(item, context) * this.scale
 			let model = this.fallback
 			for (const entry of this.entries) {
@@ -323,7 +322,7 @@ export namespace ItemModel {
 			super()
 		}
 
-		public getMesh(item: ItemStack, resources: ItemModelResources, context: ItemRenderingContext): Mesh {
+		public getMesh(item: ItemStack, resources: ItemRendererResources, context: ItemRenderingContext): Mesh {
 			const mesh = this.specialModel.getMesh(item, resources)
 			const model = resources.getBlockModel(this.base)
 			if (!model) {
@@ -335,8 +334,21 @@ export namespace ItemModel {
 	}
 
 	class BundleSelectedItem extends ItemModel {
-		public getMesh(item: ItemStack, resources: ItemModelResources, context: ItemRenderingContext): Mesh {
-			return new Mesh()
+		public getMesh(item: ItemStack, resources: ItemRendererResources, context: ItemRenderingContext): Mesh {
+			const selectedItemIndex = context['bundle/selected_item']
+			if (selectedItemIndex === undefined || selectedItemIndex < 0) return new Mesh()
+			const selectedItem = item.getComponent('bundle_contents', tag => {
+				console.log(tag)
+				if (!tag.isListOrArray()) return undefined
+				const selectedItemTag = tag.get(selectedItemIndex)
+				console.log(selectedItemTag)
+				if (selectedItemTag === undefined || !selectedItemTag.isCompound()) return undefined
+				return ItemStack.fromNbt(selectedItemTag)
+			})
+
+			console.log(selectedItem)
+			
+			return selectedItem !== undefined ? ItemRenderer.getItemMesh(selectedItem, resources, context) : new Mesh()
 		}
 	}
 }

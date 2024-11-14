@@ -1,5 +1,5 @@
 import { mat4 } from 'gl-matrix'
-import type { ItemRendererResources, NbtTag, Resources, Voxel } from '../src/index.js'
+import type { ItemRendererResources, ItemRenderingContext, NbtTag, Resources, Voxel } from '../src/index.js'
 import { BlockDefinition, BlockModel, Identifier, Item, ItemRenderer, ItemStack, NormalNoise, Structure, StructureRenderer, TextureAtlas, VoxelRenderer, XoroshiroRandom, jsonToNbt, upperPowerOfTwo } from '../src/index.js'
 import { } from '../src/nbt/Util.js'
 import { ItemModel } from '../src/render/ItemModel.js'
@@ -144,19 +144,23 @@ Promise.all([
 
 	// === Item rendering ===
 
+	const context: ItemRenderingContext = {
+		"bundle/selected_item": 0
+	}
+
 	const itemCanvas = document.getElementById('item-display') as HTMLCanvasElement
 	const itemGl = itemCanvas.getContext('webgl')!
 	const itemInput = document.getElementById('item-input') as HTMLInputElement
 	itemInput.value = localStorage.getItem('deepslate_demo_item') ?? 'stone'
 	const itemStack = ItemStack.fromString(itemInput.value)
-	const itemRenderer = new ItemRenderer(itemGl, itemStack, resources)
+	const itemRenderer = new ItemRenderer(itemGl, itemStack, resources, context)
 
 	itemInput.addEventListener('keyup', () => {
 		try {
 			const id = itemInput.value
 			const itemStack = ItemStack.fromString(itemInput.value)
 			itemGl.clear(itemGl.DEPTH_BUFFER_BIT | itemGl.COLOR_BUFFER_BIT);
-			itemRenderer.setItem(itemStack)
+			itemRenderer.setItem(itemStack, context)
 			itemRenderer.drawItem()
 			itemInput.classList.remove('invalid')
 			localStorage.setItem('deepslate_demo_item', id)

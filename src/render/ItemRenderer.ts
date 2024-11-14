@@ -17,7 +17,7 @@ export type ItemRenderingContext = {
 
 	using_item?: boolean,
 	'fishing_rod/cast'?: boolean,
-	'bundle/has_selected_item'?: boolean,
+	'bundle/selected_item'?: number,
 	selected?: boolean,
 	carried?: boolean,
 	extended_view?: boolean,
@@ -45,25 +45,26 @@ export class ItemRenderer extends Renderer {
 		gl: WebGLRenderingContext,
 		private item: ItemStack,
 		private readonly resources: ItemRendererResources,
+		context: ItemRenderingContext = {},
 		options?: ModelRendererOptions,
 	) {
 		super(gl)
-		this.updateMesh()
+		this.updateMesh(context)
 		this.atlasTexture = this.createAtlasTexture(this.resources.getTextureAtlas())
 	}
 
-	public setItem(item: ItemStack) {
+	public setItem(item: ItemStack, context: ItemRenderingContext = {}) {
 		this.item = item
-		this.updateMesh()
+		this.updateMesh(context)
 	}
 
-	private updateMesh() {
-		this.mesh = ItemRenderer.getItemMesh(this.item, this.resources)
+	public updateMesh(context: ItemRenderingContext = {}) {
+		this.mesh = ItemRenderer.getItemMesh(this.item, this.resources, context)
 		this.mesh.computeNormals()
 		this.mesh.rebuild(this.gl, { pos: true, color: true, texture: true, normal: true })
 	}
 
-	public static getItemMesh(item: ItemStack, resources: ItemRendererResources, context: ItemRenderingContext = {}) {
+	public static getItemMesh(item: ItemStack, resources: ItemRendererResources, context: ItemRenderingContext) {
 		const itemModelId = item.getComponent('item_model', tag => tag.getAsString())
 		if (itemModelId === undefined){
 			return new Mesh()
