@@ -26,7 +26,7 @@ export type ItemRenderingContext = {
 	main_hand?: 'left' | 'right',
 	holder_type?: Identifier,
 
-	cooldown_normalized?: number,
+	cooldown_percentage?: {[key: string]: number},
 	game_time?: number,
 	compass_angle?: number,
 	use_duration?: number,

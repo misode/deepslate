@@ -153,7 +153,7 @@ export namespace ItemModel {
 						if (!tag.isCompound()) return false
 						const flag = tag.getList('flags').getNumber(index)
 						return flag !== undefined && flag !== 0
-					}) ?? false // TODO: verify default
+					}) ?? false
 				default:
 					throw new Error(`Invalid condition property ${property}`)
 			}
@@ -162,7 +162,7 @@ export namespace ItemModel {
 
 	class Select extends ItemModel {
 		constructor(
-			private property: (item: ItemStack, context: ItemRenderingContext) => string,
+			private property: (item: ItemStack, context: ItemRenderingContext) => string | null,
 			private cases: Map<string, ItemModel>,
 			private fallback?: ItemModel
 		) {
@@ -171,10 +171,10 @@ export namespace ItemModel {
 
 		public getMesh(item: ItemStack, resources: ItemRendererResources, context: ItemRenderingContext): Mesh {
 			const value = this.property(item, context)
-			return (this.cases.get(value) ?? this.fallback)?.getMesh(item, resources, context) ?? MISSING_MESH
+			return ((value !== null ? this.cases.get(value) : undefined) ?? this.fallback)?.getMesh(item, resources, context) ?? MISSING_MESH
 		}
 
-		static propertyFromJson(root: {[x: string]: unknown}): (item: ItemStack, context: ItemRenderingContext) => string{
+		static propertyFromJson(root: {[x: string]: unknown}): (item: ItemStack, context: ItemRenderingContext) => string | null{
 			const property = Json.readString(root.property)?.replace(/^minecraft:/, '')
 
 			switch (property){
@@ -201,7 +201,7 @@ export namespace ItemModel {
 							return undefined
 						}
 						return Identifier.parse(tag.getString('material')).toString()
-					}) ?? '' // TODO: verify default value
+					}) ?? null
 				case 'block_state':
 					const block_state_property = Json.readString(root.block_state_property) ?? ''
 					return (item, context) => item.getComponent('block_state', tag => {
@@ -209,7 +209,7 @@ export namespace ItemModel {
 							return undefined
 						}
 						return tag.getString(block_state_property)
-					}) ?? '' // TODO: verify default value
+					}) ?? null
 				case 'local_time': return (item, context) => 'NOT IMPLEMENTED'
 				case 'holder_type':
 					return (item, context) => context.holder_type?.toString() ?? ''
@@ -218,7 +218,7 @@ export namespace ItemModel {
 					return (item, context) => item.getComponent('custom_model_data', tag => {
 						if (!tag.isCompound()) return undefined
 						return tag.getList('strings').getString(index)
-					}) ?? '' // TODO: verify default
+					}) ?? null
 				default:
 					throw new Error(`Invalid select property ${property}`)
 	
@@ -275,9 +275,8 @@ export namespace ItemModel {
 				case 'damage': {
 					const normalize = Json.readBoolean(root.normalize) ?? true
 					return (item, context) => {
-						const damage = item.getComponent('damage', tag => tag.getAsNumber())
-						const max_damage = item.getComponent('max_damage', tag => tag.getAsNumber())
-						if (damage === undefined || max_damage === undefined) return 0 // TODO: verify default
+						const max_damage = item.getComponent('max_damage', tag => tag.getAsNumber()) ?? 0
+						const damage = clamp(item.getComponent('damage', tag => tag.getAsNumber()) ?? 0, 0, max_damage)
 						if (normalize) return clamp(damage / max_damage, 0, 1)
 						return clamp(damage, 0, max_damage)
 					}
@@ -290,27 +289,36 @@ export namespace ItemModel {
 						return clamp(item.count, 0, max_stack_size)
 					}
 				}
-				case 'cooldown': return (item, context) => context.cooldown_normalized ?? 0 // TODO: verify default
-				case 'time': return (item, context) => ((context.game_time ?? 0) % 24000) / 24000 // TODO: handle wobble, natural only?
-				case 'compass': return (item, context) => context.compass_angle ?? 0 // TODO: calculate properly? handle wobble?
-				case 'crossbow/pull': return (item, context) => context['crossbow/pull'] ?? 0 // TODO: verify default
+				case 'cooldown': return (item, context) => {
+					const cooldownGroup = item.getComponent('use_cooldown', tag => {
+						if (!tag.isCompound()) return undefined
+						return tag.getString('cooldown_group')
+					}) ?? item.id.toString()
+
+					return context.cooldown_percentage?.[cooldownGroup] ?? 0
+				}
+				case 'time': return (item, context) => ((context.game_time ?? 0) % 24000) / 24000
+				case 'compass': return (item, context) => context.compass_angle ?? 0 // TODO: calculate properly?
+				case 'crossbow/pull': return (item, context) => context['crossbow/pull'] ?? 0
 				case 'use_duration':
 					const remaining = Json.readBoolean(root.remaining) ?? true
 					return (item, context) => {
-						if (remaining) return (context.max_use_duration ?? 0) - (context.use_duration ?? 0)
-						return context.use_duration ?? 0
-					} // TODO: verify default
+						if (context.use_duration === undefined || context.use_duration < 0) return 0
+						if (remaining) return Math.max((context.max_use_duration ?? 0) - (context.use_duration), 0)
+						return context.use_duration
+					}
 				case 'use_cycle':
 					const period = Json.readNumber(root.period) ?? 1
 					return (item, context) => {
-						return ((context.max_use_duration ?? 0) - (context.use_duration ?? 0)) % period
-					} // TODO: verify default
+						if (context.use_duration === undefined || context.use_duration < 0) return 0
+						return Math.max((context.max_use_duration ?? 0) - (context.use_duration ?? 0), 0) % period
+					}
 				case 'custom_model_data':
 					const index = Json.readInt(root.index) ?? 0
 					return (item, context) => item.getComponent('custom_model_data', tag => {
 						if (!tag.isCompound()) return undefined
 						return tag.getList('floats').getNumber(index)
-					}) ?? 0 // TODO: verify default
+					}) ?? 0
 				default:
 					throw new Error(`Invalid select property ${property}`)
 			}

@@ -31,7 +31,8 @@ export namespace ItemTint {
 				Color.fromJson(root.default) ?? INVALID_COLOR
 			)
 			case 'custom_model_data': return new CustomModelData(
-				Json.readInt(root.index) ?? 0
+				Json.readInt(root.index) ?? 0,
+				Color.fromJson(root.default) ?? INVALID_COLOR
 			)
 			default:
 				throw new Error(`Invalid item tint type ${type}`)
@@ -146,7 +147,8 @@ export namespace ItemTint {
 
 	class CustomModelData extends ItemTint {
 		constructor(
-			public index: number
+			public index: number,
+			public default_color: Color
 		) {
 			super()
 		}		
@@ -157,7 +159,7 @@ export namespace ItemTint {
 				const colorTag = tag.getList('colors').get(this.index)
 				if (colorTag === undefined) return undefined
 				return Color.fromNbt(colorTag)
-			}) ?? INVALID_COLOR // TODO: verify default
+			}) ?? this.default_color
 		}
 	}
 }
