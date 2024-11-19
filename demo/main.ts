@@ -68,7 +68,7 @@ Promise.all([
 	fetch(`${MCMETA}registries/item/data.min.json`).then(r => r.json()),
 	fetch(`${MCMETA}summary/assets/block_definition/data.min.json`).then(r => r.json()),
 	fetch(`${MCMETA}summary/assets/model/data.min.json`).then(r => r.json()),
-	fetch(`${MCMETA}summary/data/item_definition/data.min.json`).then(r => r.json()),
+	fetch(`${MCMETA}summary/assets/item_definition/data.min.json`).then(r => r.json()),
 	fetch(`${MCMETA}summary/item_components/data.min.json`).then(r => r.json()),
 	fetch(`${MCMETA}atlas/all/data.min.json`).then(r => r.json()),
 	new Promise<HTMLImageElement>(res => {
