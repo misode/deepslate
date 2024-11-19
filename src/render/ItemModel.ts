@@ -61,7 +61,7 @@ export namespace ItemModel {
 		}
 	}
 
-	class Model extends ItemModel {
+	export class Model extends ItemModel {
 		constructor(
 			private modelId: Identifier,
 			private tints: ItemTint[]
@@ -90,7 +90,7 @@ export namespace ItemModel {
 
 	}
 
-	class Composite extends ItemModel {
+	export class Composite extends ItemModel {
 		constructor(
 			private models: ItemModel[]
 		) {
@@ -104,7 +104,7 @@ export namespace ItemModel {
 		}
 	}
 
-	class Condition extends ItemModel {
+	export class Condition extends ItemModel {
 		constructor(
 			private property: (item: ItemStack, context: ItemRenderingContext) => boolean,
 			private onTrue: ItemModel,
@@ -160,7 +160,7 @@ export namespace ItemModel {
 		}		
 	}
 
-	class Select extends ItemModel {
+	export class Select extends ItemModel {
 		constructor(
 			private property: (item: ItemStack, context: ItemRenderingContext) => string | null,
 			private cases: Map<string, ItemModel>,
@@ -188,7 +188,7 @@ export namespace ItemModel {
 						if (!tag.isList() || tag.length === 0) {
 							return 'none'
 						}
-						tag.filter(tag => {
+						return tag.filter(tag => {
 							if (!tag.isCompound()) {
 								return false
 							} 
@@ -212,12 +212,14 @@ export namespace ItemModel {
 					}) ?? null
 				case 'local_time': return (item, context) => 'NOT IMPLEMENTED'
 				case 'holder_type':
-					return (item, context) => context.holder_type?.toString() ?? ''
+					return (item, context) => context.holder_type?.toString() ?? null
 				case 'custom_model_data':
 					const index = Json.readInt(root.index) ?? 0
 					return (item, context) => item.getComponent('custom_model_data', tag => {
 						if (!tag.isCompound()) return undefined
-						return tag.getList('strings').getString(index)
+						const list = tag.getList('strings')
+						if (list.length <= index) return undefined
+						return list.getString(index)
 					}) ?? null
 				default:
 					throw new Error(`Invalid select property ${property}`)
@@ -226,7 +228,7 @@ export namespace ItemModel {
 		}
 	}
 
-	class RangeDispatch extends ItemModel {
+	export class RangeDispatch extends ItemModel {
 		private entries: {threshold: number, model: ItemModel}[]
 
 		constructor(
@@ -292,10 +294,10 @@ export namespace ItemModel {
 				case 'cooldown': return (item, context) => {
 					const cooldownGroup = item.getComponent('use_cooldown', tag => {
 						if (!tag.isCompound()) return undefined
-						return tag.getString('cooldown_group')
-					}) ?? item.id.toString()
+						return Identifier.parse(tag.getString('cooldown_group'))
+					}) ?? item.id
 
-					return context.cooldown_percentage?.[cooldownGroup] ?? 0
+					return context.cooldown_percentage?.[cooldownGroup.toString()] ?? 0
 				}
 				case 'time': return (item, context) => ((context.game_time ?? 0) % 24000) / 24000
 				case 'compass': return (item, context) => context.compass_angle ?? 0 // TODO: calculate properly?
@@ -325,7 +327,7 @@ export namespace ItemModel {
 		}
 	}
 
-	class Special extends ItemModel {
+	export class Special extends ItemModel {
 		constructor(
 			private specialModel: SpecialModel,
 			private base: Identifier
@@ -344,7 +346,7 @@ export namespace ItemModel {
 		}
 	}
 
-	class BundleSelectedItem extends ItemModel {
+	export class BundleSelectedItem extends ItemModel {
 		public getMesh(item: ItemStack, resources: ItemRendererResources, context: ItemRenderingContext): Mesh {
 			const selectedItemIndex = context['bundle/selected_item']
 			if (selectedItemIndex === undefined || selectedItemIndex < 0) return new Mesh()

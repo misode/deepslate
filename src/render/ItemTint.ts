@@ -39,7 +39,7 @@ export namespace ItemTint {
 		}
 	}
 
-	class Constant extends ItemTint{
+	export class Constant extends ItemTint{
 		constructor(
 			public value: Color
 		) {
@@ -51,7 +51,7 @@ export namespace ItemTint {
 		}
 	}
 
-	class Dye extends ItemTint{
+	export class Dye extends ItemTint{
 		constructor(
 			public default_color: Color
 		) {
@@ -67,7 +67,7 @@ export namespace ItemTint {
 		}
 	}	
 
-	class Grass extends ItemTint{
+	export class Grass extends ItemTint{
 		constructor(
 			public temperature: number,
 			public downfall: number
@@ -80,7 +80,7 @@ export namespace ItemTint {
 		}
 	}
 
-	class Firework extends ItemTint{
+	export class Firework extends ItemTint{
 		constructor(
 			public default_color: Color
 		) {
@@ -94,7 +94,6 @@ export namespace ItemTint {
 				if (colorsTag && colorsTag.isListOrArray()) return colorsTag
 				return new NbtIntArray()
 			})
-			console.log(colors)
 			const color: Color = (() => {
 				if (!colors || colors.length === 0) {
 					return this.default_color
@@ -111,13 +110,13 @@ export namespace ItemTint {
 				r /= colors.length
 				g /= colors.length
 				b /= colors.length
-				return [r, g, b]
+				return [r / 255, g / 255, b / 255]
 			})()
 			return color
 		}
 	}
 
-	class Potion extends ItemTint {
+	export class Potion extends ItemTint {
 		constructor(
 			public default_color: Color
 		) {
@@ -131,7 +130,7 @@ export namespace ItemTint {
 		}
 	}
 
-	class MapColor extends ItemTint {
+	export class MapColor extends ItemTint {
 		constructor(
 			public default_color: Color
 		) {
@@ -145,7 +144,7 @@ export namespace ItemTint {
 		}
 	}
 
-	class CustomModelData extends ItemTint {
+	export class CustomModelData extends ItemTint {
 		constructor(
 			public index: number,
 			public default_color: Color

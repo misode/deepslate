@@ -14,7 +14,7 @@ export namespace Color {
 
 	export function fromNbt(nbt: NbtTag): Color | undefined {
 		if (nbt.isNumber()) return intToRgb(nbt.getAsNumber())
-		if (!nbt.isIntArray()) return undefined
+		if (!nbt.isListOrArray()) return undefined
 		const values = nbt.getItems()
 		if (values.length < 3) return undefined
 		return values.map(i => i.getAsNumber()) as Color
