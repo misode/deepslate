@@ -56,7 +56,7 @@ export class ItemStack {
 		if (other instanceof Identifier) {
 			return this.id.equals(other)
 		}
-		return this.id.equals(other.item.key())
+		return this.id.equals(other.id)
 	}
 
 	public equals(other: unknown) {
@@ -70,7 +70,7 @@ export class ItemStack {
 	}
 
 	public isSameItemSameComponents(other: ItemStack) {
-		if (!this.id.equals(other.item.key()) || this.components.size !== other.components.size) {
+		if (!this.id.equals(other.id) || this.components.size !== other.components.size) {
 			return false
 		}
 		for (const [key, value] of this.components) {
