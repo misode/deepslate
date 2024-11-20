@@ -106,6 +106,10 @@ describe('ItemModel', () => {
 		expect(extended_view(dummyItem, {extended_view: true})).toBeTruthy()
 		expect(extended_view(dummyItem, {extended_view: false})).toBeFalsy()
 
+		const view_entity = ItemModel.Condition.propertyFromJson({property: 'view_entity'})
+		expect(view_entity(dummyItem, {context_entity_is_view_entity: true})).toBeTruthy()
+		expect(view_entity(dummyItem, {context_entity_is_view_entity: false})).toBeFalsy()
+
 		const using_item = ItemModel.Condition.propertyFromJson({property: 'using_item'})
 		expect(using_item(dummyItem, {use_duration: 0})).toBeTruthy()
 		expect(using_item(dummyItem, {use_duration: -1})).toBeFalsy()
@@ -142,7 +146,7 @@ describe('ItemModel', () => {
 	it('Select', () => {
 		const model = ItemModel.fromJson({
 			type: 'select',
-			property: 'holder_type',
+			property: 'context_entity_type',
 			cases: [
 				{
 					when: 'minecraft:zombie',
@@ -160,13 +164,13 @@ describe('ItemModel', () => {
 
 		blockModel1.mockClear()
 		blockModel2.mockClear()
-		model.getMesh(dummyItem, resources, {holder_type: Identifier.create('zombie')})
+		model.getMesh(dummyItem, resources, {context_entity_type: Identifier.create('zombie')})
 		expect(blockModel1).toHaveBeenCalledOnce()
 		expect(blockModel2).not.toHaveBeenCalled()
 
 		blockModel1.mockClear()
 		blockModel2.mockClear()
-		model.getMesh(dummyItem, resources, {holder_type: Identifier.create('skeleton')})
+		model.getMesh(dummyItem, resources, {context_entity_type: Identifier.create('skeleton')})
 		expect(blockModel1).not.toHaveBeenCalled()
 		expect(blockModel2).toHaveBeenCalledOnce()
 	})
@@ -180,9 +184,13 @@ describe('ItemModel', () => {
 		expect(display_context(dummyItem, {'display_context': 'gui'})).toEqual('gui')
 		expect(display_context(dummyItem, {'display_context': 'fixed'})).toEqual('fixed')
 
-		const holder_type = ItemModel.Select.propertyFromJson({property: 'holder_type'})
-		expect(holder_type(dummyItem, {'holder_type': Identifier.create('zombie')})).toEqual('minecraft:zombie')
-		expect(holder_type(dummyItem, {})).toBeNull()
+		const context_entity_type = ItemModel.Select.propertyFromJson({property: 'context_entity_type'})
+		expect(context_entity_type(dummyItem, {'context_entity_type': Identifier.create('zombie')})).toEqual('minecraft:zombie')
+		expect(context_entity_type(dummyItem, {})).toBeNull()
+
+		const context_dimension = ItemModel.Select.propertyFromJson({property: 'context_dimension'})
+		expect(context_dimension(dummyItem, {'context_dimension': Identifier.parse('test:test')})).toEqual('test:test')
+		expect(context_dimension(dummyItem, {})).toBeNull()
 
 		const charge_type = ItemModel.Select.propertyFromJson({property: 'charge_type'})
 		expect(charge_type(ItemStack.fromString('dummy:dummy[charged_projectiles=[{id:"minecraft:arrow"}, {id:"minecraft:firework_rocket"}]]'), {})).toEqual('rocket')
@@ -209,10 +217,11 @@ describe('ItemModel', () => {
 	it('RangeDisptach', () => {
 		const model = ItemModel.fromJson({
 			type: 'range_dispatch',
-			property: 'time',
+			property: 'use_duration',
+			remaining: false,
 			entries: [
 				{
-					threshold: 0.5,
+					threshold: 2,
 					model: {
 						type: 'model',
 						model: 'test:1',
@@ -227,21 +236,27 @@ describe('ItemModel', () => {
 
 		blockModel1.mockClear()
 		blockModel2.mockClear()
-		model.getMesh(dummyItem, resources, {game_time: 12001})
+		model.getMesh(dummyItem, resources, {use_duration: 3, max_use_duration:10})
 		expect(blockModel1).toHaveBeenCalledOnce()
 		expect(blockModel2).not.toHaveBeenCalled()
 
 		blockModel1.mockClear()
 		blockModel2.mockClear()
-		model.getMesh(dummyItem, resources, {game_time: 11999})
+		model.getMesh(dummyItem, resources, {use_duration: 1, max_use_duration:10})
 		expect(blockModel1).not.toHaveBeenCalled()
 		expect(blockModel2).toHaveBeenCalled()
 	})	
 
 	it('RangeDisptach properties', () => {
-		const time = ItemModel.RangeDispatch.propertyFromJson({property: 'time'})
-		expect(time(dummyItem, {game_time: 100})).toEqual(100/24000)
-		expect(time(dummyItem, {game_time: 24100})).toEqual(100/24000)
+		const time_daytime = ItemModel.RangeDispatch.propertyFromJson({property: 'time', source: 'daytime'})
+		expect(time_daytime(dummyItem, {game_time: 6000})).toEqual(0)
+		expect(time_daytime(dummyItem, {game_time: 18000})).toEqual(0.5)
+
+		const time_moon_phase = ItemModel.RangeDispatch.propertyFromJson({property: 'time', source: 'moon_phase'})
+		expect(time_moon_phase(dummyItem, {game_time: 0})).toEqual(0)
+		expect(time_moon_phase(dummyItem, {game_time: 24000})).toEqual(1/8)
+		expect(time_moon_phase(dummyItem, {game_time: 7.5*24000})).toEqual(7.5/8)
+		expect(time_moon_phase(dummyItem, {game_time: 8*24000})).toEqual(0)
 
 		const use_duration_remaining = ItemModel.RangeDispatch.propertyFromJson({property: 'use_duration', remaining: true})
 		expect(use_duration_remaining(dummyItem, {use_duration: 70, max_use_duration: 100})).toEqual(30)

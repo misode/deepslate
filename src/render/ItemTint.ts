@@ -1,7 +1,7 @@
-import { Color, ItemStack, Json, NbtIntArray, PotionContents } from "../index.js"
+import { Color, ItemRenderingContext, ItemStack, Json, NbtIntArray, PotionContents } from "../index.js"
 
 export abstract class ItemTint {
-	public abstract getTint(item: ItemStack): Color
+	public abstract getTint(item: ItemStack, context: ItemRenderingContext): Color
 }
 
 const INVALID_COLOR: Color = [0, 0, 0]
@@ -32,6 +32,9 @@ export namespace ItemTint {
 			)
 			case 'custom_model_data': return new CustomModelData(
 				Json.readInt(root.index) ?? 0,
+				Color.fromJson(root.default) ?? INVALID_COLOR
+			)
+			case 'team': return new Team(
 				Color.fromJson(root.default) ?? INVALID_COLOR
 			)
 			default:
@@ -159,6 +162,18 @@ export namespace ItemTint {
 				if (colorTag === undefined) return undefined
 				return Color.fromNbt(colorTag)
 			}) ?? this.default_color
+		}
+	}
+
+	export class Team extends ItemTint {
+		constructor(
+			public default_color: Color
+		) {
+			super()
+		}
+
+		public getTint(item: ItemStack, context: ItemRenderingContext): Color {
+			return context.context_entity_team_color ?? this.default_color
 		}
 	}
 }

@@ -22,6 +22,7 @@ export namespace ItemModel {
 		const root = Json.readObject(obj) ?? {}
 		const type = Json.readString(root.type)?.replace(/^minecraft:/, '')
 		switch (type) {
+			case 'empty': return new Empty()
 			case 'model': return new Model(
 				Identifier.parse(Json.readString(root.model) ?? ''),
 				Json.readArray(root.tints, ItemTint.fromJson) ?? []
@@ -61,6 +62,12 @@ export namespace ItemModel {
 		}
 	}
 
+	export class Empty extends ItemModel {
+		public getMesh(item: ItemStack, resources: ItemRendererResources, context: ItemRenderingContext): Mesh{
+			return new Mesh()
+		}
+	}
+
 	export class Model extends ItemModel {
 		constructor(
 			private modelId: Identifier,
@@ -77,7 +84,7 @@ export namespace ItemModel {
 
 			let tint = (i: number): Color => {
 				if (i < this.tints.length) {
-					return this.tints[i].getTint(item)
+					return this.tints[i].getTint(item, context)
 				} else {
 					return [1, 1, 1]
 				}
@@ -126,6 +133,8 @@ export namespace ItemModel {
 				case 'carried':
 				case 'extended_view':
 					return (item, context) => context[property] ?? false
+				case 'view_entity':
+					return (item, context) => context.context_entity_is_view_entity ?? false
 				case 'using_item':
 					return (item, context) => (context.use_duration ?? -1) >= 0
 				case 'bundle/has_selected_item':
@@ -179,9 +188,11 @@ export namespace ItemModel {
 
 			switch (property){
 				case 'main_hand':
-					return (item, context) => context['main_hand'] ?? 'right'
+					return (item, context) => context.main_hand ?? 'right'
 				case 'display_context':
-					return (item, context) => context['display_context'] ?? 'gui'
+					return (item, context) => context.display_context ?? 'gui'
+				case 'context_dimension':
+					return (item, context) => context.context_dimension?.toString() ?? null
 				case 'charge_type':
 					const FIREWORK = Identifier.create('firework_rocket')
 					return (item, context) => item.getComponent('charged_projectiles', tag => {
@@ -211,8 +222,8 @@ export namespace ItemModel {
 						return tag.getString(block_state_property)
 					}) ?? null
 				case 'local_time': return (item, context) => 'NOT IMPLEMENTED'
-				case 'holder_type':
-					return (item, context) => context.holder_type?.toString() ?? null
+				case 'context_entity_type':
+					return (item, context) => context.context_entity_type?.toString() ?? null
 				case 'custom_model_data':
 					const index = Json.readInt(root.index) ?? 0
 					return (item, context) => item.getComponent('custom_model_data', tag => {
@@ -299,7 +310,18 @@ export namespace ItemModel {
 
 					return context.cooldown_percentage?.[cooldownGroup.toString()] ?? 0
 				}
-				case 'time': return (item, context) => ((context.game_time ?? 0) % 24000) / 24000
+				case 'time': 
+					const source = Json.readString(root.source) ?? 'daytime'
+					switch (source) {
+						case 'daytime':	return (item, context) => {
+							const gameTime = context.game_time ?? 0
+							const linearTime = ((gameTime / 24000.0) % 1) - 0.25;
+							const cosTime = 0.5 - Math.cos(linearTime * Math.PI) / 2.0;
+							return (linearTime * 2.0 + cosTime) / 3;
+						}
+						case 'moon_phase': return (item, context) => ((context.game_time ?? 0) / 24000 % 8) / 8
+						case 'random': return (item, context) => Math.random()
+					}
 				case 'compass': return (item, context) => context.compass_angle ?? 0 // TODO: calculate properly?
 				case 'crossbow/pull': return (item, context) => context['crossbow/pull'] ?? 0
 				case 'use_duration':

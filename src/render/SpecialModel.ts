@@ -26,7 +26,8 @@ export namespace SpecialModel {
 			)
 			case 'head': return new Head(
 				Json.readString(root.kind) ?? '',
-				typeof root.texture === 'string' ? Identifier.parse(root.texture) : undefined
+				typeof root.texture === 'string' ? Identifier.parse(root.texture) : undefined,
+				Json.readNumber(root.animation) ?? 0
 			)
 			case 'shulker_box': return new ShulkerBox(
 				Identifier.parse(Json.readString(root.texture) ?? ''),
@@ -118,7 +119,8 @@ export namespace SpecialModel {
 
 		constructor(
 			kind: string,
-			texture?: Identifier
+			texture: Identifier | undefined,
+			animation: number
 		) {
 			super()
 

@@ -1,14 +1,12 @@
 import { mat4 } from 'gl-matrix'
 import { ItemStack } from '../core/ItemStack.js'
 import { Identifier } from '../core/index.js'
+import { Color } from '../index.js'
 import type { BlockModelProvider, Display } from './BlockModel.js'
 import { ItemModelProvider } from './ItemModel.js'
 import { Mesh } from './Mesh.js'
 import { Renderer } from './Renderer.js'
 import type { TextureAtlasProvider } from './TextureAtlas.js'
-
-interface ModelRendererOptions {
-}
 
 export interface ItemRendererResources extends BlockModelProvider, TextureAtlasProvider, ItemModelProvider {}
 
@@ -20,11 +18,14 @@ export type ItemRenderingContext = {
 	selected?: boolean,
 	carried?: boolean,
 	extended_view?: boolean,
+	context_entity_is_view_entity?: boolean
 
 	keybind_down?: string[],
 
 	main_hand?: 'left' | 'right',
-	holder_type?: Identifier,
+	context_entity_type?: Identifier,
+	context_entity_team_color?: Color
+	context_dimension?: Identifier
 
 	cooldown_percentage?: {[key: string]: number},
 	game_time?: number,
@@ -44,7 +45,6 @@ export class ItemRenderer extends Renderer {
 		private item: ItemStack,
 		private readonly resources: ItemRendererResources,
 		context: ItemRenderingContext = {},
-		options?: ModelRendererOptions,
 	) {
 		super(gl)
 		this.updateMesh(context)
