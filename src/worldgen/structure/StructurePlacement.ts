@@ -3,9 +3,9 @@ import { BlockPos, Holder, HolderSet, Identifier } from '../../core/index.js'
 import type { Random } from '../../math/index.js'
 import { LegacyRandom } from '../../math/index.js'
 import { Json } from '../../util/index.js'
-import { WorldgenRegistries } from '../WorldgenRegistries.js'
 import type { Climate } from '../biome/index.js'
 import { BiomeSource } from '../biome/index.js'
+import { WorldgenRegistries } from '../WorldgenRegistries.js'
 import { StructureSet } from './StructureSet.js'
 
 export abstract class StructurePlacement {

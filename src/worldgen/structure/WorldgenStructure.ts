@@ -1,16 +1,15 @@
-import { Rotation } from '../../core/Rotation.js'
-import { BlockPos, Holder, HolderSet, Identifier, Registry } from '../../core/index.js'
+import { BlockPos, Holder, HolderSet, Identifier, Registry, Rotation } from '../../core/index.js'
 import type { Random } from '../../math/index.js'
 import { LegacyRandom } from '../../math/index.js'
 import { Json } from '../../util/Json.js'
-import { HeightProvider } from '../HeightProvider.js'
+import type { BiomeSource } from '../biome/index.js'
 import { Heightmap } from '../Heightmap.js'
-import { LevelHeight } from '../LevelHeight.js'
+import { HeightProvider } from '../HeightProvider.js'
+import type { LevelHeight } from '../LevelHeight.js'
 import { NoiseChunkGenerator } from '../NoiseChunkGenerator.js'
 import type { NoiseGeneratorSettings } from '../NoiseGeneratorSettings.js'
 import { RandomState } from '../RandomState.js'
 import { WorldgenRegistries } from '../WorldgenRegistries.js'
-import type { BiomeSource } from '../biome/index.js'
 import { StructurePoolElement } from './StructurePoolElement.js'
 import { StructureTemplatePool } from './StructureTemplatePool.js'
 
@@ -89,7 +88,7 @@ export namespace WorldgenStructure {
 			public readonly seed: bigint,
 			public readonly biomeSource: BiomeSource,
 			public readonly settings: NoiseGeneratorSettings,
-			public readonly levelHeight: LevelHeight
+			public readonly levelHeight: LevelHeight,
 		) {
 			this.randomState = new RandomState(settings, seed)
 			this.chunkGenerator = new NoiseChunkGenerator(biomeSource, settings)

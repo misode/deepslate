@@ -1,4 +1,4 @@
-export type LevelHeight = {
+export interface LevelHeight {
 	minY: number,
 	height: number,
 }
