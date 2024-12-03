@@ -1,3 +1,4 @@
+
 export function lazy<T>(getter: () => T): () => T {
 	let value: T | null = null
 	return () => {
@@ -24,13 +25,4 @@ export function mutateWithDefault<K, V>(map: Map<K, V>, key: K, initialValue: V,
 	mutator(value, key)
 	map.set(key, value)
 	return value
-}
-
-export type Color = [number, number, number]
-
-export function intToRgb(n: number): Color {
-	const r = (n >> 16) & 255
-	const g = (n >> 8) & 255
-	const b = n & 255
-	return [r / 255, g / 255, b / 255]
 }

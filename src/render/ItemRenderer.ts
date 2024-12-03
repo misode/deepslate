@@ -1,60 +1,82 @@
 import { mat4 } from 'gl-matrix'
-import { Identifier } from '../core/index.js'
 import { ItemStack } from '../core/ItemStack.js'
-import { Cull, SpecialRenderers, type Color } from '../index.js'
-import type { BlockModelProvider } from './BlockModel.js'
-import { getItemColor } from './ItemColors.js'
-import type { Mesh } from './Mesh.js'
+import { Identifier } from '../core/index.js'
+import { Color } from '../index.js'
+import type { BlockModelProvider, Display } from './BlockModel.js'
+import { ItemModelProvider } from './ItemModel.js'
+import { Mesh } from './Mesh.js'
 import { Renderer } from './Renderer.js'
 import type { TextureAtlasProvider } from './TextureAtlas.js'
 
-interface ModelRendererOptions {
-	/** Force the tint index of the item */
-	tint?: Color,
+export interface ItemRendererResources extends BlockModelProvider, TextureAtlasProvider, ItemModelProvider {}
+
+export type ItemRenderingContext = {
+	display_context?: Display,
+
+	'fishing_rod/cast'?: boolean,
+	'bundle/selected_item'?: number,
+	selected?: boolean,
+	carried?: boolean,
+	extended_view?: boolean,
+	context_entity_is_view_entity?: boolean
+
+	keybind_down?: string[],
+
+	main_hand?: 'left' | 'right',
+	context_entity_type?: Identifier,
+	context_entity_team_color?: Color
+	context_dimension?: Identifier
+
+	cooldown_percentage?: {[key: string]: number},
+	game_time?: number,
+	compass_angle?: number,
+	use_duration?: number,
+	max_use_duration?: number,
+	'crossbow/pull'?: number
 }
 
-interface ItemRendererResources extends BlockModelProvider, TextureAtlasProvider {}
-
 export class ItemRenderer extends Renderer {
-	private item: ItemStack
-	private mesh: Mesh
-	private readonly tint: Color | ((index: number) => Color) | undefined
+	private mesh!: Mesh
 	private readonly atlasTexture: WebGLTexture
+
 
 	constructor(
 		gl: WebGLRenderingContext,
-		item: Identifier | ItemStack,
+		private item: ItemStack,
 		private readonly resources: ItemRendererResources,
-		options?: ModelRendererOptions,
+		context: ItemRenderingContext = {},
 	) {
 		super(gl)
-		this.item = item instanceof ItemStack ? item : new ItemStack(item, 1)
-		this.mesh = this.getItemMesh()
-		this.tint = options?.tint
+		this.updateMesh(context)
 		this.atlasTexture = this.createAtlasTexture(this.resources.getTextureAtlas())
 	}
 
-	public setItem(item: Identifier | ItemStack) {
-		this.item = item instanceof ItemStack ? item : new ItemStack(item, 1)
-		this.mesh = this.getItemMesh()
+	public setItem(item: ItemStack, context: ItemRenderingContext = {}) {
+		this.item = item
+		this.updateMesh(context)
 	}
 
-	private getItemMesh() {
-		const model = this.resources.getBlockModel(this.item.id.withPrefix('item/'))
-		if (!model) {
-			throw new Error(`Item model for ${this.item.toString()} does not exist`)
+	public updateMesh(context: ItemRenderingContext = {}) {
+		this.mesh = ItemRenderer.getItemMesh(this.item, this.resources, context)
+		this.mesh.computeNormals()
+		this.mesh.rebuild(this.gl, { pos: true, color: true, texture: true, normal: true })
+	}
+
+	public static getItemMesh(item: ItemStack, resources: ItemRendererResources, context: ItemRenderingContext) {
+		const itemModelId = item.getComponent('item_model', tag => tag.getAsString())
+		if (itemModelId === undefined){
+			return new Mesh()
 		}
-		let tint = this.tint
-		if (!tint && this.item.id.namespace === Identifier.DEFAULT_NAMESPACE) {
-			tint = getItemColor(this.item)
+
+		const itemModel = resources.getItemModel(Identifier.parse(itemModelId))
+		if (!itemModel) {
+			throw new Error(`Item model ${itemModelId} does not exist (defined by item ${item.toString()})`)
 		}
-		const mesh = model.getMesh(this.resources, Cull.none(), tint)
-		const specialMesh = SpecialRenderers.getItemMesh(this.item, this.resources)
-		mesh.merge(specialMesh)
-		mesh.transform(model.getDisplayTransform('gui'))
-		mesh.computeNormals()
-		mesh.rebuild(this.gl, { pos: true, color: true, texture: true, normal: true })
+
+		const mesh = itemModel.getMesh(item, resources, context)
+
 		return mesh
+
 	}
 
 	protected override getPerspective() {

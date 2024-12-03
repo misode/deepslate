@@ -1,30 +1,46 @@
+import { NbtParser } from '../nbt/NbtParser.js'
 import type { NbtTag } from '../nbt/index.js'
 import { NbtCompound, NbtInt, NbtString } from '../nbt/index.js'
+import { StringReader } from '../util/index.js'
+import { Holder } from './Holder.js'
 import { Identifier } from './Identifier.js'
+import { Item } from './Item.js'
 
 export class ItemStack {
-	constructor(
-		public id: Identifier,
-		public count: number,
-		public components: Map<string, NbtTag> = new Map(),
-	) {}
+	private readonly item: Holder<Item | undefined>
 
-	public getComponent<T>(key: string | Identifier, reader: (tag: NbtTag) => T) {
+	constructor(
+		public readonly id: Identifier,
+		public count: number,
+		public readonly components: Map<string, NbtTag> = new Map(),
+	) {
+		this.item = Holder.reference(Item.REGISTRY, id, false)
+	}
+
+	public getComponent<T>(key: string | Identifier, reader: (tag: NbtTag) => T, includeDefaultComponents: boolean = true): T | undefined {
 		if (typeof key === 'string') {
 			key = Identifier.parse(key)
+		}
+
+		if (this.components.has('!' + key.toString())){
+			return undefined
 		}
 		const value = this.components.get(key.toString())
 		if (value) {
 			return reader(value)
 		}
-		return undefined
+		return includeDefaultComponents ? this.item.value()?.getComponent(key, reader) : undefined
 	}
 
-	public hasComponent(key: string | Identifier) {
+	public hasComponent(key: string | Identifier, includeDefaultComponents: boolean = true): boolean {
 		if (typeof key === 'string') {
 			key = Identifier.parse(key)
 		}
-		return this.components.has(key.toString())
+		if (this.components.has('!' + key.toString())){
+			return false
+		}
+
+		return this.components.has(key.toString()) || (includeDefaultComponents && (this.item.value()?.hasComponent(key) ?? false))
 	}
 
 	public clone(): ItemStack {
@@ -75,6 +91,53 @@ export class ItemStack {
 			result += ` ${this.count}`
 		}
 		return result
+	}
+
+	public static fromString(string: string) {
+		const reader = new StringReader(string)
+		
+		while (reader.canRead() && reader.peek() !== '[') {
+			reader.skip()
+		}
+		const itemId = Identifier.parse(reader.getRead())
+		if (!reader.canRead()){
+			return new ItemStack(itemId, 1)
+		}
+
+		const components = new Map<string, NbtTag>()
+		reader.skip()
+		if (reader.peek() === ']'){
+			return new ItemStack(itemId, 1, components)
+		}
+		do{
+			if (reader.peek() === '!'){
+				reader.skip()
+				const start = reader.cursor
+				while (reader.canRead() && reader.peek() !== ']' && reader.peek() !== ',') {
+					reader.skip()
+				}
+				components.set('!' + Identifier.parse(reader.getRead(start)).toString(), new NbtCompound())
+			} else {
+				const start = reader.cursor
+				while (reader.canRead() && reader.peek() !== '=') {
+					reader.skip()
+				}
+				const component = Identifier.parse(reader.getRead(start)).toString()
+				if (!reader.canRead()) break;
+				reader.skip()
+				const tag = NbtParser.readTag(reader)
+				components.set(component, tag)
+			}
+			if (!reader.canRead()) break;
+			if (reader.peek() === ']'){
+				return new ItemStack(itemId, 1, components)
+			}
+			if (reader.peek() !== ','){
+				throw new Error('Expected , or ]')
+			}
+			reader.skip()
+		} while (reader.canRead())
+		throw new Error('Missing closing ]')
 	}
 
 	public toNbt() {
