@@ -1,7 +1,7 @@
 import type { Holder } from '../core/index.js'
 import { Registry } from '../core/index.js'
 import { BlendedNoise, computeIfAbsent, DensityFunction, Identifier, LegacyRandom, NoiseParameters, NoiseSettings, NormalNoise, XoroshiroRandom } from '../index.js'
-import type { PositionalRandom } from '../math/index.js'
+import type { PositionalRandom, Random } from '../math/index.js'
 import { Climate } from './biome/index.js'
 import type { NoiseGeneratorSettings } from './NoiseGeneratorSettings.js'
 import { NoiseRouter } from './NoiseRouter.js'
@@ -83,7 +83,8 @@ export class RandomState {
 					return new DensityFunction.WeirdScaledSampler(fn.input, fn.rarityValueMapper, fn.noiseData, getNoise(fn.noiseData))
 				}
 				if (fn instanceof DensityFunction.OldBlendedNoise) {
-					return new DensityFunction.OldBlendedNoise(fn.xzScale, fn.yScale, fn.xzFactor, fn.yFactor, fn.smearScaleMultiplier, new BlendedNoise( this.random.fromHashOf(Identifier.create('terrain').toString()), fn.xzScale, fn.yScale, fn.xzFactor, fn.yFactor, fn.smearScaleMultiplier))
+					const oldBlendedNoiseRandom: Random = legacyRandom ? new LegacyRandom(this.seed + BigInt(0)) : this.random.fromHashOf(Identifier.create('terrain').toString())
+					return new DensityFunction.OldBlendedNoise(fn.xzScale, fn.yScale, fn.xzFactor, fn.yFactor, fn.smearScaleMultiplier, new BlendedNoise(oldBlendedNoiseRandom, fn.xzScale, fn.yScale, fn.xzFactor, fn.yFactor, fn.smearScaleMultiplier))
 				}
 				if (fn instanceof DensityFunction.EndIslands) {
 					return new DensityFunction.EndIslands(this.seed)

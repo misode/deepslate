@@ -1,7 +1,7 @@
 import { Holder, Identifier } from '../core/index.js'
 import type { BlendedNoise, MinMaxNumberFunction, NormalNoise } from '../math/index.js'
-import { clamp, clampedMap, CubicSpline, lazyLerp3, LegacyRandom, NoiseParameters, SimplexNoise } from '../math/index.js'
-import { computeIfAbsent, Json } from '../util/index.js'
+import { CubicSpline, LegacyRandom, NoiseParameters, SimplexNoise, clamp, clampedMap, lazyLerp3 } from '../math/index.js'
+import { Json, computeIfAbsent } from '../util/index.js'
 import { WorldgenRegistries } from './WorldgenRegistries.js'
 
 export abstract class DensityFunction implements MinMaxNumberFunction<DensityFunction.Context> {
@@ -381,7 +381,7 @@ export namespace DensityFunction {
 			const z0 = Math.floor(z / 2)
 			const x1 = x % 2
 			const z1 = z % 2
-			let f = clamp(100 - Math.sqrt(x * x + z * z), -100, 80)
+			let f = clamp(100 - Math.sqrt(x * x + z * z) * 8, -100, 80)
 
 			for (let i = -12; i <= 12; i += 1) {
 				for (let j = -12; j <= 12; j += 1) {

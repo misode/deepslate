@@ -1,15 +1,15 @@
-import { Rotation } from '../../core/Rotation.js'
-import { BlockPos, Holder, HolderSet, Identifier, Registry } from '../../core/index.js'
+import { BlockPos, Holder, HolderSet, Identifier, Registry, Rotation } from '../../core/index.js'
 import type { Random } from '../../math/index.js'
 import { LegacyRandom } from '../../math/index.js'
 import { Json } from '../../util/Json.js'
-import { HeightProvider } from '../HeightProvider.js'
+import type { BiomeSource } from '../biome/index.js'
 import { Heightmap } from '../Heightmap.js'
+import { HeightProvider } from '../HeightProvider.js'
+import type { LevelHeight } from '../LevelHeight.js'
 import { NoiseChunkGenerator } from '../NoiseChunkGenerator.js'
 import type { NoiseGeneratorSettings } from '../NoiseGeneratorSettings.js'
 import { RandomState } from '../RandomState.js'
 import { WorldgenRegistries } from '../WorldgenRegistries.js'
-import type { BiomeSource } from '../biome/index.js'
 import { StructurePoolElement } from './StructurePoolElement.js'
 import { StructureTemplatePool } from './StructureTemplatePool.js'
 
@@ -58,14 +58,14 @@ export abstract class WorldgenStructure {
 		return BlockPos.create(posX, this.getLowestY(context, posX, posZ, width, depth), posZ)
 	}
 
-	public tryGenerate(chunkX: number, chunkZ: number, context: WorldgenStructure.GenerationContext): boolean {
+	public tryGenerate(chunkX: number, chunkZ: number, context: WorldgenStructure.GenerationContext): BlockPos | undefined {
 		const random = LegacyRandom.fromLargeFeatureSeed(context.seed, chunkX, chunkZ)
 
 		const pos = this.findGenerationPoint(chunkX, chunkZ, random, context)
-		if (pos === undefined) return false
+		if (pos === undefined) return undefined
 		const biome = context.biomeSource.getBiome(pos[0]>>2, pos[1], pos[2]>>2, context.randomState.sampler)
 
-		return [...this.settings.validBiomes.getEntries()].findIndex((b) => b.key()?.equals(biome)) >= 0
+		return [...this.settings.validBiomes.getEntries()].findIndex((b) => b.key()?.equals(biome)) >= 0 ? pos : undefined
 	}
 }
 
@@ -88,6 +88,7 @@ export namespace WorldgenStructure {
 			public readonly seed: bigint,
 			public readonly biomeSource: BiomeSource,
 			public readonly settings: NoiseGeneratorSettings,
+			public readonly levelHeight: LevelHeight,
 		) {
 			this.randomState = new RandomState(settings, seed)
 			this.chunkGenerator = new NoiseChunkGenerator(biomeSource, settings)
@@ -121,7 +122,8 @@ export namespace WorldgenStructure {
 				const startJigsawNameString = Json.readString(root.start_jigsaw_name)
 				const startJigsawName = startJigsawNameString ? Identifier.parse(startJigsawNameString) : undefined
 				const heightmap = Heightmap.fromJson(root.project_start_to_heightmap)
-				return new JigsawStructure(settings, startPool, startHeight, heightmap, startJigsawName)
+				const dimensionPadding = JigsawStructure.DimensionPadding.fromJson(root.dimension_padding)
+				return new JigsawStructure(settings, startPool, startHeight, heightmap, startJigsawName, dimensionPadding)
 			case 'jungle_temple':
 				return new JungleTempleStructure(settings)
 			case 'mineshaft':
@@ -155,7 +157,8 @@ export namespace WorldgenStructure {
 			private readonly startingPoolHolder: Holder<StructureTemplatePool>,
 			private readonly startHeight: HeightProvider,
 			private readonly projectStartToHeightmap: Heightmap | undefined,
-			private readonly startJigsawName: Identifier | undefined
+			private readonly startJigsawName: Identifier | undefined,
+			private readonly dimensionPadding: JigsawStructure.DimensionPadding
 		) {
 			super(settings)
 		}
@@ -194,12 +197,27 @@ export namespace WorldgenStructure {
 					y = templateStartPos[1]
 				}
 
+				boundingBox.forEach(pos => pos[1] += y - boundingBox[0][1] - 1)
+				if (JigsawStructure.isStartTooCloseToWorldHeightLimits(this.dimensionPadding, boundingBox, context.levelHeight)) {
+					return undefined
+				}
+
 				const generationPoint = BlockPos.create(x, y + startJigsawOffset[1], z)
 
 				//console.log(`Generating Jigsaw Structure in Chunk ${chunkX}, ${chunkZ}: rotation: ${rotation}, startingElement: ${startingElement.toString()}, center: ${x}, ${y}, ${z}`)
 
 				return generationPoint
 			}
+		}
+
+		public static isStartTooCloseToWorldHeightLimits(dimensionPadding: JigsawStructure.DimensionPadding, boundingBox: [BlockPos, BlockPos], levelHeight: LevelHeight ): boolean {
+			if (dimensionPadding === JigsawStructure.DimensionPadding.ZERO) { // reference comparison here is correct (i.e. matching vanilla), see MC-278259
+				return false
+			}
+
+			const bottomLimit = levelHeight.minY + dimensionPadding.bottom
+			const topLimit = levelHeight.minY + levelHeight.height - dimensionPadding.top
+			return boundingBox[0][1] < bottomLimit || boundingBox[1][1] > topLimit
 		}
 
 		private static getRandomNamedJigsaw(element: StructurePoolElement, name: Identifier, rotation: Rotation, random: Random): BlockPos | undefined{
@@ -211,6 +229,29 @@ export namespace WorldgenStructure {
 			}
 
 			return undefined
+		}
+	}
+
+	export namespace JigsawStructure {
+		export class DimensionPadding {
+			static ZERO: DimensionPadding = new DimensionPadding(0, 0)
+
+			constructor(
+				public top: number,
+				public bottom: number
+			) {}
+
+			static fromJson(obj: unknown): DimensionPadding {
+				if (obj === undefined) {
+					return DimensionPadding.ZERO
+				}
+				if (typeof obj === 'number') {
+					return new DimensionPadding(obj, obj)
+				}
+
+				const padding = Json.readObject(obj) ?? {}
+				return new DimensionPadding(Json.readInt(padding.top) ?? 0, Json.readInt(padding.bottom) ?? 0)
+			}
 		}
 	}
 

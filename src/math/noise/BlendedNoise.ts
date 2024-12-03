@@ -19,12 +19,12 @@ export class BlendedNoise {
 		public readonly yFactor: number,
 		public readonly smearScaleMultiplier: number
 	) {
-		this.minLimitNoise = new PerlinNoise(random, -15, [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
-		this.maxLimitNoise = new PerlinNoise(random, -15, [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
-		this.mainNoise = new PerlinNoise(random, -7, [1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0])
+		this.minLimitNoise = new PerlinNoise(random, -15, [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0], true)
+		this.maxLimitNoise = new PerlinNoise(random, -15, [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0], true)
+		this.mainNoise = new PerlinNoise(random, -7, [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0], true)
 		this.xzMultiplier = 684.412 * xzScale
 		this.yMultiplier = 684.412 * yScale
-		this.maxValue = this.minLimitNoise.edgeValue(this.yScale + 2) //TODO
+		this.maxValue = this.minLimitNoise.edgeValue(this.yMultiplier + 2)
 	}
 
 	public sample(x: number, y: number, z: number) {
