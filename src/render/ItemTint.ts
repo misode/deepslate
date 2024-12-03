@@ -1,4 +1,5 @@
-import { Color, ItemRenderingContext, ItemStack, Json, NbtIntArray, PotionContents } from "../index.js"
+import type { ItemRenderingContext, ItemStack } from '../index.js'
+import { Color, Json, PotionContents } from '../index.js'
 
 export abstract class ItemTint {
 	public abstract getTint(item: ItemStack, context: ItemRenderingContext): Color
@@ -62,11 +63,14 @@ export namespace ItemTint {
 		}
 
 		public getTint(item: ItemStack): Color {
-			const dyedColor = item.getComponent('dyed_color', tag => {
-				return tag.isCompound() ? tag.getNumber('rgb') : tag.getAsNumber()
-			})
-			if (dyedColor === undefined) return this.default_color
-			return Color.intToRgb(dyedColor)
+			const tag = item.getComponent('dyed_color')
+			if (!tag) {
+				return this.default_color
+			}
+			if (!tag.isCompound()) {
+				return Color.intToRgb(tag.getAsNumber())
+			}
+			return Color.intToRgb(tag.getNumber('rgb'))
 		}
 	}	
 
@@ -91,16 +95,15 @@ export namespace ItemTint {
 		}
 
 		public getTint(item: ItemStack): Color {
-			const colors = item.getComponent('firework_explosion', tag => {
-				if (!tag.isCompound()) return new NbtIntArray()
-				const colorsTag = tag.get('colors')
-				if (colorsTag && colorsTag.isListOrArray()) return colorsTag
-				return new NbtIntArray()
-			})
+			const tag = item.getComponent('firework_explosion')
+			if (!tag?.isCompound()) {
+				return this.default_color
+			}
+			const colors = tag.get('colors')
+			if (!colors || !colors.isListOrArray()) {
+				return this.default_color
+			}
 			const color: Color = (() => {
-				if (!colors || colors.length === 0) {
-					return this.default_color
-				}
 				if (colors.length === 1) {
 					return Color.intToRgb(colors.get(0)!.getAsNumber())
 				}
@@ -127,9 +130,12 @@ export namespace ItemTint {
 		}		
 
 		public getTint(item: ItemStack): Color {
-			const potion_contents = item.getComponent('potion_contents', PotionContents.fromNbt )
-			if (!potion_contents) return this.default_color
-			return PotionContents.getColor(potion_contents)
+			const tag = item.getComponent('potion_contents')
+			if (!tag) {
+				return this.default_color
+			}
+			const potionContents = PotionContents.fromNbt(tag)
+			return PotionContents.getColor(potionContents)
 		}
 	}
 
@@ -141,9 +147,11 @@ export namespace ItemTint {
 		}		
 
 		public getTint(item: ItemStack): Color {
-			const mapColor = item.getComponent('map_color', tag => tag.getAsNumber())
-			if (mapColor === undefined) return this.default_color
-			return Color.intToRgb(mapColor)
+			const mapColor = item.getComponent('map_color')
+			if (!mapColor) {
+				return this.default_color
+			}
+			return Color.intToRgb(mapColor.getAsNumber())
 		}
 	}
 
@@ -156,12 +164,15 @@ export namespace ItemTint {
 		}		
 
 		public getTint(item: ItemStack): Color {
-			return item.getComponent('custom_model_data', tag => {
-				if (!tag.isCompound()) return undefined
-				const colorTag = tag.getList('colors').get(this.index)
-				if (colorTag === undefined) return undefined
-				return Color.fromNbt(colorTag)
-			}) ?? this.default_color
+			const tag = item.getComponent('custom_model_data')
+			if (!tag?.isCompound()) {
+				return this.default_color
+			}
+			const colors = tag.getList('colors').get(this.index)
+			if (!colors) {
+				return this.default_color
+			}
+			return Color.fromNbt(colors) ?? this.default_color
 		}
 	}
 

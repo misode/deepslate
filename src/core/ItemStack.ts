@@ -1,23 +1,21 @@
-import { NbtParser } from '../nbt/NbtParser.js'
 import type { NbtTag } from '../nbt/index.js'
 import { NbtCompound, NbtInt, NbtString } from '../nbt/index.js'
+import { NbtParser } from '../nbt/NbtParser.js'
 import { StringReader } from '../util/index.js'
-import { Holder } from './Holder.js'
 import { Identifier } from './Identifier.js'
-import { Item } from './Item.js'
+
+export interface ItemComponentsProvider {
+	getItemComponents: (id: Identifier) => Map<string, NbtTag>,
+}
 
 export class ItemStack {
-	private readonly item: Holder<Item | undefined>
-
 	constructor(
 		public readonly id: Identifier,
 		public count: number,
 		public readonly components: Map<string, NbtTag> = new Map(),
-	) {
-		this.item = Holder.reference(Item.REGISTRY, id, false)
-	}
+	) {}
 
-	public getComponent<T>(key: string | Identifier, reader: (tag: NbtTag) => T, includeDefaultComponents: boolean = true): T | undefined {
+	public getComponent<T>(key: string | Identifier, baseComponents?: ItemComponentsProvider): NbtTag | undefined {
 		if (typeof key === 'string') {
 			key = Identifier.parse(key)
 		}
@@ -27,20 +25,28 @@ export class ItemStack {
 		}
 		const value = this.components.get(key.toString())
 		if (value) {
-			return reader(value)
+			return value
 		}
-		return includeDefaultComponents ? this.item.value()?.getComponent(key, reader) : undefined
+		if (baseComponents) {
+			return baseComponents.getItemComponents(this.id)?.get(key.toString())
+		}
+		return undefined
 	}
 
-	public hasComponent(key: string | Identifier, includeDefaultComponents: boolean = true): boolean {
+	public hasComponent(key: string | Identifier, baseComponents?: ItemComponentsProvider): boolean {
 		if (typeof key === 'string') {
 			key = Identifier.parse(key)
 		}
 		if (this.components.has('!' + key.toString())){
 			return false
 		}
-
-		return this.components.has(key.toString()) || (includeDefaultComponents && (this.item.value()?.hasComponent(key) ?? false))
+		if (this.components.has(key.toString())) {
+			return true
+		}
+		if (baseComponents) {
+			return baseComponents.getItemComponents(this.id)?.has(key.toString())
+		}
+		return false
 	}
 
 	public clone(): ItemStack {
@@ -85,7 +91,9 @@ export class ItemStack {
 	public toString() {
 		let result = this.id.toString()
 		if (this.components.size > 0) {
-			result += `[${[...this.components.entries()].map(([k, v]) => `${k}=${v.toString()}`).join(',')}]`
+			result += `[${[...this.components.entries()].map(([k, v]) => {
+				return k.startsWith('!') ? k : `${k}=${v.toString()}`
+			}).join(',')}]`
 		}
 		if (this.count > 1) {
 			result += ` ${this.count}`
@@ -123,12 +131,12 @@ export class ItemStack {
 					reader.skip()
 				}
 				const component = Identifier.parse(reader.getRead(start)).toString()
-				if (!reader.canRead()) break;
+				if (!reader.canRead()) break
 				reader.skip()
 				const tag = NbtParser.readTag(reader)
 				components.set(component, tag)
 			}
-			if (!reader.canRead()) break;
+			if (!reader.canRead()) break
 			if (reader.peek() === ']'){
 				return new ItemStack(itemId, 1, components)
 			}
@@ -156,7 +164,12 @@ export class ItemStack {
 		const id = Identifier.parse(nbt.getString('id'))
 		const count = nbt.hasNumber('count') ? nbt.getNumber('count') : 1
 		const components = new Map(Object.entries(
-			nbt.getCompound('components').map((key, value) => [Identifier.parse(key).toString(), value])
+			nbt.getCompound('components').map((key, value) => {
+				if (key.startsWith('!')) {
+					return ['!' + Identifier.parse(key).toString(), new NbtCompound()]
+				}
+				return [Identifier.parse(key).toString(), value]
+			})
 		))
 		return new ItemStack(id, count, components)
 	}

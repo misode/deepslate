@@ -1,6 +1,6 @@
 import { mat4 } from 'gl-matrix'
 import type { ItemRendererResources, ItemRenderingContext, NbtTag, Resources, Voxel } from '../src/index.js'
-import { BlockDefinition, BlockModel, Identifier, Item, ItemRenderer, ItemStack, NormalNoise, Structure, StructureRenderer, TextureAtlas, VoxelRenderer, XoroshiroRandom, jsonToNbt, upperPowerOfTwo } from '../src/index.js'
+import { BlockDefinition, BlockModel, Identifier, ItemRenderer, ItemStack, jsonToNbt, NormalNoise, Structure, StructureRenderer, TextureAtlas, upperPowerOfTwo, VoxelRenderer, XoroshiroRandom } from '../src/index.js'
 import { } from '../src/nbt/Util.js'
 import { ItemModel } from '../src/render/ItemModel.js'
 
@@ -107,13 +107,13 @@ Promise.all([
 		itemModels['minecraft:' + id] = ItemModel.fromJson(item_models[id].model)
 	})
 
-
+	const itemComponents: Record<string, Map<string, NbtTag>> = {}
 	Object.keys(item_components).forEach(id => {
 		const components = new Map<string, NbtTag>()
 		Object.keys(item_components[id]).forEach(c_id => {
 			components.set(c_id, jsonToNbt(item_components[id][c_id]))
 		})
-		Item.REGISTRY.register(Identifier.create(id), new Item(components))
+		itemComponents['minecraft:' + id] = components
 	})
 
 	const atlasCanvas = document.createElement('canvas')
@@ -140,12 +140,13 @@ Promise.all([
 		getBlockProperties(id) { return null },
 		getDefaultBlockProperties(id) { return null },
 		getItemModel(id) { return itemModels[id.toString()] },
+		getItemComponents(id) { return itemComponents[id.toString()] },
 	}
 
 	// === Item rendering ===
 
 	const context: ItemRenderingContext = {
-		"bundle/selected_item": 0
+		'bundle/selected_item': 0,
 	}
 
 	const itemCanvas = document.getElementById('item-display') as HTMLCanvasElement
@@ -159,7 +160,7 @@ Promise.all([
 		try {
 			const id = itemInput.value
 			const itemStack = ItemStack.fromString(itemInput.value)
-			itemGl.clear(itemGl.DEPTH_BUFFER_BIT | itemGl.COLOR_BUFFER_BIT);
+			itemGl.clear(itemGl.DEPTH_BUFFER_BIT | itemGl.COLOR_BUFFER_BIT)
 			itemRenderer.setItem(itemStack, context)
 			itemRenderer.drawItem()
 			itemInput.classList.remove('invalid')

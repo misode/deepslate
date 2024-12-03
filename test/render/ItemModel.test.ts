@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
-import { BlockModel, Color, Identifier, ItemRendererResources, ItemStack } from '../../src'
+import type { Color, ItemRendererResources } from '../../src'
+import { BlockModel, Identifier, ItemStack } from '../../src'
 import { ItemModel } from '../../src/render/ItemModel'
 
 describe('ItemModel', () => {
@@ -7,7 +8,7 @@ describe('ItemModel', () => {
 
 	const blockModels = {
 		'test:1': new BlockModel(undefined, undefined, undefined),
-		'test:2': new BlockModel(undefined, undefined, undefined)
+		'test:2': new BlockModel(undefined, undefined, undefined),
 	}
 
 	const blockModel1 = vi.spyOn(blockModels['test:1'], 'getMesh')
@@ -18,6 +19,7 @@ describe('ItemModel', () => {
 		getItemModel(id) { return null },
 		getTextureAtlas() { return new ImageData(0, 0) },
 		getTextureUV(texture) { return [0, 0, 0, 0] },
+		getItemComponents(id) { return new Map() },
 	}
 
 	it('Model', () => {
@@ -26,10 +28,10 @@ describe('ItemModel', () => {
 			model: 'test:1',
 			tints: [
 				{
-					type: "constant",
-					value: [0.5, 0.6, 0.7]
-				}
-			]
+					type: 'constant',
+					value: [0.5, 0.6, 0.7],
+				},
+			],
 		})
 
 		blockModel1.mockClear()
@@ -52,7 +54,7 @@ describe('ItemModel', () => {
 				{
 					type: 'model',
 					model: 'test:1',
-				}
+				},
 			],
 		})
 
@@ -73,7 +75,7 @@ describe('ItemModel', () => {
 			on_false: {
 				type: 'model',
 				model: 'test:2',
-			}
+			},
 		})
 
 		blockModel1.mockClear()
@@ -154,12 +156,12 @@ describe('ItemModel', () => {
 						type: 'model',
 						model: 'test:1',
 					},
-				}
+				},
 			],
 			fallback: {
 				type: 'model',
 				model: 'test:2',
-			}
+			},
 		})
 
 		blockModel1.mockClear()
@@ -177,19 +179,19 @@ describe('ItemModel', () => {
 
 	it('Select properties', () => {
 		const main_hand = ItemModel.Select.propertyFromJson({property: 'main_hand'})
-		expect(main_hand(dummyItem, {'main_hand': 'left'})).toEqual('left')
-		expect(main_hand(dummyItem, {'main_hand': 'right'})).toEqual('right')
+		expect(main_hand(dummyItem, {main_hand: 'left'})).toEqual('left')
+		expect(main_hand(dummyItem, {main_hand: 'right'})).toEqual('right')
 
 		const display_context = ItemModel.Select.propertyFromJson({property: 'display_context'})
-		expect(display_context(dummyItem, {'display_context': 'gui'})).toEqual('gui')
-		expect(display_context(dummyItem, {'display_context': 'fixed'})).toEqual('fixed')
+		expect(display_context(dummyItem, {display_context: 'gui'})).toEqual('gui')
+		expect(display_context(dummyItem, {display_context: 'fixed'})).toEqual('fixed')
 
 		const context_entity_type = ItemModel.Select.propertyFromJson({property: 'context_entity_type'})
-		expect(context_entity_type(dummyItem, {'context_entity_type': Identifier.create('zombie')})).toEqual('minecraft:zombie')
+		expect(context_entity_type(dummyItem, {context_entity_type: Identifier.create('zombie')})).toEqual('minecraft:zombie')
 		expect(context_entity_type(dummyItem, {})).toBeNull()
 
 		const context_dimension = ItemModel.Select.propertyFromJson({property: 'context_dimension'})
-		expect(context_dimension(dummyItem, {'context_dimension': Identifier.parse('test:test')})).toEqual('test:test')
+		expect(context_dimension(dummyItem, {context_dimension: Identifier.parse('test:test')})).toEqual('test:test')
 		expect(context_dimension(dummyItem, {})).toBeNull()
 
 		const charge_type = ItemModel.Select.propertyFromJson({property: 'charge_type'})
@@ -226,12 +228,12 @@ describe('ItemModel', () => {
 						type: 'model',
 						model: 'test:1',
 					},
-				}
+				},
 			],
 			fallback: {
 				type: 'model',
 				model: 'test:2',
-			}
+			},
 		})
 
 		blockModel1.mockClear()

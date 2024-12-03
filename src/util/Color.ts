@@ -1,5 +1,5 @@
-import { NbtTag } from "../nbt/index.js"
-import { Json } from "./Json.js"
+import type { NbtTag } from '../nbt/index.js'
+import { Json } from './Json.js'
 
 export type Color = [number, number, number]
 
