@@ -40,9 +40,13 @@ export namespace ItemModel {
 			)
 			case 'select': return new Select(
 				Select.propertyFromJson(root),
-				new Map(Json.readArray(root.cases, caseObj => {
-					const caseRoot = Json.readObject(caseObj) ?? {}
-					return [Json.readString(caseRoot.when) ?? '', ItemModel.fromJson(caseRoot.model)]
+				new Map(Json.readArray(root.cases, e => Json.readObject(e) ?? {})?.flatMap(caseRoot => {
+					const model = ItemModel.fromJson(caseRoot.model)
+					if (Array.isArray(caseRoot.when)) {
+						return caseRoot.when.map(w => [Json.readString(w) ?? '', model])
+					} else {
+						return [[Json.readString(caseRoot.when) ?? '', model]]
+					}
 				})),
 				root.fallback ? ItemModel.fromJson(root.fallback) : undefined
 			)
