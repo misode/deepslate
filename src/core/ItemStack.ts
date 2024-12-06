@@ -15,7 +15,7 @@ export class ItemStack {
 		public components: Map<string, NbtTag> = new Map(),
 	) {}
 
-	public getComponent<T>(key: string | Identifier, baseComponents?: ItemComponentsProvider): NbtTag | undefined {
+	public getComponent<T>(key: string | Identifier, baseComponents: ItemComponentsProvider | undefined): NbtTag | undefined {
 		if (typeof key === 'string') {
 			key = Identifier.parse(key)
 		}
@@ -33,7 +33,7 @@ export class ItemStack {
 		return undefined
 	}
 
-	public hasComponent(key: string | Identifier, baseComponents?: ItemComponentsProvider): boolean {
+	public hasComponent(key: string | Identifier, baseComponents: ItemComponentsProvider | undefined): boolean {
 		if (typeof key === 'string') {
 			key = Identifier.parse(key)
 		}

@@ -1,9 +1,14 @@
 import { describe, expect, it } from 'vitest'
+import type { ItemComponentsProvider } from '../../src'
 import { Color, ItemStack } from '../../src'
 import { ItemTint } from '../../src/render/ItemTint'
 
 describe('ItemTint', () => {
 	const TEST_COLOR = [0.1, 0.2, 0.3] as Color
+
+	const resources: ItemComponentsProvider = {
+		getItemComponents(id) { return new Map() },
+	}
 
 	it('fromJson', () => {
 		const constant = ItemTint.fromJson({type: 'constant', value: TEST_COLOR})
@@ -43,37 +48,37 @@ describe('ItemTint', () => {
 
 	it('Dye', () => {
 		const dyeTint = new ItemTint.Dye(TEST_COLOR)
-		expect(dyeTint.getTint(ItemStack.fromString('dummy:dummy'))).toEqual(TEST_COLOR)
-		expect(dyeTint.getTint(ItemStack.fromString('dummy:dummy[dyed_color=255]'))).toEqual([0, 0, 1])
+		expect(dyeTint.getTint(ItemStack.fromString('dummy:dummy'), resources)).toEqual(TEST_COLOR)
+		expect(dyeTint.getTint(ItemStack.fromString('dummy:dummy[dyed_color=255]'), resources)).toEqual([0, 0, 1])
 	})
 
 	it('Firework', () => {
 		const fireworkTint = new ItemTint.Firework(TEST_COLOR)
-		expect(fireworkTint.getTint(ItemStack.fromString('dummy:dummy'))).toEqual(TEST_COLOR)
-		expect(fireworkTint.getTint(ItemStack.fromString('dummy:dummy[firework_explosion={colors:[255]}]'))).toEqual([0, 0, 1])
-		expect(fireworkTint.getTint(ItemStack.fromString('dummy:dummy[firework_explosion={colors:[255, 0]}]'))).toEqual([0, 0, 0.5])
+		expect(fireworkTint.getTint(ItemStack.fromString('dummy:dummy'), resources)).toEqual(TEST_COLOR)
+		expect(fireworkTint.getTint(ItemStack.fromString('dummy:dummy[firework_explosion={colors:[255]}]'), resources)).toEqual([0, 0, 1])
+		expect(fireworkTint.getTint(ItemStack.fromString('dummy:dummy[firework_explosion={colors:[255, 0]}]'), resources)).toEqual([0, 0, 0.5])
 	})
 
 	it('Potion', () => {
 		const potionTint = new ItemTint.Potion(TEST_COLOR)
-		expect(potionTint.getTint(ItemStack.fromString('dummy:dummy'))).toEqual(TEST_COLOR)
-		expect(potionTint.getTint(ItemStack.fromString('dummy:dummy[potion_contents={custom_color:255}]'))).toEqual([0, 0, 1])
-		expect(potionTint.getTint(ItemStack.fromString('dummy:dummy[potion_contents={potion:"water"}]'))).toEqual(Color.intToRgb(-13083194))
-		expect(potionTint.getTint(ItemStack.fromString('dummy:dummy[potion_contents={potion:"leaping"}]'))).toEqual(Color.intToRgb(16646020))
-		expect(potionTint.getTint(ItemStack.fromString('dummy:dummy[potion_contents={custom_effects:[{id:"jump_boost"}]}]'))).toEqual(Color.intToRgb(16646020))
+		expect(potionTint.getTint(ItemStack.fromString('dummy:dummy'), resources)).toEqual(TEST_COLOR)
+		expect(potionTint.getTint(ItemStack.fromString('dummy:dummy[potion_contents={custom_color:255}]'), resources)).toEqual([0, 0, 1])
+		expect(potionTint.getTint(ItemStack.fromString('dummy:dummy[potion_contents={potion:"water"}]'), resources)).toEqual(Color.intToRgb(-13083194))
+		expect(potionTint.getTint(ItemStack.fromString('dummy:dummy[potion_contents={potion:"leaping"}]'), resources)).toEqual(Color.intToRgb(16646020))
+		expect(potionTint.getTint(ItemStack.fromString('dummy:dummy[potion_contents={custom_effects:[{id:"jump_boost"}]}]'), resources)).toEqual(Color.intToRgb(16646020))
 	})
 
 	it('MapColor', () => {
 		const mapColorTint = new ItemTint.MapColor(TEST_COLOR)
-		expect(mapColorTint.getTint(ItemStack.fromString('dummy:dummy'))).toEqual(TEST_COLOR)
-		expect(mapColorTint.getTint(ItemStack.fromString('dummy:dummy[map_color=255]'))).toEqual([0, 0, 1])
+		expect(mapColorTint.getTint(ItemStack.fromString('dummy:dummy'), resources)).toEqual(TEST_COLOR)
+		expect(mapColorTint.getTint(ItemStack.fromString('dummy:dummy[map_color=255]'), resources)).toEqual([0, 0, 1])
 	})
 
 	it('CustomModelData', () => {
 		const customModelDataTint = new ItemTint.CustomModelData(1, TEST_COLOR)
-		expect(customModelDataTint.getTint(ItemStack.fromString('dummy:dummy'))).toEqual(TEST_COLOR)
-		expect(customModelDataTint.getTint(ItemStack.fromString('dummy:dummy[custom_model_data={colors:[[0,0,1]]}]'))).toEqual(TEST_COLOR)
-		expect(customModelDataTint.getTint(ItemStack.fromString('dummy:dummy[custom_model_data={colors:[[0.0,0.0,0.5],[0.0,0.0,1.0]]}]'))).toEqual([0, 0, 1])
+		expect(customModelDataTint.getTint(ItemStack.fromString('dummy:dummy'), resources)).toEqual(TEST_COLOR)
+		expect(customModelDataTint.getTint(ItemStack.fromString('dummy:dummy[custom_model_data={colors:[[0,0,1]]}]'), resources)).toEqual(TEST_COLOR)
+		expect(customModelDataTint.getTint(ItemStack.fromString('dummy:dummy[custom_model_data={colors:[[0.0,0.0,0.5],[0.0,0.0,1.0]]}]'), resources)).toEqual([0, 0, 1])
 	})
 
 	// not testing grass as its not properly implemented

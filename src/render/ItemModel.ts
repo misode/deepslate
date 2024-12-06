@@ -1,3 +1,4 @@
+import type { ItemComponentsProvider } from '../core/index.js'
 import { Identifier, ItemStack } from '../core/index.js'
 import { clamp } from '../math/index.js'
 import type { Color } from '../util/index.js'
@@ -88,7 +89,7 @@ export namespace ItemModel {
 
 			const tint = (i: number): Color => {
 				if (i < this.tints.length) {
-					return this.tints[i].getTint(item, context)
+					return this.tints[i].getTint(item, resources, context)
 				} else {
 					return [1, 1, 1]
 				}
@@ -115,16 +116,16 @@ export namespace ItemModel {
 
 	export class Condition {
 		constructor(
-			private readonly property: (item: ItemStack, context: ItemRenderingContext) => boolean,
+			private readonly property: (item: ItemStack, resources: ItemComponentsProvider, context: ItemRenderingContext) => boolean,
 			private readonly onTrue: ItemModel,
 			private readonly onFalse: ItemModel,
 		) {}
 
 		public getMesh(item: ItemStack, resources: ItemRendererResources, context: ItemRenderingContext): Mesh {
-			return (this.property(item, context) ? this.onTrue : this.onFalse).getMesh(item, resources, context)
+			return (this.property(item, resources, context) ? this.onTrue : this.onFalse).getMesh(item, resources, context)
 		}
 
-		static propertyFromJson(root: {[x: string]: unknown}): (item: ItemStack, context: ItemRenderingContext) => boolean {
+		static propertyFromJson(root: {[x: string]: unknown}): (item: ItemStack, resources: ItemComponentsProvider, context: ItemRenderingContext) => boolean {
 			const property = Json.readString(root.property)?.replace(/^minecraft:/, '')
 
 			switch (property){
@@ -132,34 +133,34 @@ export namespace ItemModel {
 				case 'selected':
 				case 'carried':
 				case 'extended_view':
-					return (item, context) => context[property] ?? false
+					return (item, resources, context) => context[property] ?? false
 				case 'view_entity':
-					return (item, context) => context.context_entity_is_view_entity ?? false
+					return (item, resources, context) => context.context_entity_is_view_entity ?? false
 				case 'using_item':
-					return (item, context) => (context.use_duration ?? -1) >= 0
+					return (item, resources, context) => (context.use_duration ?? -1) >= 0
 				case 'bundle/has_selected_item':
-					return (item, context) => (context['bundle/selected_item'] ?? -1) >= 0
-				case 'broken': return (item, context) => {
-					const damage = item.getComponent('damage')?.getAsNumber()
-					const max_damage = item.getComponent('max_damage')?.getAsNumber()
+					return (item, resources, context) => (context['bundle/selected_item'] ?? -1) >= 0
+				case 'broken': return (item, resources, context) => {
+					const damage = item.getComponent('damage', resources)?.getAsNumber()
+					const max_damage = item.getComponent('max_damage', resources)?.getAsNumber()
 					return (damage !== undefined && max_damage !== undefined && damage >= max_damage - 1)
 				}
-				case 'damaged': return (item, context) => {
-					const damage = item.getComponent('damage')?.getAsNumber()
-					const max_damage = item.getComponent('max_damage')?.getAsNumber()
+				case 'damaged': return (item, resources, context) => {
+					const damage = item.getComponent('damage', resources)?.getAsNumber()
+					const max_damage = item.getComponent('max_damage', resources)?.getAsNumber()
 					return (damage !== undefined && max_damage !== undefined && damage >= 1)
 				}
 				case 'has_component': 
 					const componentId = Identifier.parse(Json.readString(root.component) ?? '')
 					const ignore_default = Json.readBoolean(root.ignore_default) ?? false
-					return (item, context) => item.hasComponent(componentId)
+					return (item, resources, context) => item.hasComponent(componentId, ignore_default ? undefined : resources)
 				case 'keybind_down':
 					const keybind = Json.readString(root.keybind) ?? ''
-					return (item, context) => context.keybind_down?.includes(keybind) ?? false
+					return (item, resources, context) => context.keybind_down?.includes(keybind) ?? false
 				case 'custom_model_data':
 					const index = Json.readInt(root.index) ?? 0
-					return (item, context) => {
-						const tag = item.getComponent('custom_model_data')
+					return (item, resources, context) => {
+						const tag = item.getComponent('custom_model_data', resources)
 						if (!tag?.isCompound()) return false
 						const flag = tag.getList('flags').getNumber(index)
 						return flag !== undefined && flag !== 0
@@ -172,30 +173,30 @@ export namespace ItemModel {
 
 	export class Select {
 		constructor(
-			private readonly property: (item: ItemStack, context: ItemRenderingContext) => string | null,
+			private readonly property: (item: ItemStack, resources: ItemComponentsProvider, context: ItemRenderingContext) => string | null,
 			private readonly cases: Map<string, ItemModel>,
 			private readonly fallback?: ItemModel,
 		) {}
 
 		public getMesh(item: ItemStack, resources: ItemRendererResources, context: ItemRenderingContext): Mesh {
-			const value = this.property(item, context)
+			const value = this.property(item, resources, context)
 			return ((value !== null ? this.cases.get(value) : undefined) ?? this.fallback)?.getMesh(item, resources, context) ?? MISSING_MESH
 		}
 
-		static propertyFromJson(root: {[x: string]: unknown}): (item: ItemStack, context: ItemRenderingContext) => string | null {
+		static propertyFromJson(root: {[x: string]: unknown}): (item: ItemStack, resources: ItemComponentsProvider, context: ItemRenderingContext) => string | null {
 			const property = Json.readString(root.property)?.replace(/^minecraft:/, '')
 
 			switch (property){
 				case 'main_hand':
-					return (item, context) => context.main_hand ?? 'right'
+					return (item, resources, context) => context.main_hand ?? 'right'
 				case 'display_context':
-					return (item, context) => context.display_context ?? 'gui'
+					return (item, resources, context) => context.display_context ?? 'gui'
 				case 'context_dimension':
-					return (item, context) => context.context_dimension?.toString() ?? null
+					return (item, resources, context) => context.context_dimension?.toString() ?? null
 				case 'charge_type':
 					const FIREWORK = Identifier.create('firework_rocket')
-					return (item, context) => {
-						const tag = item.getComponent('charged_projectiles')
+					return (item, resources, context) => {
+						const tag = item.getComponent('charged_projectiles', resources)
 						if (!tag?.isList() || tag.length === 0) {
 							return 'none'
 						}
@@ -207,8 +208,8 @@ export namespace ItemModel {
 						}).length > 0 ? 'rocket' : 'arrow'
 					}
 				case 'trim_material':
-					return (item, context) => {
-						const tag = item.getComponent('trim')
+					return (item, resources, context) => {
+						const tag = item.getComponent('trim', resources)
 						if (!tag?.isCompound()) {
 							return null
 						}
@@ -216,20 +217,20 @@ export namespace ItemModel {
 					}
 				case 'block_state':
 					const block_state_property = Json.readString(root.block_state_property) ?? ''
-					return (item, context) => {
-						const tag = item.getComponent('block_state')
+					return (item, resources, context) => {
+						const tag = item.getComponent('block_state', resources)
 						if (!tag?.isCompound()) {
 							return null
 						}
 						return tag.getString(block_state_property)
 					}
-				case 'local_time': return (item, context) => 'NOT IMPLEMENTED'
+				case 'local_time': return (item, resources, context) => 'NOT IMPLEMENTED'
 				case 'context_entity_type':
-					return (item, context) => context.context_entity_type?.toString() ?? null
+					return (item, resources, context) => context.context_entity_type?.toString() ?? null
 				case 'custom_model_data':
 					const index = Json.readInt(root.index) ?? 0
-					return (item, context) => {
-						const tag = item.getComponent('custom_model_data')
+					return (item, resources, context) => {
+						const tag = item.getComponent('custom_model_data', resources)
 						if (!tag?.isCompound()) {
 							return null
 						}
@@ -250,7 +251,7 @@ export namespace ItemModel {
 		private readonly entries: {threshold: number, model: ItemModel}[]
 
 		constructor(
-			private readonly property: (item: ItemStack, context: ItemRenderingContext) => number,
+			private readonly property: (item: ItemStack, resources: ItemComponentsProvider, context: ItemRenderingContext) => number,
 			private readonly scale: number,
 			entries: {threshold: number, model: ItemModel}[],
 			private readonly fallback?: ItemModel,
@@ -259,7 +260,7 @@ export namespace ItemModel {
 		}
 
 		public getMesh(item: ItemStack, resources: ItemRendererResources, context: ItemRenderingContext): Mesh {
-			const value = this.property(item, context) * this.scale
+			const value = this.property(item, resources, context) * this.scale
 			let model = this.fallback
 			for (const entry of this.entries) {
 				if (entry.threshold <= value) {
@@ -271,13 +272,13 @@ export namespace ItemModel {
 			return model?.getMesh(item, resources, context) ?? MISSING_MESH
 		}
 
-		static propertyFromJson(root: {[x: string]: unknown}): (item: ItemStack, context: ItemRenderingContext) => number {
+		static propertyFromJson(root: {[x: string]: unknown}): (item: ItemStack, resources: ItemComponentsProvider, context: ItemRenderingContext) => number {
 			const property = Json.readString(root.property)?.replace(/^minecraft:/, '')
 
 			switch (property){	
 				case 'bundle/fullness':
-					function calculateBundleWeight(item: ItemStack): number {
-						const tag = item.getComponent('bundle_contents')
+					function calculateBundleWeight(item: ItemStack, resources: ItemComponentsProvider): number {
+						const tag = item.getComponent('bundle_contents', resources)
 						if (!tag?.isListOrArray()) {
 							return 0
 						}
@@ -286,38 +287,38 @@ export namespace ItemModel {
 							if (item === undefined) {
 								return weight
 							}
-							if (item.hasComponent('bundle_contents')) {
-								return weight + calculateBundleWeight(item) + 1/16
+							if (item.hasComponent('bundle_contents', resources)) {
+								return weight + calculateBundleWeight(item, resources) + 1/16
 							}
-							const beesTag = item.getComponent('bees')
+							const beesTag = item.getComponent('bees', resources)
 							if (beesTag?.isListOrArray() && beesTag.length > 0) {
 								return weight + 1
 							}
-							const maxStackSize = item.getComponent('max_stack_size')?.getAsNumber() ?? 1
+							const maxStackSize = item.getComponent('max_stack_size', resources)?.getAsNumber() ?? 1
 							return weight + item.count / maxStackSize
 						}, 0)
 					}
 
-					return (item, context) => calculateBundleWeight(item)
+					return (item, resources, context) => calculateBundleWeight(item, resources)
 				case 'damage': {
 					const normalize = Json.readBoolean(root.normalize) ?? true
-					return (item, context) => {
-						const maxDamage = item.getComponent('max_damage')?.getAsNumber() ?? 0
-						const damage = clamp(item.getComponent('damage')?.getAsNumber() ?? 0, 0, maxDamage)
+					return (item, resources, context) => {
+						const maxDamage = item.getComponent('max_damage', resources)?.getAsNumber() ?? 0
+						const damage = clamp(item.getComponent('damage', resources)?.getAsNumber() ?? 0, 0, maxDamage)
 						if (normalize) return clamp(damage / maxDamage, 0, 1)
 						return clamp(damage, 0, maxDamage)
 					}
 				}
 				case 'count': {
 					const normalize = Json.readBoolean(root.normalize) ?? true
-					return (item, context) => {
-						const maxStackSize = item.getComponent('max_stack_size')?.getAsNumber() ?? 1
+					return (item, resources, context) => {
+						const maxStackSize = item.getComponent('max_stack_size', resources)?.getAsNumber() ?? 1
 						if (normalize) return clamp(item.count / maxStackSize, 0, 1)
 						return clamp(item.count, 0, maxStackSize)
 					}
 				}
-				case 'cooldown': return (item, context) => {
-					const tag = item.getComponent('use_cooldown')
+				case 'cooldown': return (item, resources, context) => {
+					const tag = item.getComponent('use_cooldown', resources)
 					const cooldownGroup = tag?.isCompound()
 						? Identifier.parse(tag.getString('cooldown_group') ?? item.id)
 						: item.id
@@ -326,34 +327,34 @@ export namespace ItemModel {
 				case 'time': 
 					const source = Json.readString(root.source) ?? 'daytime'
 					switch (source) {
-						case 'moon_phase': return (item, context) => ((context.game_time ?? 0) / 24000 % 8) / 8
-						case 'random': return (item, context) => Math.random()
-						default: return (item, context) => {
+						case 'moon_phase': return (item, resources, context) => ((context.game_time ?? 0) / 24000 % 8) / 8
+						case 'random': return (item, resources, context) => Math.random()
+						default: return (item, resources, context) => {
 							const gameTime = context.game_time ?? 0
 							const linearTime = ((gameTime / 24000.0) % 1) - 0.25
 							const cosTime = 0.5 - Math.cos(linearTime * Math.PI) / 2.0
 							return (linearTime * 2.0 + cosTime) / 3
 						}
 					}
-				case 'compass': return (item, context) => context.compass_angle ?? 0 // TODO: calculate properly?
-				case 'crossbow/pull': return (item, context) => context['crossbow/pull'] ?? 0
+				case 'compass': return (item, resources, context) => context.compass_angle ?? 0 // TODO: calculate properly?
+				case 'crossbow/pull': return (item, resources, context) => context['crossbow/pull'] ?? 0
 				case 'use_duration':
 					const remaining = Json.readBoolean(root.remaining) ?? true
-					return (item, context) => {
+					return (item, resources, context) => {
 						if (context.use_duration === undefined || context.use_duration < 0) return 0
 						if (remaining) return Math.max((context.max_use_duration ?? 0) - (context.use_duration), 0)
 						return context.use_duration
 					}
 				case 'use_cycle':
 					const period = Json.readNumber(root.period) ?? 1
-					return (item, context) => {
+					return (item, resources, context) => {
 						if (context.use_duration === undefined || context.use_duration < 0) return 0
 						return Math.max((context.max_use_duration ?? 0) - (context.use_duration ?? 0), 0) % period
 					}
 				case 'custom_model_data':
 					const index = Json.readInt(root.index) ?? 0
-					return (item, context) => {
-						const tag = item.getComponent('custom_model_data')
+					return (item, resources, context) => {
+						const tag = item.getComponent('custom_model_data', resources)
 						if (!tag?.isCompound()) {
 							return 0
 						}
@@ -386,7 +387,7 @@ export namespace ItemModel {
 		public getMesh(item: ItemStack, resources: ItemRendererResources, context: ItemRenderingContext): Mesh {
 			const selectedItemIndex = context['bundle/selected_item']
 			if (selectedItemIndex === undefined || selectedItemIndex < 0) return new Mesh()
-			const tag = item.getComponent('bundle_contents')
+			const tag = item.getComponent('bundle_contents', resources)
 			if (!tag?.isListOrArray()) {
 				return new Mesh()
 			}

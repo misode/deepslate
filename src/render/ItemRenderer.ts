@@ -10,7 +10,7 @@ import type { TextureAtlasProvider } from './TextureAtlas.js'
 
 export interface ItemRendererResources extends BlockModelProvider, TextureAtlasProvider, ItemModelProvider, ItemComponentsProvider {}
 
-export type ItemRenderingContext = {
+export interface ItemRenderingContext {
 	display_context?: Display,
 
 	'fishing_rod/cast'?: boolean,

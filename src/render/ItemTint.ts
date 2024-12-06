@@ -1,8 +1,10 @@
-import type { ItemRenderingContext, ItemStack } from '../index.js'
-import { Color, Json, PotionContents } from '../index.js'
+import type { ItemComponentsProvider, ItemStack } from '../core/index.js'
+import { PotionContents } from '../core/index.js'
+import { Color, Json } from '../util/index.js'
+import type { ItemRenderingContext } from './ItemRenderer.js'
 
 export interface ItemTint {
-	getTint(item: ItemStack, context: ItemRenderingContext): Color
+	getTint(item: ItemStack, resources: ItemComponentsProvider, context: ItemRenderingContext): Color
 }
 
 const INVALID_COLOR: Color = [0, 0, 0]
@@ -54,8 +56,8 @@ export namespace ItemTint {
 	export class Dye {
 		constructor(public default_color: Color) {}
 
-		public getTint(item: ItemStack): Color {
-			const tag = item.getComponent('dyed_color')
+		public getTint(item: ItemStack, resources: ItemComponentsProvider): Color {
+			const tag = item.getComponent('dyed_color', resources)
 			if (!tag) {
 				return this.default_color
 			}
@@ -77,8 +79,8 @@ export namespace ItemTint {
 	export class Firework {
 		constructor(public default_color: Color) {}
 
-		public getTint(item: ItemStack): Color {
-			const tag = item.getComponent('firework_explosion')
+		public getTint(item: ItemStack, resources: ItemComponentsProvider): Color {
+			const tag = item.getComponent('firework_explosion', resources)
 			if (!tag?.isCompound()) {
 				return this.default_color
 			}
@@ -108,8 +110,8 @@ export namespace ItemTint {
 	export class Potion  {
 		constructor(public default_color: Color) {}		
 
-		public getTint(item: ItemStack): Color {
-			const tag = item.getComponent('potion_contents')
+		public getTint(item: ItemStack, resources: ItemComponentsProvider): Color {
+			const tag = item.getComponent('potion_contents', resources)
 			if (!tag) {
 				return this.default_color
 			}
@@ -121,8 +123,8 @@ export namespace ItemTint {
 	export class MapColor  {
 		constructor(public default_color: Color) {}
 
-		public getTint(item: ItemStack): Color {
-			const mapColor = item.getComponent('map_color')
+		public getTint(item: ItemStack, resources: ItemComponentsProvider): Color {
+			const mapColor = item.getComponent('map_color', resources)
 			if (!mapColor) {
 				return this.default_color
 			}
@@ -133,8 +135,8 @@ export namespace ItemTint {
 	export class CustomModelData  {
 		constructor(public index: number, public default_color: Color) {}		
 
-		public getTint(item: ItemStack): Color {
-			const tag = item.getComponent('custom_model_data')
+		public getTint(item: ItemStack, resources: ItemComponentsProvider): Color {
+			const tag = item.getComponent('custom_model_data', resources)
 			if (!tag?.isCompound()) {
 				return this.default_color
 			}
@@ -149,7 +151,7 @@ export namespace ItemTint {
 	export class Team  {
 		constructor(public default_color: Color) {}
 
-		public getTint(item: ItemStack, context: ItemRenderingContext): Color {
+		public getTint(item: ItemStack, resources: ItemComponentsProvider, context: ItemRenderingContext): Color {
 			return context.context_entity_team_color ?? this.default_color
 		}
 	}
