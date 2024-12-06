@@ -3,7 +3,8 @@ import { clamp } from '../math/index.js'
 import type { Color } from '../util/index.js'
 import { Json } from '../util/index.js'
 import { Cull } from './Cull.js'
-import type { ItemRendererResources, ItemRenderingContext } from './index.js'
+import type { ItemRendererResources, ItemRenderingContext } from './ItemRenderer.js'
+import { ItemRenderer } from './ItemRenderer.js'
 import { ItemTint } from './ItemTint.js'
 import { Mesh } from './Mesh.js'
 import { SpecialModel } from './SpecialModel.js'
@@ -394,14 +395,13 @@ export namespace ItemModel {
 				return new Mesh()
 			}
 			const selectedItem = ItemStack.fromNbt(selectedItemTag)
-			return new Mesh()
-			// return ItemRenderer.getItemMesh(selectedItem, resources, {
-			// 	...context,
-			// 	'bundle/selected_item': -1,
-			// 	selected: false,
-			// 	carried: false,
-			// 	use_duration: -1,
-			// })
+			return ItemRenderer.getItemMesh(selectedItem, resources, {
+				...context,
+				'bundle/selected_item': -1,
+				selected: false,
+				carried: false,
+				use_duration: -1,
+			})
 		}
 	}
 }
