@@ -1,8 +1,8 @@
 import type { ItemRenderingContext, ItemStack } from '../index.js'
 import { Color, Json, PotionContents } from '../index.js'
 
-export abstract class ItemTint {
-	public abstract getTint(item: ItemStack, context: ItemRenderingContext): Color
+export interface ItemTint {
+	getTint(item: ItemStack, context: ItemRenderingContext): Color
 }
 
 const INVALID_COLOR: Color = [0, 0, 0]
@@ -43,24 +43,16 @@ export namespace ItemTint {
 		}
 	}
 
-	export class Constant extends ItemTint{
-		constructor(
-			public value: Color
-		) {
-			super()
-		}
+	export class Constant {
+		constructor(public value: Color) {}
 
 		public getTint(item: ItemStack): Color {
 			return this.value
 		}
 	}
 
-	export class Dye extends ItemTint{
-		constructor(
-			public default_color: Color
-		) {
-			super()
-		}
+	export class Dye {
+		constructor(public default_color: Color) {}
 
 		public getTint(item: ItemStack): Color {
 			const tag = item.getComponent('dyed_color')
@@ -74,25 +66,16 @@ export namespace ItemTint {
 		}
 	}	
 
-	export class Grass extends ItemTint{
-		constructor(
-			public temperature: number,
-			public downfall: number
-		) {
-			super()
-		}
+	export class Grass {
+		constructor(public temperature: number, public downfall: number) {}
 
 		public getTint(item: ItemStack): Color {
 			return  [124 / 255, 189 / 255, 107 / 255] // TODO: this is hardcoded to the same value as for blocks
 		}
 	}
 
-	export class Firework extends ItemTint{
-		constructor(
-			public default_color: Color
-		) {
-			super()
-		}
+	export class Firework {
+		constructor(public default_color: Color) {}
 
 		public getTint(item: ItemStack): Color {
 			const tag = item.getComponent('firework_explosion')
@@ -122,12 +105,8 @@ export namespace ItemTint {
 		}
 	}
 
-	export class Potion extends ItemTint {
-		constructor(
-			public default_color: Color
-		) {
-			super()
-		}		
+	export class Potion  {
+		constructor(public default_color: Color) {}		
 
 		public getTint(item: ItemStack): Color {
 			const tag = item.getComponent('potion_contents')
@@ -139,12 +118,8 @@ export namespace ItemTint {
 		}
 	}
 
-	export class MapColor extends ItemTint {
-		constructor(
-			public default_color: Color
-		) {
-			super()
-		}		
+	export class MapColor  {
+		constructor(public default_color: Color) {}
 
 		public getTint(item: ItemStack): Color {
 			const mapColor = item.getComponent('map_color')
@@ -155,13 +130,8 @@ export namespace ItemTint {
 		}
 	}
 
-	export class CustomModelData extends ItemTint {
-		constructor(
-			public index: number,
-			public default_color: Color
-		) {
-			super()
-		}		
+	export class CustomModelData  {
+		constructor(public index: number, public default_color: Color) {}		
 
 		public getTint(item: ItemStack): Color {
 			const tag = item.getComponent('custom_model_data')
@@ -176,12 +146,8 @@ export namespace ItemTint {
 		}
 	}
 
-	export class Team extends ItemTint {
-		constructor(
-			public default_color: Color
-		) {
-			super()
-		}
+	export class Team  {
+		constructor(public default_color: Color) {}
 
 		public getTint(item: ItemStack, context: ItemRenderingContext): Color {
 			return context.context_entity_team_color ?? this.default_color

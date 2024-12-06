@@ -1,5 +1,6 @@
 import { mat4 } from 'gl-matrix'
-import { BlockState, Direction, Identifier } from '../core/index.js'
+import type { BlockState } from '../core/index.js'
+import { Direction, Identifier } from '../core/index.js'
 import { BlockColors } from './BlockColors.js'
 import { BlockModel } from './BlockModel.js'
 import { Cull } from './Cull.js'

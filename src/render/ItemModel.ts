@@ -12,10 +12,8 @@ export interface ItemModelProvider {
 	getItemModel(id: Identifier): ItemModel | null
 }
 
-export abstract class ItemModel {
-
-	public abstract getMesh(item: ItemStack, resources: ItemRendererResources, context: ItemRenderingContext): Mesh
-
+export interface ItemModel {
+	getMesh(item: ItemStack, resources: ItemRendererResources, context: ItemRenderingContext): Mesh
 }
 
 const MISSING_MESH: Mesh = new Mesh() ///TODO
@@ -69,21 +67,19 @@ export namespace ItemModel {
 		}
 	}
 
-	export class Empty extends ItemModel {
-		public getMesh(item: ItemStack, resources: ItemRendererResources, context: ItemRenderingContext): Mesh{
+	export class Empty {
+		public getMesh(item: ItemStack, resources: ItemRendererResources, context: ItemRenderingContext): Mesh {
 			return new Mesh()
 		}
 	}
 
-	export class Model extends ItemModel {
+	export class Model {
 		constructor(
 			private readonly modelId: Identifier,
-			private readonly tints: ItemTint[]
-		) {
-			super()
-		}
+			private readonly tints: ItemTint[],
+		) {}
 
-		public getMesh(item: ItemStack, resources: ItemRendererResources, context: ItemRenderingContext): Mesh{
+		public getMesh(item: ItemStack, resources: ItemRendererResources, context: ItemRenderingContext): Mesh {
 			const model = resources.getBlockModel(this.modelId)
 			if (!model) {
 				throw new Error(`Model ${this.modelId} does not exist (trying to render ${item.toString()})`)
@@ -104,12 +100,10 @@ export namespace ItemModel {
 
 	}
 
-	export class Composite extends ItemModel {
+	export class Composite {
 		constructor(
-			private readonly models: ItemModel[]
-		) {
-			super()
-		}
+			private readonly models: ItemModel[],
+		) {}
 
 		public getMesh(item: ItemStack, resources: ItemRendererResources, context: ItemRenderingContext): Mesh {
 			const mesh = new Mesh()
@@ -118,20 +112,18 @@ export namespace ItemModel {
 		}
 	}
 
-	export class Condition extends ItemModel {
+	export class Condition {
 		constructor(
 			private readonly property: (item: ItemStack, context: ItemRenderingContext) => boolean,
 			private readonly onTrue: ItemModel,
-			private readonly onFalse: ItemModel
-		) {
-			super()
-		}
+			private readonly onFalse: ItemModel,
+		) {}
 
 		public getMesh(item: ItemStack, resources: ItemRendererResources, context: ItemRenderingContext): Mesh {
 			return (this.property(item, context) ? this.onTrue : this.onFalse).getMesh(item, resources, context)
 		}
 
-		static propertyFromJson(root: {[x: string]: unknown}): (item: ItemStack, context: ItemRenderingContext) => boolean{
+		static propertyFromJson(root: {[x: string]: unknown}): (item: ItemStack, context: ItemRenderingContext) => boolean {
 			const property = Json.readString(root.property)?.replace(/^minecraft:/, '')
 
 			switch (property){
@@ -177,21 +169,19 @@ export namespace ItemModel {
 		}		
 	}
 
-	export class Select extends ItemModel {
+	export class Select {
 		constructor(
 			private readonly property: (item: ItemStack, context: ItemRenderingContext) => string | null,
 			private readonly cases: Map<string, ItemModel>,
-			private readonly fallback?: ItemModel
-		) {
-			super()
-		}
+			private readonly fallback?: ItemModel,
+		) {}
 
 		public getMesh(item: ItemStack, resources: ItemRendererResources, context: ItemRenderingContext): Mesh {
 			const value = this.property(item, context)
 			return ((value !== null ? this.cases.get(value) : undefined) ?? this.fallback)?.getMesh(item, resources, context) ?? MISSING_MESH
 		}
 
-		static propertyFromJson(root: {[x: string]: unknown}): (item: ItemStack, context: ItemRenderingContext) => string | null{
+		static propertyFromJson(root: {[x: string]: unknown}): (item: ItemStack, context: ItemRenderingContext) => string | null {
 			const property = Json.readString(root.property)?.replace(/^minecraft:/, '')
 
 			switch (property){
@@ -255,16 +245,15 @@ export namespace ItemModel {
 		}
 	}
 
-	export class RangeDispatch extends ItemModel {
+	export class RangeDispatch {
 		private readonly entries: {threshold: number, model: ItemModel}[]
 
 		constructor(
 			private readonly property: (item: ItemStack, context: ItemRenderingContext) => number,
 			private readonly scale: number,
 			entries: {threshold: number, model: ItemModel}[],
-			private readonly fallback?: ItemModel
+			private readonly fallback?: ItemModel,
 		) {
-			super()
 			this.entries = entries.sort((a, b) => a.threshold - b.threshold)
 		}
 
@@ -375,13 +364,11 @@ export namespace ItemModel {
 		}
 	}
 
-	export class Special extends ItemModel {
+	export class Special {
 		constructor(
 			private readonly specialModel: SpecialModel,
-			private readonly base: Identifier
-		) {
-			super()
-		}
+			private readonly base: Identifier,
+		) {}
 
 		public getMesh(item: ItemStack, resources: ItemRendererResources, context: ItemRenderingContext): Mesh {
 			const mesh = this.specialModel.getMesh(item, resources)
@@ -394,7 +381,7 @@ export namespace ItemModel {
 		}
 	}
 
-	export class BundleSelectedItem extends ItemModel {
+	export class BundleSelectedItem {
 		public getMesh(item: ItemStack, resources: ItemRendererResources, context: ItemRenderingContext): Mesh {
 			const selectedItemIndex = context['bundle/selected_item']
 			if (selectedItemIndex === undefined || selectedItemIndex < 0) return new Mesh()

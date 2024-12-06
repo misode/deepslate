@@ -1,15 +1,14 @@
-import { mat4 } from "gl-matrix"
-import { Direction, Identifier, ItemStack, Json, SpecialRenderers, TextureAtlasProvider } from "../index.js"
-import { Mesh } from "./Mesh.js"
+import { mat4 } from 'gl-matrix'
+import type { Direction, ItemStack, TextureAtlasProvider } from '../index.js'
+import { Identifier, Json, SpecialRenderers } from '../index.js'
+import { Mesh } from './Mesh.js'
 
-
-
-export abstract class SpecialModel {
-	public abstract getMesh(item: ItemStack, resources: TextureAtlasProvider): Mesh
+export interface SpecialModel {
+	getMesh(item: ItemStack, resources: TextureAtlasProvider): Mesh
 }
 
 export namespace SpecialModel {
-	export function fromJson(obj: unknown) {
+	export function fromJson(obj: unknown): SpecialModel {
 		const root = Json.readObject(obj) ?? {}
 		const type = Json.readString(root.type)?.replace(/^minecraft:/, '')
 		switch (type) {
@@ -50,32 +49,26 @@ export namespace SpecialModel {
 		}
 	}
 
-	class Bed extends SpecialModel {
+	class Bed {
 		private readonly renderer
 
-		constructor(
-			texture: Identifier
-		) {
-			super()
+		constructor(texture: Identifier) {
 			this.renderer = SpecialRenderers.bedRenderer(texture)
 		}
 
 		public getMesh(item: ItemStack, resources: TextureAtlasProvider): Mesh {
-			const headMesh = this.renderer("head", resources)
-			const footMesh = this.renderer("foot", resources)
+			const headMesh = this.renderer('head', resources)
+			const footMesh = this.renderer('foot', resources)
 			const t = mat4.create()
 			mat4.translate(t, t, [0, 0, -16])
 			return headMesh.merge(footMesh.transform(t))
 		}
 	}
 
-	class Banner extends SpecialModel {
+	class Banner {
 		private readonly renderer
 
-		constructor(
-			color: string
-		) {
-			super()
+		constructor(color: string) {
 			this.renderer = SpecialRenderers.bannerRenderer(color)
 		}
 
@@ -84,24 +77,19 @@ export namespace SpecialModel {
 		}
 	}
 
-	class Conduit extends SpecialModel {
-		constructor() {
-			super()
-		}
-
+	class Conduit {
 		public getMesh(item: ItemStack, resources: TextureAtlasProvider): Mesh {
 			return SpecialRenderers.conduitRenderer(resources)
 		}
 	}
 
-	class Chest extends SpecialModel {
+	class Chest {
 		private readonly renderer
 
 		constructor(
 			texture: Identifier,
 			openness: number
 		) {
-			super()
 			this.renderer = SpecialRenderers.chestRenderer(texture)
 		}
 
@@ -114,24 +102,18 @@ export namespace SpecialModel {
 		}
 	}
 
-	class Head extends SpecialModel {
+	class Head {
 		private readonly renderer
 
-		constructor(
-			kind: string,
-			texture: Identifier | undefined,
-			animation: number
-		) {
-			super()
-
+		constructor(kind: string, texture: Identifier | undefined, animation: number) {
 			this.renderer = ({
-				'skeleton': () => SpecialRenderers.headRenderer(texture ?? Identifier.create('skeleton/skeleton'), 2),
-				'wither_skeleton': () => SpecialRenderers.headRenderer(texture ?? Identifier.create('skeleton/wither_skeleton'), 2),
-				'zombie': () => SpecialRenderers.headRenderer(texture ?? Identifier.create('zombie/zombie'), 1),
-				'creeper': () => SpecialRenderers.headRenderer(texture ?? Identifier.create('creeper/creeper'), 2),
-				'dragon': () => SpecialRenderers.dragonHeadRenderer(texture),
-				'piglin': () => SpecialRenderers.piglinHeadRenderer(texture),
-				'player': () => SpecialRenderers.headRenderer(texture ?? Identifier.create('player/wide/steve'), 1), // TODO: fix texture
+				skeleton: () => SpecialRenderers.headRenderer(texture ?? Identifier.create('skeleton/skeleton'), 2),
+				wither_skeleton: () => SpecialRenderers.headRenderer(texture ?? Identifier.create('skeleton/wither_skeleton'), 2),
+				zombie: () => SpecialRenderers.headRenderer(texture ?? Identifier.create('zombie/zombie'), 1),
+				creeper: () => SpecialRenderers.headRenderer(texture ?? Identifier.create('creeper/creeper'), 2),
+				dragon: () => SpecialRenderers.dragonHeadRenderer(texture),
+				piglin: () => SpecialRenderers.piglinHeadRenderer(texture),
+				player: () => SpecialRenderers.headRenderer(texture ?? Identifier.create('player/wide/steve'), 1), // TODO: fix texture
 			}[kind] ?? (() => () => new Mesh()))()
 		}
 
@@ -140,16 +122,10 @@ export namespace SpecialModel {
 		}
 	}
 
-	class ShulkerBox extends SpecialModel {
+	class ShulkerBox {
 		private readonly renderer
 
-		constructor(
-			texture: Identifier,
-			openness: number,
-			orientation: Direction
-		) {
-			super()
-
+		constructor(texture: Identifier, openness: number, orientation: Direction) {
 			this.renderer = SpecialRenderers.shulkerBoxRenderer(texture)
 		}
 
@@ -158,11 +134,7 @@ export namespace SpecialModel {
 		}
 	}
 
-	class Shield extends SpecialModel {
-		constructor() {
-			super()
-		}
-
+	class Shield {
 		public getMesh(item: ItemStack, resources: TextureAtlasProvider): Mesh {
 			const shieldMesh = SpecialRenderers.shieldRenderer(resources)
 			const t = mat4.create()
@@ -174,35 +146,22 @@ export namespace SpecialModel {
 		}
 	}
 
-	class Trident extends SpecialModel {
-		constructor() {
-			super()
-		}
-
+	class Trident {
 		public getMesh(item: ItemStack, resources: TextureAtlasProvider): Mesh {
 			return new Mesh() // TODO
 		}
 	}
 	
-	class DecoratedPot extends SpecialModel {
-		constructor() {
-			super()
-		}
-
+	class DecoratedPot {
 		public getMesh(item: ItemStack, resources: TextureAtlasProvider): Mesh {
 			return SpecialRenderers.decoratedPotRenderer(resources)
 		}
 	}	
 
-	class StandingSign extends SpecialModel {
+	class StandingSign {
 		private readonly renderer
 
-		constructor(
-			wood_type: string,
-			texture?: Identifier
-		) {
-			super()
-
+		constructor(wood_type: string, texture?: Identifier) {
 			this.renderer = SpecialRenderers.signRenderer(texture ?? Identifier.create(wood_type))
 		}
 
@@ -211,15 +170,10 @@ export namespace SpecialModel {
 		}
 	}
 
-	class HangingSign extends SpecialModel {
+	class HangingSign {
 		private readonly renderer
 
-		constructor(
-			wood_type: string,
-			texture?: Identifier
-		) {
-			super()
-
+		constructor(wood_type: string, texture?: Identifier) {
 			this.renderer = SpecialRenderers.hangingSignRenderer(texture ?? Identifier.create(wood_type))
 		}
 
