@@ -10,9 +10,9 @@ export interface ItemComponentsProvider {
 
 export class ItemStack {
 	constructor(
-		public readonly id: Identifier,
+		public id: Identifier,
 		public count: number,
-		public readonly components: Map<string, NbtTag> = new Map(),
+		public components: Map<string, NbtTag> = new Map(),
 	) {}
 
 	public getComponent<T>(key: string | Identifier, baseComponents?: ItemComponentsProvider): NbtTag | undefined {
