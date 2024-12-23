@@ -881,13 +881,13 @@ export namespace SpecialRenderers {
 
 
 	export function getBlockMesh(block: BlockState, atlas: TextureAtlasProvider, cull: Cull): Mesh {
+		const mesh = new Mesh()
 		if (block.is('water')) {
-			return liquidRenderer('water', getInt(block, 'level'), atlas, cull, 0)
+			mesh.merge(liquidRenderer('water', getInt(block, 'level'), atlas, cull, 0))
 		}
 		if (block.is('lava')) {
-			return liquidRenderer('lava', getInt(block, 'level'), atlas, cull)
+			mesh.merge(liquidRenderer('lava', getInt(block, 'level'), atlas, cull))
 		}
-		const mesh = new Mesh()
 		const chestRenderer = ChestRenderers.get(block.getName().toString())
 		if (chestRenderer !== undefined) {
 			const facing = getStr(block, 'facing', 'south')
@@ -1004,7 +1004,7 @@ export namespace SpecialRenderers {
 			mesh.merge(wallBannerRenderer(atlas).transform(t))
 		}
 
-		if (block.isWaterlogged()) {
+		if (!block.is('water') && !block.is('lava') && block.isWaterlogged()) {
 			mesh.merge(liquidRenderer('water', 0, atlas, cull, 0))
 		}
 
