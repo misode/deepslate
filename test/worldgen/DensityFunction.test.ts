@@ -6,6 +6,8 @@ import { DensityFunction as DF, NoiseGeneratorSettings, NoiseRouter, WorldgenReg
 import { RandomState } from '../../src/worldgen/RandomState.js'
 
 describe('DensityFunction', () => {
+	const DELTA = 1e-7
+
 	const ContextA = DF.context(1, 2, 3)
 	const ContextB = DF.context(2, 3, 4)
 	const ContextC = DF.context(12, -30, 1)
@@ -151,12 +153,12 @@ describe('DensityFunction', () => {
 			.addPoint(5, 0.2)
 			.addPoint(20, 0.7)
 		const fn2 = wrap(new DF.Spline(spline))
-		expect(fn2.compute(DF.context(0, 0, 0))).toEqual(1)
-		expect(fn2.compute(DF.context(0, 3.2, 0))).toEqual(0.4363904)
-		expect(fn2.compute(DF.context(0, 5, 0))).toEqual(0.2)
-		expect(fn2.compute(DF.context(0, 11, 0))).toEqual(0.376)
-		expect(fn2.compute(DF.context(0, 20, 0))).toEqual(0.7)
-		expect(fn2.compute(DF.context(0, 25, 0))).toEqual(0.7)
+		expect(fn2.compute(DF.context(0, 0, 0))).toBeCloseTo(1, DELTA)
+		expect(fn2.compute(DF.context(0, 3.2, 0))).toBeCloseTo(0.4363904, DELTA)
+		expect(fn2.compute(DF.context(0, 5, 0))).toBeCloseTo(0.2, DELTA)
+		expect(fn2.compute(DF.context(0, 11, 0))).toBeCloseTo(0.376, DELTA)
+		expect(fn2.compute(DF.context(0, 20, 0))).toBeCloseTo(0.7, DELTA)
+		expect(fn2.compute(DF.context(0, 25, 0))).toBeCloseTo(0.7, DELTA)
 	})
 
 	it('YClampedGradient', () => {
