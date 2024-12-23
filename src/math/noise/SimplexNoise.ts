@@ -29,16 +29,16 @@ export class SimplexNoise {
 	}
 
 	public sample2D(d: number, d2: number) {
-		let d3
-		let n3
-		let d4
 		const d6 = (d + d2) * SimplexNoise.F2
 		const n4 = intFloor(d + d6)
-		const d7 = n4 - (d3 = (n4 + (n3 = intFloor(d2 + d6))) * SimplexNoise.G2)
+		const n3 = intFloor(d2 + d6)
+		const d3 = (n4 + n3) * SimplexNoise.G2
+		const d7 = n4 - d3
 		const d8 = d - d7
 		let a
 		let b
-		if (d8 > (d4 = d2 - (n3 - d3))) {
+		const d4 = d2 - (n3 - d3)
+		if (d8 > d4) {
 			a = 1
 			b = 0
 		} else {
