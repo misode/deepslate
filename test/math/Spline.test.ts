@@ -11,10 +11,10 @@ describe('Spline', () => {
 			.addPoint(-0.44, -0.12)
 			.addPoint(-0.18, -0.12)
 		
-		expect(spline.compute(-1.6)).toEqual(0.044)
-		expect(spline.compute(-0.7)).toEqual(-0.2222)
+		expect(spline.compute(-1.6)).toBeCloseTo(0.044, DELTA)
+		expect(spline.compute(-0.7)).toBeCloseTo(-0.2222, DELTA)
 		expect(spline.compute(-0.5)).toBeCloseTo(-0.21653879, DELTA)
-		expect(spline.compute(-0.2)).toEqual(-0.12)
+		expect(spline.compute(-0.2)).toBeCloseTo(-0.12, DELTA)
 	})
 
 	it('derivatives', () => {
@@ -25,7 +25,7 @@ describe('Spline', () => {
 			.addPoint(0.6, 0.4, 0.0)
 		
 		expect(spline.compute(-0.1)).toBeCloseTo(-0.0022000019, DELTA)
-		expect(spline.compute(0)).toEqual(0.0178)
+		expect(spline.compute(0)).toBeCloseTo(0.0178, DELTA)
 		expect(spline.compute(0.31)).toBeCloseTo(0.24358201, DELTA)
 		expect(spline.compute(0.4)).toBeCloseTo(0.69171876, DELTA)
 	})

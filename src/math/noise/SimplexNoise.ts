@@ -1,4 +1,5 @@
 import type { Random } from '../random/index.js'
+import { intFloor } from '../Util.js'
 
 export class SimplexNoise {
 	private static readonly GRADIENT = [[1, 1, 0], [-1, 1, 0], [1, -1, 0], [-1, -1, 0], [1, 0, 1], [-1, 0, 1], [1, 0, -1], [-1, 0, -1], [0, 1, 1], [0, -1, 1], [0, 1, -1], [0, -1, -1], [1, 1, 0], [0, -1, 1], [-1, 1, 0], [0, -1, -1]]
@@ -28,16 +29,16 @@ export class SimplexNoise {
 	}
 
 	public sample2D(d: number, d2: number) {
-		let d3
-		let n3
-		let d4
 		const d6 = (d + d2) * SimplexNoise.F2
-		const n4 = Math.floor(d + d6)
-		const d7 = n4 - (d3 = (n4 + (n3 = Math.floor(d2 + d6))) * SimplexNoise.G2)
+		const n4 = intFloor(d + d6)
+		const n3 = intFloor(d2 + d6)
+		const d3 = (n4 + n3) * SimplexNoise.G2
+		const d7 = n4 - d3
 		const d8 = d - d7
 		let a
 		let b
-		if (d8 > (d4 = d2 - (n3 - d3))) {
+		const d4 = d2 - (n3 - d3)
+		if (d8 > d4) {
 			a = 1
 			b = 0
 		} else {
@@ -61,9 +62,9 @@ export class SimplexNoise {
 
 	public sample(x: number, y: number, z: number) {
 		const d5 = (x + y + z) * 0.3333333333333333
-		const x2 = Math.floor(x + d5)
-		const y2 = Math.floor(y + d5)
-		const z2 = Math.floor(z + d5)
+		const x2 = intFloor(x + d5)
+		const y2 = intFloor(y + d5)
+		const z2 = intFloor(z + d5)
 		const d7 = (x2 + y2 + z2) * 0.16666666666666666
 		const x3 = x - (x2 - d7)
 		const y3 = y - (y2 - d7)
