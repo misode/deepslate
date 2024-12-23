@@ -12,6 +12,10 @@ export function lerp(a: number, b: number, c: number): number {
 	return b + a * (c - b)
 }
 
+export function flerp(a: number, b: number, c: number): number {
+	return Math.fround(b + Math.fround(a * Math.fround(c - b)))
+}
+
 export function lerp2(a: number, b: number, c: number, d: number, e: number, f: number): number {
 	return lerp(b, lerp(a, c, d), lerp(a, e, f))
 }

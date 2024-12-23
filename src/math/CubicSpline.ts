@@ -1,5 +1,5 @@
 import { Json } from '../util/index.js'
-import { binarySearch, lerp } from './Util.js'
+import { binarySearch, flerp } from './Util.js'
 
 export interface NumberFunction<C> {
 	compute(c: C): number,
@@ -90,14 +90,14 @@ export namespace CubicSpline {
 			const loc1 = this.locations[i + 1]
 			const der0 = this.derivatives[i]
 			const der1 = this.derivatives[i + 1]
-			const f = (coordinate - loc0) / (loc1 - loc0)
-	
+			const f = Math.fround(Math.fround(coordinate - loc0) / Math.fround(loc1 - loc0))
+
 			const val0 = this.values[i].compute(c)
 			const val1 = this.values[i + 1].compute(c)
-			
-			const f8 = der0 * (loc1 - loc0) - (val1 - val0)
-			const f9 = -der1 * (loc1 - loc0) + (val1 - val0)
-			const f10 = lerp(f, val0, val1) + f * (1.0 - f) * lerp(f, f8, f9)
+
+			const f8 = Math.fround(Math.fround(der0 * Math.fround(loc1 - loc0)) - Math.fround(val1 - val0))
+			const f9 = Math.fround(Math.fround(-der1 * Math.fround(loc1 - loc0)) + Math.fround(val1 - val0))
+			const f10 = Math.fround(flerp(f, val0, val1) + Math.fround(f * (1.0 - f) * flerp(f, f8, f9)))
 			return f10
 		}
 
@@ -114,11 +114,11 @@ export namespace CubicSpline {
 		}
 	
 		public addPoint(location: number, value: number | CubicSpline<C>, derivative = 0) {
-			this.locations.push(location)
+			this.locations.push(Math.fround(location))
 			this.values.push(typeof value === 'number'
-				? new CubicSpline.Constant(value)
+				? new CubicSpline.Constant(Math.fround(value))
 				: value)
-			this.derivatives.push(derivative)
+			this.derivatives.push(Math.fround(derivative))
 			return this
 		}
 
@@ -159,7 +159,7 @@ export namespace CubicSpline {
 			for (var i = 0; i < lastIdx; ++i) {
 				const locationLeft = this.locations[i]
 				const locationRight = this.locations[i + 1]
-				const locationDelta = locationRight - locationLeft
+				const locationDelta = Math.fround(locationRight - locationLeft)
 				const splineLeft = this.values[i]
 				const splineRight = this.values[i + 1]
 				const minLeft = splineLeft.min()
@@ -169,18 +169,18 @@ export namespace CubicSpline {
 				const derivativeLeft = this.derivatives[i]
 				const derivativeRight = this.derivatives[i + 1]
 				if (derivativeLeft !== 0.0 || derivativeRight !== 0.0) {
-					const maxValueDeltaLeft = derivativeLeft * locationDelta
-					const maxValueDeltaRight = derivativeRight * locationDelta
+					const maxValueDeltaLeft = Math.fround(derivativeLeft * locationDelta)
+					const maxValueDeltaRight = Math.fround(derivativeRight * locationDelta)
 					const minValue = Math.min(minLeft, minRight)
 					const maxValue = Math.max(maxLeft, maxRight)
-					const minDeltaLeft = maxValueDeltaLeft - maxRight + minLeft
-					const maxDeltaLeft = maxValueDeltaLeft - minRight + maxLeft
-					const minDeltaRight = -maxValueDeltaRight + minRight - maxLeft
-					const maxDeltaRight = -maxValueDeltaRight + maxRight - minLeft
+					const minDeltaLeft = Math.fround(maxValueDeltaLeft - maxRight + minLeft)
+					const maxDeltaLeft = Math.fround(maxValueDeltaLeft - minRight + maxLeft)
+					const minDeltaRight = Math.fround(-maxValueDeltaRight + minRight - maxLeft)
+					const maxDeltaRight = Math.fround(-maxValueDeltaRight + maxRight - minLeft)
 					const minDelta = Math.min(minDeltaLeft, minDeltaRight)
 					const maxDelta = Math.max(maxDeltaLeft, maxDeltaRight)
-					splineMin = Math.min(splineMin, minValue + 0.25 * minDelta)
-					splineMax = Math.max(splineMax, maxValue + 0.25 * maxDelta)
+					splineMin = Math.min(splineMin, Math.fround(minValue + 0.25 * minDelta))
+					splineMax = Math.max(splineMax, Math.fround(maxValue + 0.25 * maxDelta))
 				}
 			}
 
@@ -191,7 +191,10 @@ export namespace CubicSpline {
 
 		private static linearExtend(location: number, locations: number[], value: number, derivatives: number[], useIndex: number) {
 			const derivative = derivatives[useIndex]
-			return derivative == 0.0 ? value : value + derivative * (location - locations[useIndex])
+			if (derivative == 0) {
+				return value
+			}
+			return Math.fround(value + Math.fround(derivative * Math.fround(location - locations[useIndex])))
 		}
 	}
 }
