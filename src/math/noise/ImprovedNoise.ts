@@ -1,5 +1,5 @@
 import type { Random } from '../random/index.js'
-import { lerp3, smoothstep } from '../Util.js'
+import { intFloor, lerp3, smoothstep } from '../Util.js'
 import { SimplexNoise } from './SimplexNoise.js'
 
 export class ImprovedNoise {
@@ -29,9 +29,9 @@ export class ImprovedNoise {
 		const x2 = x + this.xo
 		const y2 = y + this.yo
 		const z2 = z + this.zo
-		const x3 = Math.floor(x2)
-		const y3 = Math.floor(y2)
-		const z3 = Math.floor(z2)
+		const x3 = intFloor(x2)
+		const y3 = intFloor(y2)
+		const z3 = intFloor(z2)
 		const x4 = x2 - x3
 		const y4 = y2 - y3
 		const z4 = z2 - z3
@@ -39,7 +39,7 @@ export class ImprovedNoise {
 		let y6 = 0
 		if (yScale !== 0) {
 			const t = yLimit >= 0 && yLimit < y4 ? yLimit : y4
-			y6 = Math.floor(t / yScale + 1e-7) * yScale
+			y6 = intFloor(t / yScale + 1e-7) * yScale
 		}
 
 		return this.sampleAndLerp(x3, y3, z3, x4, y4 - y6, z4, y4)

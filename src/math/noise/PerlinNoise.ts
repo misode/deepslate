@@ -1,6 +1,6 @@
 import type { Random } from '../random/index.js'
 import { XoroshiroRandom } from '../random/index.js'
-import { clamp } from '../Util.js'
+import { longFloor } from '../Util.js'
 import { ImprovedNoise } from './ImprovedNoise.js'
 
 export class PerlinNoise {
@@ -80,6 +80,6 @@ export class PerlinNoise {
 	}
 
 	public static wrap(value: number) {
-		return value - clamp(Math.floor(value / 3.3554432E7 + 0.5), -2^63+1, 2^63-1) * 3.3554432E7
+		return value - longFloor(value / 3.3554432E7 + 0.5) * 3.3554432E7
 	}
 }

@@ -1,5 +1,10 @@
 import type { Random } from './random/index.js'
 
+const MIN_INT = -2147483648
+const MAX_INT = 2147483647
+const MIN_LONG = -9223372036854776000
+const MAX_LONG = 9223372036854776000
+
 export function square(x: number) {
 	return x * x
 }
@@ -62,6 +67,14 @@ export function map(a: number, b: number, c: number, d: number, e: number) {
 
 export function clampedMap(a: number, b: number, c: number, d: number, e: number) {
 	return clampedLerp(d, e, inverseLerp(a, b, c))
+}
+
+export function intFloor(a: number) {
+	return clamp(Math.floor(a), MIN_INT, MAX_INT)
+}
+
+export function longFloor(a: number) {
+	return clamp(Math.floor(a), MIN_LONG, MAX_LONG)
 }
 
 export function binarySearch(n: number, n2: number, predicate: (value: number) => boolean) {
