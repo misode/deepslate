@@ -1,5 +1,5 @@
 import { Json } from '../util/index.js'
-import { binarySearch, flerp } from './Util.js'
+import { binarySearch, floatLerp } from './Util.js'
 
 export interface NumberFunction<C> {
 	compute(c: C): number,
@@ -80,11 +80,12 @@ export namespace CubicSpline {
 			const coordinate = this.coordinate.compute(c)
 			const i = binarySearch(0, this.locations.length, n => coordinate < this.locations[n]) - 1
 			const n = this.locations.length - 1
+			// TODO: use linear extend for this 
 			if (i < 0) {
-				return this.values[0].compute(c) + this.derivatives[0] * (coordinate - this.locations[0])  //TODO: us linear extend for this 
+				return Math.fround(this.values[0].compute(c) + Math.fround(this.derivatives[0] * Math.fround(coordinate - this.locations[0])))
 			}
 			if (i === n) {
-				return this.values[n].compute(c) + this.derivatives[n] * (coordinate - this.locations[n])  //TODO: us linear extend for this 
+				return Math.fround(this.values[n].compute(c) + Math.fround(this.derivatives[n] * Math.fround(coordinate - this.locations[n])))
 			}
 			const loc0 = this.locations[i]
 			const loc1 = this.locations[i + 1]
@@ -97,7 +98,7 @@ export namespace CubicSpline {
 
 			const f8 = Math.fround(Math.fround(der0 * Math.fround(loc1 - loc0)) - Math.fround(val1 - val0))
 			const f9 = Math.fround(Math.fround(-der1 * Math.fround(loc1 - loc0)) + Math.fround(val1 - val0))
-			const f10 = Math.fround(flerp(f, val0, val1) + Math.fround(f * (1.0 - f) * flerp(f, f8, f9)))
+			const f10 = Math.fround(floatLerp(f, val0, val1) + Math.fround(Math.fround(f * Math.fround(1.0 - f)) * floatLerp(f, f8, f9)))
 			return f10
 		}
 
@@ -173,14 +174,14 @@ export namespace CubicSpline {
 					const maxValueDeltaRight = Math.fround(derivativeRight * locationDelta)
 					const minValue = Math.min(minLeft, minRight)
 					const maxValue = Math.max(maxLeft, maxRight)
-					const minDeltaLeft = Math.fround(maxValueDeltaLeft - maxRight + minLeft)
-					const maxDeltaLeft = Math.fround(maxValueDeltaLeft - minRight + maxLeft)
-					const minDeltaRight = Math.fround(-maxValueDeltaRight + minRight - maxLeft)
-					const maxDeltaRight = Math.fround(-maxValueDeltaRight + maxRight - minLeft)
+					const minDeltaLeft = Math.fround(Math.fround(maxValueDeltaLeft - maxRight) + minLeft)
+					const maxDeltaLeft = Math.fround(Math.fround(maxValueDeltaLeft - minRight) + maxLeft)
+					const minDeltaRight = Math.fround(Math.fround(-maxValueDeltaRight + minRight) - maxLeft)
+					const maxDeltaRight = Math.fround(Math.fround(-maxValueDeltaRight + maxRight) - minLeft)
 					const minDelta = Math.min(minDeltaLeft, minDeltaRight)
 					const maxDelta = Math.max(maxDeltaLeft, maxDeltaRight)
-					splineMin = Math.min(splineMin, Math.fround(minValue + 0.25 * minDelta))
-					splineMax = Math.max(splineMax, Math.fround(maxValue + 0.25 * maxDelta))
+					splineMin = Math.min(splineMin, Math.fround(minValue + Math.fround(0.25 * minDelta)))
+					splineMax = Math.max(splineMax, Math.fround(maxValue + Math.fround(0.25 * maxDelta)))
 				}
 			}
 

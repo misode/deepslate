@@ -17,7 +17,7 @@ export function lerp(a: number, b: number, c: number): number {
 	return b + a * (c - b)
 }
 
-export function flerp(a: number, b: number, c: number): number {
+export function floatLerp(a: number, b: number, c: number): number {
 	return Math.fround(b + Math.fround(a * Math.fround(c - b)))
 }
 
