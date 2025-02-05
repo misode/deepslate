@@ -6,7 +6,6 @@ const spruce = Color.intToRgb(6396257)
 const birch = Color.intToRgb(8431445)
 const foliage = Color.intToRgb(4764952)
 const water = Color.intToRgb(4159204)
-const attached_stem = Color.intToRgb(8431445)
 const lily_pad = Color.intToRgb(2129968)
 
 const redstone = (power: number): Color => {
@@ -46,8 +45,8 @@ export const BlockColors: {
 	water_cauldron: () => water,
 	redstone_wire: (props) => redstone(parseInt(props['power'] ?? '0')),
 	sugar_cane: () => grass,
-	attached_melon_stem: () => attached_stem,
-	attached_pumpkin_stem: () => attached_stem,
+	attached_melon_stem: () => stem(7),
+	attached_pumpkin_stem: () => stem(7),
 	melon_stem: (props) => stem(parseInt(props['age'] ?? '0')),
 	pumpkin_stem: (props) => stem(parseInt(props['age'] ?? '0')),
 	lily_pad: () => lily_pad,
