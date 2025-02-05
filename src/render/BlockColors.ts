@@ -18,7 +18,7 @@ const redstone = (power: number): Color => {
 }
 
 const stem = (age: number): Color => {
-	return [age / 8, 1 - age / 32, age * 64]
+	return [age / 8, 1 - age / 32, age / 64]
 }
 
 export const BlockColors: {
