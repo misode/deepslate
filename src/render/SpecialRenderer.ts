@@ -602,8 +602,8 @@ export namespace SpecialRenderers {
 				0: 'entity/banner_base',
 			}, [
 				{
-					from: [-2, -8, 9],
-					to: [18, 32, 10],
+					from: [-2, -8, 6],
+					to: [18, 32, 7],
 					faces: {
 						north: {uv: [0.25, 0.25, 5.25, 10.25], texture: '#0'},
 						east: {uv: [0, 0.25, 0.25, 10.25], texture: '#0'},
