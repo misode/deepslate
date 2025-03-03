@@ -6,6 +6,7 @@ import { BlockModel } from './BlockModel.js'
 import { Cull } from './Cull.js'
 import { Mesh } from './Mesh.js'
 import type { TextureAtlasProvider } from './TextureAtlas.js'
+import { DyeColors } from './DyeColors.js'
 
 function liquidRenderer(type: string, level: number, atlas: TextureAtlasProvider, cull: Cull, tintindex?: number) {
 	const y = cull['up'] ? 16 : [14.2, 12.5, 10.5, 9, 7, 5.3, 3.7, 1.9, 16, 16, 16, 16, 16, 16, 16, 16][level]
@@ -605,12 +606,12 @@ export namespace SpecialRenderers {
 					from: [-2, -8, 6],
 					to: [18, 32, 7],
 					faces: {
-						north: {uv: [0.25, 0.25, 5.25, 10.25], texture: '#0'},
-						east: {uv: [0, 0.25, 0.25, 10.25], texture: '#0'},
-						south: {uv: [5.5, 0.25, 10.5, 10.25], texture: '#0'},
-						west: {uv: [5.25, 0.25, 5.5, 10.25], texture: '#0'},
-						up: {uv: [5.25, 0.25, 0.25, 0], texture: '#0'},
-						down: {uv: [10.25, 0, 5.25, 0.25], texture: '#0'},
+						north: {uv: [0.25, 0.25, 5.25, 10.25], texture: '#0', tintindex: 0},
+						east: {uv: [0, 0.25, 0.25, 10.25], texture: '#0', tintindex: 0},
+						south: {uv: [5.5, 0.25, 10.5, 10.25], texture: '#0', tintindex: 0},
+						west: {uv: [5.25, 0.25, 5.5, 10.25], texture: '#0', tintindex: 0},
+						up: {uv: [5.25, 0.25, 0.25, 0], texture: '#0', tintindex: 0},
+						down: {uv: [10.25, 0, 5.25, 0.25], texture: '#0', tintindex: 0},
 					},
 				},
 				{
@@ -637,7 +638,7 @@ export namespace SpecialRenderers {
 						down: {uv: [10.5, 10.5, 5.5, 11], texture: '#0'},
 					},
 				},
-			]).getMesh(atlas, Cull.none())
+			]).getMesh(atlas, Cull.none(), DyeColors[color]?.({}))
 		}
 	}
 
@@ -650,12 +651,12 @@ export namespace SpecialRenderers {
 					from: [-2, -8, -1.5],
 					to: [18, 32, -0.5],
 					faces: {
-						north: {uv: [0.25, 0.25, 5.25, 10.25], texture: '#0'},
-						east: {uv: [0, 0.25, 0.25, 10.25], texture: '#0'},
-						south: {uv: [5.5, 0.25, 10.5, 10.25], texture: '#0'},
-						west: {uv: [5.25, 0.25, 5.5, 10.25], texture: '#0'},
-						up: {uv: [5.25, 0.25, 0.25, 0], texture: '#0'},
-						down: {uv: [10.25, 0, 5.25, 0.25], texture: '#0'},
+						north: {uv: [0.25, 0.25, 5.25, 10.25], texture: '#0', tintindex: 0},
+						east: {uv: [0, 0.25, 0.25, 10.25], texture: '#0', tintindex: 0},
+						south: {uv: [5.5, 0.25, 10.5, 10.25], texture: '#0', tintindex: 0},
+						west: {uv: [5.25, 0.25, 5.5, 10.25], texture: '#0', tintindex: 0},
+						up: {uv: [5.25, 0.25, 0.25, 0], texture: '#0', tintindex: 0},
+						down: {uv: [10.25, 0, 5.25, 0.25], texture: '#0', tintindex: 0},
 					},
 				},
 				{
@@ -670,7 +671,7 @@ export namespace SpecialRenderers {
 						down: {uv: [10.5, 10.5, 5.5, 11], texture: '#0'},
 					},
 				},
-			]).getMesh(atlas, Cull.none())
+			]).getMesh(atlas, Cull.none(), DyeColors[color]?.({}))
 		}
 	}
 
@@ -844,41 +845,29 @@ export namespace SpecialRenderers {
 		[`minecraft:${type}_wall_hanging_sign`, SpecialRenderers.wallHangingSignRenderer(type)]
 	))
 
-	const DyeColors = [
-		'white',
-		'orange',
-		'magenta',
-		'light_blue',
-		'yellow',
-		'lime',
-		'pink',
-		'gray',
-		'light_gray',
-		'cyan',
-		'purple',
-		'blue',
-		'brown',
-		'green',
-		'red',
-		'black',
-	]
+	const ShulkerBoxRenderers = new Map(
+		Object.keys(DyeColors).map(color =>
+			[`minecraft:${color}_shulker_box`, SpecialRenderers.shulkerBoxRenderer(Identifier.create(`shulker_${color}`))]
+		)
+	)
 
-	const ShulkerBoxRenderers = new Map(DyeColors.map(color =>
-		[`minecraft:${color}_shulker_box`, SpecialRenderers.shulkerBoxRenderer(Identifier.create(`shulker_${color}`))]
-	))
+	const BedRenderers = new Map(
+		Object.keys(DyeColors).map(color =>
+			[`minecraft:${color}_bed`, SpecialRenderers.bedRenderer(Identifier.create(color))]
+		)
+	)
 
-	const BedRenderers = new Map(DyeColors.map(color =>
-		[`minecraft:${color}_bed`, SpecialRenderers.bedRenderer(Identifier.create(color))]
-	))
+	const BannerRenderers = new Map(
+		Object.keys(DyeColors).map(color =>
+			[`minecraft:${color}_banner`, SpecialRenderers.bannerRenderer(color)]
+		)
+	)
 
-	const BannerRenderers = new Map(DyeColors.map(color =>
-		[`minecraft:${color}_banner`, SpecialRenderers.bannerRenderer(color)]
-	))
-
-	const WallBannerRenderers = new Map(DyeColors.map(color =>
-		[`minecraft:${color}_wall_banner`, SpecialRenderers.wallBannerRenderer(color)]
-	))
-
+	const WallBannerRenderers = new Map(
+		Object.keys(DyeColors).map(color =>
+			[`minecraft:${color}_wall_banner`, SpecialRenderers.wallBannerRenderer(color)]
+		)
+	)
 
 	export function getBlockMesh(block: BlockState, atlas: TextureAtlasProvider, cull: Cull): Mesh {
 		const mesh = new Mesh()
