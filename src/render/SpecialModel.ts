@@ -75,7 +75,12 @@ export namespace SpecialModel {
 
 		public getMesh(item: ItemStack, resources: TextureAtlasProvider): Mesh {
 			const patterns = item.getComponent('banner_patterns', undefined)
-			return this.renderer(resources, patterns instanceof NbtList<NbtCompound> ? patterns : undefined)
+			const t = mat4.create()
+			mat4.translate(t, t, [8, 24, 8])
+			mat4.rotateY(t, t, Math.PI)
+			mat4.scale(t, t, [2/3, 2/3, 2/3])
+			mat4.translate(t, t, [-8, -24, -8])
+			return this.renderer(resources, patterns instanceof NbtList<NbtCompound> ? patterns : undefined).transform(t)
 		}
 	}
 
