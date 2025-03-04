@@ -1,5 +1,5 @@
 import { mat4 } from 'gl-matrix'
-import {Direction, ItemStack, NbtCompound, TextureAtlasProvider} from '../index.js'
+import type {Direction, ItemStack, NbtCompound, TextureAtlasProvider} from '../index.js'
 import { NbtList } from '../index.js'
 import { Identifier, Json, SpecialRenderers } from '../index.js'
 import { Mesh } from './Mesh.js'
