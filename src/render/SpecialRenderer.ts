@@ -608,7 +608,7 @@ export namespace SpecialRenderers {
 	})
 
 	function createBannerRenderer(color: string, config: { base: any[], pattern: (index: number) => any }) {
-		return (nbt: NbtCompound | undefined, atlas: TextureAtlasProvider) => {
+		return (atlas: TextureAtlasProvider, nbt?: NbtCompound) => {
 			const textures: { [key: string]: string } = { 0: 'entity/banner_base' }
 			const elements = [...config.base]
 			const colors: string[] = [color]
@@ -1004,7 +1004,7 @@ export namespace SpecialRenderers {
 			mat4.rotateY(t, t, rotation)
 			mat4.scale(t, t, [2/3, 2/3, 2/3])
 			mat4.translate(t, t, [-8, -24, -8])
-			mesh.merge(bannerRenderer(nbt, atlas).transform(t))
+			mesh.merge(bannerRenderer(atlas, nbt).transform(t))
 		}
 		const wallBannerRenderer = WallBannerRenderers.get(state.getName().toString())
 		if (wallBannerRenderer !== undefined) {
@@ -1014,7 +1014,7 @@ export namespace SpecialRenderers {
 			mat4.rotateY(t, t, facing === 'east' ? Math.PI / 2 : facing === 'north' ? Math.PI : facing === 'west' ? Math.PI * 3 / 2 : 0)
 			mat4.scale(t, t, [2/3, 2/3, 2/3])
 			mat4.translate(t, t, [-8, -23.2, -8])
-			mesh.merge(wallBannerRenderer(nbt, atlas).transform(t))
+			mesh.merge(wallBannerRenderer(atlas, nbt).transform(t))
 		}
 
 		if (!state.is('water') && !state.is('lava') && state.isWaterlogged()) {
