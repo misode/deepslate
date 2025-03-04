@@ -1,5 +1,6 @@
 import { mat4 } from 'gl-matrix'
-import type { Direction, ItemStack, TextureAtlasProvider } from '../index.js'
+import {Direction, ItemStack, NbtCompound, TextureAtlasProvider} from '../index.js'
+import { NbtList } from '../index.js'
 import { Identifier, Json, SpecialRenderers } from '../index.js'
 import { Mesh } from './Mesh.js'
 
@@ -73,7 +74,8 @@ export namespace SpecialModel {
 		}
 
 		public getMesh(item: ItemStack, resources: TextureAtlasProvider): Mesh {
-			return this.renderer(resources)
+			const patterns = item.getComponent('banner_patterns', undefined)
+			return this.renderer(resources, patterns instanceof NbtList<NbtCompound> ? patterns : undefined)
 		}
 	}
 
