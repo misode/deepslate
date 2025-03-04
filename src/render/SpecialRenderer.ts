@@ -616,9 +616,9 @@ export namespace SpecialRenderers {
 			patterns?.forEach((compound, index) => {
 				const pattern = Identifier.parse(compound.getString('pattern')).path
 				const color = compound.getString('color')
-				const key = index + 1
-				textures[key] = `entity/banner/${pattern}`
-				elements.push(config.pattern(key))
+				index++
+				textures[index] = `entity/banner/${pattern}`
+				elements.push(config.pattern(index))
 				colors.push(color)
 			})
 
