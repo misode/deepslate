@@ -8,6 +8,7 @@ import { Mesh } from './Mesh.js'
 import type { TextureAtlasProvider } from './TextureAtlas.js'
 import { DyeColors } from './DyeColors.js'
 import type { NbtCompound, NbtList } from '../nbt/index.js'
+import { NbtType } from '../nbt/index.js'
 
 function liquidRenderer(type: string, level: number, atlas: TextureAtlasProvider, cull: Cull, tintindex?: number) {
 	const y = cull['up'] ? 16 : [14.2, 12.5, 10.5, 9, 7, 5.3, 3.7, 1.9, 16, 16, 16, 16, 16, 16, 16, 16][level]
@@ -1001,7 +1002,7 @@ export namespace SpecialRenderers {
 			mat4.rotateY(t, t, rotation)
 			mat4.scale(t, t, [2/3, 2/3, 2/3])
 			mat4.translate(t, t, [-8, -24, -8])
-			mesh.merge(bannerRenderer(atlas, nbt?.getList('patterns', 10)).transform(t))
+			mesh.merge(bannerRenderer(atlas, nbt?.getList('patterns', NbtType.Compound)).transform(t))
 		}
 		const wallBannerRenderer = WallBannerRenderers.get(state.getName().toString())
 		if (wallBannerRenderer !== undefined) {
@@ -1011,7 +1012,7 @@ export namespace SpecialRenderers {
 			mat4.rotateY(t, t, facing === 'east' ? Math.PI / 2 : facing === 'north' ? Math.PI : facing === 'west' ? Math.PI * 3 / 2 : 0)
 			mat4.scale(t, t, [2/3, 2/3, 2/3])
 			mat4.translate(t, t, [-8, -23.2, -8])
-			mesh.merge(wallBannerRenderer(atlas, nbt?.getList('patterns', 10)).transform(t))
+			mesh.merge(wallBannerRenderer(atlas, nbt?.getList('patterns', NbtType.Compound)).transform(t))
 		}
 
 		if (!state.is('water') && !state.is('lava') && state.isWaterlogged()) {
