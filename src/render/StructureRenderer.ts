@@ -1,5 +1,4 @@
-import type { vec3 } from 'gl-matrix'
-import { mat4 } from 'gl-matrix'
+import { mat4, vec3 } from 'gl-matrix'
 import type { Identifier, StructureProvider } from '../core/index.js'
 import { BlockState } from '../core/index.js'
 import type { Color } from '../index.js'
@@ -212,8 +211,11 @@ export class StructureRenderer extends Renderer {
 		this.setTexture(this.atlasTexture)
 		this.prepareDraw(viewMatrix)
 
-		this.chunkBuilder.getMeshes().forEach(mesh => {
-			this.drawMesh(mesh, { pos: true, color: true, texture: true, normal: true })
+		this.chunkBuilder.getNonTransparentMeshes().forEach(mesh => {
+			this.drawMesh(mesh, { pos: true, color: true, texture: true, normal: true, sort: false })
+		})
+		this.chunkBuilder.getTransparentMeshes(this.extractCameraPositionFromView()).forEach(mesh => {
+			this.drawMesh(mesh, { pos: true, color: true, texture: true, normal: true, sort: true })
 		})
 	}
 
@@ -221,8 +223,11 @@ export class StructureRenderer extends Renderer {
 		this.setShader(this.colorShaderProgram)
 		this.prepareDraw(viewMatrix)
 
-		this.chunkBuilder.getMeshes().forEach(mesh => {
-			this.drawMesh(mesh, { pos: true, color: true, normal: true, blockPos: true })
+		this.chunkBuilder.getNonTransparentMeshes().forEach(mesh => {
+			this.drawMesh(mesh, { pos: true, color: true, normal: true, blockPos: true, sort: false })
+		})
+		this.chunkBuilder.getTransparentMeshes(this.extractCameraPositionFromView()).forEach(mesh => {
+			this.drawMesh(mesh, { pos: true, color: true, normal: true, blockPos: true, sort: true })
 		})
 	}
 
