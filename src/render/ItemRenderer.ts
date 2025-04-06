@@ -53,7 +53,6 @@ export class ItemRenderer extends Renderer {
 		mesh.merge(specialMesh)
 		mesh.transform(model.getDisplayTransform('gui'))
 		mesh.computeNormals()
-		mesh.rebuild(this.gl, { pos: true, color: true, texture: true, normal: true })
 		return mesh
 	}
 

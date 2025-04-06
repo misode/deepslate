@@ -148,7 +148,6 @@ export class Renderer {
 	}
 
 	protected drawMesh(mesh: Mesh, options: { pos?: boolean, color?: boolean, texture?: boolean, normal?: boolean, blockPos?: boolean, sort?: boolean }) {
-
     // If the mesh is intended for transparent rendering, sort the quads.
     if (mesh.quadVertices() > 0 && options.sort) {
 				const cameraPos = this.extractCameraPositionFromView()
@@ -159,10 +158,27 @@ export class Renderer {
             const distB = vec3.distance(cameraPos, centerB)
             return distB - distA // Sort in descending order (farthest first)
         })
-        // Rebuild the index buffer to reflect the new quad order.
-        mesh.rebuild(this.gl, { pos: true, color: true, texture: true, normal: true, blockPos: true })
     }
 
+		// If the mesh is too large, split it into smaller meshes
+		const meshes = mesh.split()
+
+		// We rebuild mesh only right before we render to avoid multiple rebuild
+		// Mesh will keep tracking whether itself is dirty or not to avoid unnecessary rebuild as well
+		meshes.forEach(m => m.rebuild(this.gl, {
+			pos: options.pos,
+			color: options.color,
+			texture: options.texture,
+			normal: options.normal,
+			blockPos: options.blockPos,
+		}))
+
+		for (const m of meshes) {
+			this.drawMeshInner(m, options)
+		}
+	}
+
+	protected drawMeshInner(mesh: Mesh, options: { pos?: boolean, color?: boolean, texture?: boolean, normal?: boolean, blockPos?: boolean, sort?: boolean }) {
 		if (mesh.quadVertices() > 0) {
 			if (options.pos) this.setVertexAttr('vertPos', 3, mesh.posBuffer)
 			if (options.color) this.setVertexAttr('vertColor', 3, mesh.colorBuffer)

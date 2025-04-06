@@ -152,13 +152,12 @@ export class StructureRenderer extends Renderer {
 		for (let x = 1; x <= X; x += 1) mesh.addLine(x, 0, 0, x, 0, Z, c)
 		for (let z = 1; z <= Z; z += 1) mesh.addLine(0, 0, z, X, 0, z, c)
 
-		return mesh.rebuild(this.gl, { pos: true, color: true })
+		return mesh
 	}
 
 	private getOutlineMesh(): Mesh {
 		return new Mesh()
 			.addLineCube(0, 0, 0, 1, 1, 1, [1, 1, 1])
-			.rebuild(this.gl, { pos: true, color: true })
 	}
 
 	private getInvisibleBlocksMesh(): Mesh {
@@ -186,7 +185,7 @@ export class StructureRenderer extends Renderer {
 			}
 		}
 
-		return mesh.rebuild(this.gl, { pos: true, color: true })
+		return mesh
 	}
 
 	public drawGrid(viewMatrix: mat4) {

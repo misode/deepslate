@@ -133,9 +133,6 @@ export class VoxelRenderer extends Renderer {
 		if (!mesh.isEmpty()) {
 			meshes.push(mesh)
 		}
-		for (const mesh of meshes) {
-			mesh.rebuild(this.gl, { pos: true, color: true })
-		}
 		return meshes
 	}
 

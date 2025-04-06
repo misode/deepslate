@@ -85,19 +85,6 @@ export class ChunkBuilder {
 				console.error(`Error rendering block ${blockName}`, e)
 			}
 		}
-
-		if (!chunkPositions) {
-			this.chunks.forEach(x => x.forEach(y => y.forEach(chunk => {
-				chunk.mesh.rebuild(this.gl, { pos: true, color: true, texture: true, normal: true, blockPos: true })
-				// We don't sort the transparent mesh here, as we trust the user will pass sort=True when calling drawMesh() to prevent double sorting
-			})))
-		} else {
-			chunkPositions.forEach(chunkPos => {
-				const chunk = this.getChunk(chunkPos)
-				chunk.mesh.rebuild(this.gl, { pos: true, color: true, texture: true, normal: true, blockPos: true })
-				// We don't sort the transparent mesh here, as we trust the user will pass sort=True when calling drawMesh() to prevent double sorting
-			})
-		}
 	}
 
 	public getTransparentMeshes(cameraPos: vec3): Mesh[] {
