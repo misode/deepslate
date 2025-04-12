@@ -1,6 +1,9 @@
 import { mat4 } from 'gl-matrix'
 import type { BlockState } from '../core/index.js'
 import { Direction, Identifier } from '../core/index.js'
+import type { NbtCompound, NbtList } from '../nbt/index.js'
+import { NbtType } from '../nbt/index.js'
+import { Color } from '../util/index.js'
 import { BlockColors } from './BlockColors.js'
 import { BlockModel } from './BlockModel.js'
 import { Cull } from './Cull.js'
@@ -26,6 +29,24 @@ function liquidRenderer(type: string, level: number, atlas: TextureAtlasProvider
 	}]).getMesh(atlas, cull, BlockColors[type]?.({}))
 }
 
+const DyeColors: Record<string, Color> = {
+	white: Color.intToRgb(16383998),
+	orange: Color.intToRgb(16351261),
+	magenta: Color.intToRgb(13061821),
+	light_blue: Color.intToRgb(3847130),
+	yellow: Color.intToRgb(16701501),
+	lime: Color.intToRgb(8439583),
+	pink: Color.intToRgb(15961002),
+	gray: Color.intToRgb(4673362),
+	light_gray: Color.intToRgb(10329495),
+	cyan: Color.intToRgb(1481884),
+	purple: Color.intToRgb(8991416),
+	blue: Color.intToRgb(3949738),
+	brown: Color.intToRgb(8606770),
+	green: Color.intToRgb(6192150),
+	red: Color.intToRgb(11546150),
+	black: Color.intToRgb(1908001),
+}
 
 export namespace SpecialRenderers {
 	export function chestRenderer(texture: Identifier) {
@@ -596,83 +617,100 @@ export namespace SpecialRenderers {
 		}
 	}
 
-	export function bannerRenderer(color: string) {
-		return (atlas: TextureAtlasProvider) => {
-			return new BlockModel(undefined, {
-				0: 'entity/banner_base',
-			}, [
-				{
-					from: [-2, -8, 6],
-					to: [18, 32, 7],
-					faces: {
-						north: {uv: [0.25, 0.25, 5.25, 10.25], texture: '#0'},
-						east: {uv: [0, 0.25, 0.25, 10.25], texture: '#0'},
-						south: {uv: [5.5, 0.25, 10.5, 10.25], texture: '#0'},
-						west: {uv: [5.25, 0.25, 5.5, 10.25], texture: '#0'},
-						up: {uv: [5.25, 0.25, 0.25, 0], texture: '#0'},
-						down: {uv: [10.25, 0, 5.25, 0.25], texture: '#0'},
-					},
-				},
-				{
-					from: [7, -12, 7],
-					to: [9, 30, 9],
-					faces: {
-						north: {uv: [11.5, 0.5, 12, 11], texture: '#0'},
-						east: {uv: [11, 0.5, 11.5, 11], texture: '#0'},
-						south: {uv: [12.5, 0.5, 13, 11], texture: '#0'},
-						west: {uv: [12, 0.5, 12.5, 11], texture: '#0'},
-						up: {uv: [12, 0.5, 11.5, 0], texture: '#0'},
-						down: {uv: [12.5, 0, 12, 0.5], texture: '#0'},
-					},
-				},
-				{
-					from: [-2, 30, 7],
-					to: [18, 32, 9],
-					faces: {
-						north: {uv: [0.5, 11, 5.5, 11.5], texture: '#0'},
-						east: {uv: [0, 11, 0.5, 11.5], texture: '#0'},
-						south: {uv: [6, 11, 11, 11.5], texture: '#0'},
-						west: {uv: [5.5, 11, 6, 11.5], texture: '#0'},
-						up: {uv: [5.5, 11, 0.5, 10.5], texture: '#0'},
-						down: {uv: [10.5, 10.5, 5.5, 11], texture: '#0'},
-					},
-				},
-			]).getMesh(atlas, Cull.none())
+	const bannerFace = (index: number) => ({
+		north: {uv: [0.25, 0.25, 5.25, 10.25], texture: `#${index}`, tintindex: index},
+		east: {uv: [0, 0.25, 0.25, 10.25], texture: `#${index}`, tintindex: index},
+		south: {uv: [5.5, 0.25, 10.5, 10.25], texture: `#${index}`, tintindex: index},
+		west: {uv: [5.25, 0.25, 5.5, 10.25], texture: `#${index}`, tintindex: index},
+		up: {uv: [5.25, 0.25, 0.25, 0], texture: `#${index}`, tintindex: index},
+		down: {uv: [10.25, 0, 5.25, 0.25], texture: `#${index}`, tintindex: index},
+	})
+
+	function createBannerRenderer(color: string, config: { base: any[], pattern: (index: number) => any }) {
+		return (atlas: TextureAtlasProvider, patterns?: NbtList<NbtCompound>) => {
+			const textures: { [key: string]: string } = { 0: 'entity/banner_base' }
+			const elements = [...config.base]
+			const colors: string[] = [color]
+
+			patterns?.forEach((compound, index) => {
+				const pattern = Identifier.parse(compound.getString('pattern')).path
+				const color = compound.getString('color')
+				index++
+				textures[index] = `entity/banner/${pattern}`
+				elements.push(config.pattern(index))
+				colors.push(color)
+			})
+
+			return new BlockModel(undefined, textures, elements)
+				.getMesh(atlas, Cull.none(), (index: number) => DyeColors[colors[index]])
 		}
 	}
 
-	export function wallBannerRenderer(color: string) {
-		return (atlas: TextureAtlasProvider) => {
-			return new BlockModel(undefined, {
-				0: 'entity/banner_base',
-			}, [
-				{
-					from: [-2, -8, -1.5],
-					to: [18, 32, -0.5],
-					faces: {
-						north: {uv: [0.25, 0.25, 5.25, 10.25], texture: '#0'},
-						east: {uv: [0, 0.25, 0.25, 10.25], texture: '#0'},
-						south: {uv: [5.5, 0.25, 10.5, 10.25], texture: '#0'},
-						west: {uv: [5.25, 0.25, 5.5, 10.25], texture: '#0'},
-						up: {uv: [5.25, 0.25, 0.25, 0], texture: '#0'},
-						down: {uv: [10.25, 0, 5.25, 0.25], texture: '#0'},
-					},
+	export const bannerRenderer = (color: string) => createBannerRenderer(color, {
+		base: [
+			{
+				from: [-2, -8, 6],
+				to: [18, 32, 7],
+				faces: bannerFace(0),
+			},
+			{
+				from: [7, -12, 7],
+				to: [9, 30, 9],
+				faces: {
+					north: {uv: [11.5, 0.5, 12, 11], texture: '#0'},
+					east: {uv: [11, 0.5, 11.5, 11], texture: '#0'},
+					south: {uv: [12.5, 0.5, 13, 11], texture: '#0'},
+					west: {uv: [12, 0.5, 12.5, 11], texture: '#0'},
+					up: {uv: [12, 0.5, 11.5, 0], texture: '#0'},
+					down: {uv: [12.5, 0, 12, 0.5], texture: '#0'},
 				},
-				{
-					from: [-2, 30, -3.5],
-					to: [18, 32, -1.5],
-					faces: {
-						north: {uv: [0.5, 11, 5.5, 11.5], texture: '#0'},
-						east: {uv: [0, 11, 0.5, 11.5], texture: '#0'},
-						south: {uv: [6, 11, 11, 11.5], texture: '#0'},
-						west: {uv: [5.5, 11, 6, 11.5], texture: '#0'},
-						up: {uv: [5.5, 11, 0.5, 10.5], texture: '#0'},
-						down: {uv: [10.5, 10.5, 5.5, 11], texture: '#0'},
-					},
+			},
+			{
+				from: [-2, 30, 7],
+				to: [18, 32, 9],
+				faces: {
+					north: {uv: [0.5, 11, 5.5, 11.5], texture: '#0'},
+					east: {uv: [0, 11, 0.5, 11.5], texture: '#0'},
+					south: {uv: [6, 11, 11, 11.5], texture: '#0'},
+					west: {uv: [5.5, 11, 6, 11.5], texture: '#0'},
+					up: {uv: [5.5, 11, 0.5, 10.5], texture: '#0'},
+					down: {uv: [10.5, 10.5, 5.5, 11], texture: '#0'},
 				},
-			]).getMesh(atlas, Cull.none())
-		}
-	}
+			},
+		],
+		pattern: (index: number) => ({
+			from: [-2, -8, 6],
+			to: [18, 32, 7],
+			faces: bannerFace(index),
+		}),
+	})
+
+	export const wallBannerRenderer = (color: string) => createBannerRenderer(color, {
+		base: [
+			{
+				from: [-2, -8, -1.5],
+				to: [18, 32, -0.5],
+				faces: bannerFace(0),
+			},
+			{
+				from: [-2, 30, -3.5],
+				to: [18, 32, -1.5],
+				faces: {
+					north: {uv: [0.5, 11, 5.5, 11.5], texture: '#0'},
+					east: {uv: [0, 11, 0.5, 11.5], texture: '#0'},
+					south: {uv: [6, 11, 11, 11.5], texture: '#0'},
+					west: {uv: [5.5, 11, 6, 11.5], texture: '#0'},
+					up: {uv: [5.5, 11, 0.5, 10.5], texture: '#0'},
+					down: {uv: [10.5, 10.5, 5.5, 11], texture: '#0'},
+				},
+			},
+		],
+		pattern: (index: number) => ({
+			from: [-2, -8, -1.5],
+			to: [18, 32, -0.5],
+			faces: bannerFace(index),
+		}),
+	})
 
 	export function bellRenderer(atlas: TextureAtlasProvider) {
 		return new BlockModel(undefined, {
@@ -844,43 +882,31 @@ export namespace SpecialRenderers {
 		[`minecraft:${type}_wall_hanging_sign`, SpecialRenderers.wallHangingSignRenderer(type)]
 	))
 
-	const DyeColors = [
-		'white',
-		'orange',
-		'magenta',
-		'light_blue',
-		'yellow',
-		'lime',
-		'pink',
-		'gray',
-		'light_gray',
-		'cyan',
-		'purple',
-		'blue',
-		'brown',
-		'green',
-		'red',
-		'black',
-	]
+	const ShulkerBoxRenderers = new Map(
+		Object.keys(DyeColors).map(color =>
+			[`minecraft:${color}_shulker_box`, SpecialRenderers.shulkerBoxRenderer(Identifier.create(`shulker_${color}`))]
+		)
+	)
 
-	const ShulkerBoxRenderers = new Map(DyeColors.map(color =>
-		[`minecraft:${color}_shulker_box`, SpecialRenderers.shulkerBoxRenderer(Identifier.create(`shulker_${color}`))]
-	))
+	const BedRenderers = new Map(
+		Object.keys(DyeColors).map(color =>
+			[`minecraft:${color}_bed`, SpecialRenderers.bedRenderer(Identifier.create(color))]
+		)
+	)
 
-	const BedRenderers = new Map(DyeColors.map(color =>
-		[`minecraft:${color}_bed`, SpecialRenderers.bedRenderer(Identifier.create(color))]
-	))
+	const BannerRenderers = new Map(
+		Object.keys(DyeColors).map(color =>
+			[`minecraft:${color}_banner`, SpecialRenderers.bannerRenderer(color)]
+		)
+	)
 
-	const BannerRenderers = new Map(DyeColors.map(color =>
-		[`minecraft:${color}_banner`, SpecialRenderers.bannerRenderer(color)]
-	))
+	const WallBannerRenderers = new Map(
+		Object.keys(DyeColors).map(color =>
+			[`minecraft:${color}_wall_banner`, SpecialRenderers.wallBannerRenderer(color)]
+		)
+	)
 
-	const WallBannerRenderers = new Map(DyeColors.map(color =>
-		[`minecraft:${color}_wall_banner`, SpecialRenderers.wallBannerRenderer(color)]
-	))
-
-
-	export function getBlockMesh(block: BlockState, atlas: TextureAtlasProvider, cull: Cull): Mesh {
+	export function getBlockMesh(block: BlockState, nbt: NbtCompound | undefined, atlas: TextureAtlasProvider, cull: Cull): Mesh {
 		const mesh = new Mesh()
 		if (block.is('water')) {
 			mesh.merge(liquidRenderer('water', getInt(block, 'level'), atlas, cull, 0))
@@ -991,7 +1017,7 @@ export namespace SpecialRenderers {
 			mat4.rotateY(t, t, rotation)
 			mat4.scale(t, t, [2/3, 2/3, 2/3])
 			mat4.translate(t, t, [-8, -24, -8])
-			mesh.merge(bannerRenderer(atlas).transform(t))
+			mesh.merge(bannerRenderer(atlas, nbt?.getList('patterns', NbtType.Compound)).transform(t))
 		}
 		const wallBannerRenderer = WallBannerRenderers.get(block.getName().toString())
 		if (wallBannerRenderer !== undefined) {
@@ -1001,7 +1027,7 @@ export namespace SpecialRenderers {
 			mat4.rotateY(t, t, facing === 'east' ? Math.PI / 2 : facing === 'north' ? Math.PI : facing === 'west' ? Math.PI * 3 / 2 : 0)
 			mat4.scale(t, t, [2/3, 2/3, 2/3])
 			mat4.translate(t, t, [-8, -23.2, -8])
-			mesh.merge(wallBannerRenderer(atlas).transform(t))
+			mesh.merge(wallBannerRenderer(atlas, nbt?.getList('patterns', NbtType.Compound)).transform(t))
 		}
 
 		if (!block.is('water') && !block.is('lava') && block.isWaterlogged()) {
