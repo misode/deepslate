@@ -69,7 +69,7 @@ export class ChunkBuilder {
 				if (blockDefinition) {
 					mesh.merge(blockDefinition.getMesh(blockName, blockProps, this.resources, this.resources, cull))
 				}
-				const specialMesh = SpecialRenderers.getBlockMesh(b, this.resources, cull)
+				const specialMesh = SpecialRenderers.getBlockMesh(b.state, b.nbt, this.resources, cull)
 				if (!specialMesh.isEmpty()) {
 					mesh.merge(specialMesh)
 				}

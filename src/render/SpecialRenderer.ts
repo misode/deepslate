@@ -1,14 +1,14 @@
 import { mat4 } from 'gl-matrix'
-import type { BlockState, PlacedBlock } from '../core/index.js'
+import type { BlockState } from '../core/index.js'
 import { Direction, Identifier } from '../core/index.js'
+import type { NbtCompound, NbtList } from '../nbt/index.js'
+import { NbtType } from '../nbt/index.js'
 import { BlockColors } from './BlockColors.js'
 import { BlockModel } from './BlockModel.js'
 import { Cull } from './Cull.js'
+import { DyeColors } from './DyeColors.js'
 import { Mesh } from './Mesh.js'
 import type { TextureAtlasProvider } from './TextureAtlas.js'
-import { DyeColors } from './DyeColors.js'
-import type { NbtCompound, NbtList } from '../nbt/index.js'
-import { NbtType } from '../nbt/index.js'
 
 function liquidRenderer(type: string, level: number, atlas: TextureAtlasProvider, cull: Cull, tintindex?: number) {
 	const y = cull['up'] ? 16 : [14.2, 12.5, 10.5, 9, 7, 5.3, 3.7, 1.9, 16, 16, 16, 16, 16, 16, 16, 16][level]
@@ -888,41 +888,38 @@ export namespace SpecialRenderers {
 		)
 	)
 
-	export function getBlockMesh(block: PlacedBlock, atlas: TextureAtlasProvider, cull: Cull): Mesh {
-		const state = block.state
-		const nbt = block.nbt
-
+	export function getBlockMesh(block: BlockState, nbt: NbtCompound, atlas: TextureAtlasProvider, cull: Cull): Mesh {
 		const mesh = new Mesh()
-		if (state.is('water')) {
-			mesh.merge(liquidRenderer('water', getInt(state, 'level'), atlas, cull, 0))
+		if (block.is('water')) {
+			mesh.merge(liquidRenderer('water', getInt(block, 'level'), atlas, cull, 0))
 		}
-		if (state.is('lava')) {
-			mesh.merge(liquidRenderer('lava', getInt(state, 'level'), atlas, cull))
+		if (block.is('lava')) {
+			mesh.merge(liquidRenderer('lava', getInt(block, 'level'), atlas, cull))
 		}
-		const chestRenderer = ChestRenderers.get(state.getName().toString())
+		const chestRenderer = ChestRenderers.get(block.getName().toString())
 		if (chestRenderer !== undefined) {
-			const facing = getStr(state, 'facing', 'south')
+			const facing = getStr(block, 'facing', 'south')
 			const t = mat4.create()
 			mat4.translate(t, t, [8, 8, 8])
 			mat4.rotateY(t, t, facing === 'west' ? Math.PI / 2 : facing === 'south' ? Math.PI : facing === 'east' ? Math.PI * 3 / 2 : 0)
 			mat4.translate(t, t, [-8, -8, -8])
 			mesh.merge(chestRenderer(atlas).transform(t))
 		}
-		if (state.is('decorated_pot')) {
+		if (block.is('decorated_pot')) {
 			mesh.merge(decoratedPotRenderer(atlas))
 		}
-		const skullRenderer = SkullRenderers.get(state.getName().toString())
+		const skullRenderer = SkullRenderers.get(block.getName().toString())
 		if (skullRenderer !== undefined) {
-			const rotation = getInt(state, 'rotation') / 16 * Math.PI * 2
+			const rotation = getInt(block, 'rotation') / 16 * Math.PI * 2
 			const t = mat4.create()
 			mat4.translate(t, t, [8, 8, 8])
 			mat4.rotateY(t, t, rotation)
 			mat4.translate(t, t, [-8, -8, -8])
 			mesh.merge(skullRenderer(atlas).transform(t))
 		}
-		const signRenderer = SignRenderers.get(state.getName().toString())
+		const signRenderer = SignRenderers.get(block.getName().toString())
 		if (signRenderer !== undefined) {
-			const rotation = getInt(state, 'rotation') / 16 * Math.PI * 2
+			const rotation = getInt(block, 'rotation') / 16 * Math.PI * 2
 			const t = mat4.create()
 			mat4.translate(t, t, [8, 8, 8])
 			mat4.rotateY(t, t, rotation)
@@ -930,9 +927,9 @@ export namespace SpecialRenderers {
 			mat4.translate(t, t, [-8, -8, -8])
 			mesh.merge(signRenderer(atlas).transform(t))
 		}
-		const wallSignRenderer = WallSignRenderers.get(state.getName().toString())
+		const wallSignRenderer = WallSignRenderers.get(block.getName().toString())
 		if (wallSignRenderer !== undefined) {
-			const facing = getStr(state, 'facing', 'south')
+			const facing = getStr(block, 'facing', 'south')
 			const t = mat4.create()
 			mat4.translate(t, t, [8, 8, 8])
 			mat4.rotateY(t, t, facing === 'west' ? Math.PI / 2 : facing === 'south' ? Math.PI : facing === 'east' ? Math.PI * 3 / 2 : 0)
@@ -940,10 +937,10 @@ export namespace SpecialRenderers {
 			mat4.translate(t, t, [-8, -8, -8])
 			mesh.merge(wallSignRenderer(atlas).transform(t))
 		}
-		const hangingSignRenderer = HangingSignRenderers.get(state.getName().toString())
+		const hangingSignRenderer = HangingSignRenderers.get(block.getName().toString())
 		if (hangingSignRenderer !== undefined) {
-			const attached = getStr(state, 'attached', 'false') === 'true'
-			const rotation = getInt(state, 'rotation') / 16 * Math.PI * 2
+			const attached = getStr(block, 'attached', 'false') === 'true'
+			const rotation = getInt(block, 'rotation') / 16 * Math.PI * 2
 			const t = mat4.create()
 			mat4.translate(t, t, [8, 8, 8])
 			mat4.rotateY(t, t, rotation)
@@ -951,21 +948,21 @@ export namespace SpecialRenderers {
 			mat4.translate(t, t, [-8, -8, -8])
 			mesh.merge(hangingSignRenderer(attached, atlas).transform(t))
 		}
-		const wallHangingSignRenderer = WallHangingSignRenderers.get(state.getName().toString())
+		const wallHangingSignRenderer = WallHangingSignRenderers.get(block.getName().toString())
 		if (wallHangingSignRenderer !== undefined) {
-			const facing = getStr(state, 'facing', 'south')
+			const facing = getStr(block, 'facing', 'south')
 			const t = mat4.create()
 			mat4.translate(t, t, [8, 8, 8])
 			mat4.rotateY(t, t, facing === 'west' ? Math.PI / 2 : facing === 'south' ? Math.PI : facing === 'east' ? Math.PI * 3 / 2 : 0)
 			mat4.translate(t, t, [-8, -8, -8])
 			mesh.merge(wallHangingSignRenderer(atlas).transform(t))
 		}
-		if (state.is('conduit')) {
+		if (block.is('conduit')) {
 			mesh.merge(conduitRenderer(atlas))
 		}
-		const shulkerBoxRenderer = ShulkerBoxRenderers.get(state.getName().toString())
+		const shulkerBoxRenderer = ShulkerBoxRenderers.get(block.getName().toString())
 		if (shulkerBoxRenderer !== undefined) {
-			const facing = getStr(state, 'facing', 'up')
+			const facing = getStr(block, 'facing', 'up')
 			const t = mat4.create()
 			mat4.translate(t, t, [8, 8, 8])
 			if (facing === 'down') {
@@ -977,26 +974,26 @@ export namespace SpecialRenderers {
 			mat4.translate(t, t, [-8, -8, -8])
 			mesh.merge(shulkerBoxRenderer(atlas).transform(t))
 		}
-		if (state.is('bell')) {
+		if (block.is('bell')) {
 			const t = mat4.create()
 			mat4.translate(t, t, [8, 8, 8])
 			mat4.scale(t, t, [1, -1, -1])
 			mat4.translate(t, t, [-8, -8, -8])
 			mesh.merge(bellRenderer(atlas).transform(t))
 		}
-		const bedRenderer = BedRenderers.get(state.getName().toString())
+		const bedRenderer = BedRenderers.get(block.getName().toString())
 		if (bedRenderer !== undefined) {
-			const part = getStr(state, 'part', 'head')
-			const facing = getStr(state, 'facing', 'south')
+			const part = getStr(block, 'part', 'head')
+			const facing = getStr(block, 'facing', 'south')
 			const t = mat4.create()
 			mat4.translate(t, t, [8, 8, 8])
 			mat4.rotateY(t, t, facing === 'east' ? Math.PI / 2 : facing === 'north' ? Math.PI : facing === 'west' ? Math.PI * 3 / 2 : 0)
 			mat4.translate(t, t, [-8, -8, -8])
 			mesh.merge(bedRenderer(part, atlas).transform(t))
 		}
-		const bannerRenderer = BannerRenderers.get(state.getName().toString())
+		const bannerRenderer = BannerRenderers.get(block.getName().toString())
 		if (bannerRenderer !== undefined) {
-			const rotation = getInt(state, 'rotation') / 16 * Math.PI * 2
+			const rotation = getInt(block, 'rotation') / 16 * Math.PI * 2
 			const t = mat4.create()
 			mat4.translate(t, t, [8, 24, 8])
 			mat4.rotateY(t, t, rotation)
@@ -1004,9 +1001,9 @@ export namespace SpecialRenderers {
 			mat4.translate(t, t, [-8, -24, -8])
 			mesh.merge(bannerRenderer(atlas, nbt?.getList('patterns', NbtType.Compound)).transform(t))
 		}
-		const wallBannerRenderer = WallBannerRenderers.get(state.getName().toString())
+		const wallBannerRenderer = WallBannerRenderers.get(block.getName().toString())
 		if (wallBannerRenderer !== undefined) {
-			const facing = getStr(state, 'facing', 'south')
+			const facing = getStr(block, 'facing', 'south')
 			const t = mat4.create()
 			mat4.translate(t, t, [8, 8, 8])
 			mat4.rotateY(t, t, facing === 'east' ? Math.PI / 2 : facing === 'north' ? Math.PI : facing === 'west' ? Math.PI * 3 / 2 : 0)
@@ -1015,7 +1012,7 @@ export namespace SpecialRenderers {
 			mesh.merge(wallBannerRenderer(atlas, nbt?.getList('patterns', NbtType.Compound)).transform(t))
 		}
 
-		if (!state.is('water') && !state.is('lava') && state.isWaterlogged()) {
+		if (!block.is('water') && !block.is('lava') && block.isWaterlogged()) {
 			mesh.merge(liquidRenderer('water', 0, atlas, cull, 0))
 		}
 
