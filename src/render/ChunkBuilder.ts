@@ -89,20 +89,66 @@ export class ChunkBuilder {
 		if (!chunkPositions) {
 			this.chunks.forEach(x => x.forEach(y => y.forEach(chunk => {
 				chunk.mesh.rebuild(this.gl, { pos: true, color: true, texture: true, normal: true, blockPos: true })
-				chunk.transparentMesh.rebuild(this.gl, { pos: true, color: true, texture: true, normal: true, blockPos: true })
+				// We don't sort the transparent mesh here, as we trust the user will pass sort=True when calling drawMesh() to prevent double sorting
 			})))
 		} else {
 			chunkPositions.forEach(chunkPos => {
 				const chunk = this.getChunk(chunkPos)
 				chunk.mesh.rebuild(this.gl, { pos: true, color: true, texture: true, normal: true, blockPos: true })
-				chunk.transparentMesh.rebuild(this.gl, { pos: true, color: true, texture: true, normal: true, blockPos: true })
+				// We don't sort the transparent mesh here, as we trust the user will pass sort=True when calling drawMesh() to prevent double sorting
 			})
 		}
 	}
 
-	public getMeshes(): Mesh[] {
-		const chunks = this.chunks.flatMap(x => x.flatMap(y => y.flatMap(chunk => chunk ?? [])))
-		return chunks.flatMap(chunk => chunk.mesh.isEmpty() ? [] : chunk.mesh).concat(chunks.flatMap(chunk => chunk.transparentMesh.isEmpty() ? [] : chunk.transparentMesh))
+	public getTransparentMeshes(cameraPos: vec3): Mesh[] {
+		// Flatten all existing chunks into a list with their computed world-space center.
+		const chunkList: { chunk: { mesh: Mesh, transparentMesh: Mesh }, center: vec3 }[] = []
+		for (let i = 0; i < this.chunks.length; i++) {
+			if (!this.chunks[i]) continue
+			for (let j = 0; j < this.chunks[i].length; j++) {
+				if (!this.chunks[i][j]) continue
+				for (let k = 0; k < this.chunks[i][j].length; k++) {
+					const chunk = this.chunks[i][j][k]
+					if (!chunk) continue
+	
+					// Inverse mapping of getChunk() function
+					const chunkPosX = (i % 2 === 0) ? i / 2 : -((i - 1) / 2)
+					const chunkPosY = (j % 2 === 0) ? j / 2 : -((j - 1) / 2)
+					const chunkPosZ = (k % 2 === 0) ? k / 2 : -((k - 1) / 2)
+					// Compute the center of the chunk in world space.
+					const center: vec3 = [
+						chunkPosX * this.chunkSize[0] + this.chunkSize[0] / 2,
+						chunkPosY * this.chunkSize[1] + this.chunkSize[1] / 2,
+						chunkPosZ * this.chunkSize[2] + this.chunkSize[2] / 2
+					]
+					chunkList.push({ chunk, center })
+				}
+			}
+		}
+	
+		// Sort the chunk list: farthest from the camera comes first
+		chunkList.sort((a, b) => {
+			const dxA = a.center[0] - cameraPos[0]
+			const dyA = a.center[1] - cameraPos[1]
+			const dzA = a.center[2] - cameraPos[2]
+			const distA = dxA * dxA + dyA * dyA + dzA * dzA
+	
+			const dxB = b.center[0] - cameraPos[0]
+			const dyB = b.center[1] - cameraPos[1]
+			const dzB = b.center[2] - cameraPos[2]
+			const distB = dxB * dxB + dyB * dyB + dzB * dzB
+	
+			return distB - distA // sort descending (farthest first)
+		})
+	
+		// Return the transparent meshes from non-empty chunks in sorted order.
+		return chunkList
+			.filter(item => !item.chunk.transparentMesh.isEmpty())
+			.map(item => item.chunk.transparentMesh)
+	}
+
+	public getNonTransparentMeshes(): Mesh[] {
+		return this.chunks.flatMap(x => x.flatMap(y => y.flatMap(chunk => chunk.mesh.isEmpty() ? [] : chunk.mesh)))
 	}
 
 	private needsCull(block: PlacedBlock, dir: Direction) {

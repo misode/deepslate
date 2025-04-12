@@ -1,5 +1,6 @@
-import { mat4 } from 'gl-matrix'
+import { mat4, vec3 } from 'gl-matrix'
 import type { Mesh } from './Mesh.js'
+import type { Quad } from './Quad.js'
 import { ShaderProgram } from './ShaderProgram.js'
 
 const vsSource = `
@@ -42,7 +43,7 @@ export class Renderer {
 	protected readonly shaderProgram: WebGLProgram
 	
 	protected projMatrix: mat4
-	private activeShader: WebGLProgram
+	protected activeShader: WebGLProgram
 
 	constructor(
 		protected readonly gl: WebGLRenderingContext,
@@ -114,7 +115,54 @@ export class Renderer {
 		this.setUniform('mProj', this.projMatrix)
 	}
 
-	protected drawMesh(mesh: Mesh, options: { pos?: boolean, color?: boolean, texture?: boolean, normal?: boolean, blockPos?: boolean }) {
+	protected extractCameraPositionFromView() {
+		// should only be used after prepareDraw()
+		const viewLocation = this.gl.getUniformLocation(this.activeShader, 'mView')
+		if (!viewLocation) {
+			throw new Error('Failed to get location of mView uniform')
+		}
+		const viewMatrixRaw = this.gl.getUniform(this.activeShader, viewLocation)
+		// Ensure we have a valid matrix; gl.getUniform returns an array-like object.
+		const viewMatrix = mat4.clone(viewMatrixRaw)
+		const invView = mat4.create()
+		if (!mat4.invert(invView, viewMatrix)) {
+			throw new Error('Inverting view matrix failed')
+		}
+		// Translation components are at indices 12, 13, 14.
+		return vec3.fromValues(invView[12], invView[13], invView[14])
+	}
+
+	public static computeQuadCenter(quad: Quad) {
+		const vertices = quad.vertices() // Array of Vertex objects
+		const center = [0, 0, 0]
+		for (const v of vertices) {
+				const pos = v.pos.components() // [x, y, z]
+				center[0] += pos[0]
+				center[1] += pos[1]
+				center[2] += pos[2]
+		}
+		center[0] /= vertices.length
+		center[1] /= vertices.length
+		center[2] /= vertices.length
+		return vec3.fromValues(center[0], center[1], center[2])
+	}
+
+	protected drawMesh(mesh: Mesh, options: { pos?: boolean, color?: boolean, texture?: boolean, normal?: boolean, blockPos?: boolean, sort?: boolean }) {
+
+    // If the mesh is intended for transparent rendering, sort the quads.
+    if (mesh.quadVertices() > 0 && options.sort) {
+				const cameraPos = this.extractCameraPositionFromView()
+        mesh.quads.sort((a, b) => {
+            const centerA = Renderer.computeQuadCenter(a)
+            const centerB = Renderer.computeQuadCenter(b)
+            const distA = vec3.distance(cameraPos, centerA)
+            const distB = vec3.distance(cameraPos, centerB)
+            return distB - distA // Sort in descending order (farthest first)
+        })
+        // Rebuild the index buffer to reflect the new quad order.
+        mesh.rebuild(this.gl, { pos: true, color: true, texture: true, normal: true, blockPos: true })
+    }
+
 		if (mesh.quadVertices() > 0) {
 			if (options.pos) this.setVertexAttr('vertPos', 3, mesh.posBuffer)
 			if (options.color) this.setVertexAttr('vertColor', 3, mesh.colorBuffer)
