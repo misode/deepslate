@@ -120,22 +120,26 @@ export class ItemStack {
 		do{
 			if (reader.peek() === '!'){
 				reader.skip()
+				reader.skipWhitespace()
 				const start = reader.cursor
 				while (reader.canRead() && reader.peek() !== ']' && reader.peek() !== ',') {
 					reader.skip()
 				}
-				components.set('!' + Identifier.parse(reader.getRead(start)).toString(), new NbtCompound())
+				components.set('!' + Identifier.parse(reader.getRead(start).trim()).toString(), new NbtCompound())
 			} else {
+				reader.skipWhitespace()
 				const start = reader.cursor
 				while (reader.canRead() && reader.peek() !== '=') {
 					reader.skip()
 				}
-				const component = Identifier.parse(reader.getRead(start)).toString()
+				const component = Identifier.parse(reader.getRead(start).trim()).toString()
 				if (!reader.canRead()) break
 				reader.skip()
+				reader.skipWhitespace()
 				const tag = NbtParser.readTag(reader)
 				components.set(component, tag)
 			}
+			reader.skipWhitespace()
 			if (!reader.canRead()) break
 			if (reader.peek() === ']'){
 				return new ItemStack(itemId, 1, components)
