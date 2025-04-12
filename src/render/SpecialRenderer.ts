@@ -3,10 +3,10 @@ import type { BlockState } from '../core/index.js'
 import { Direction, Identifier } from '../core/index.js'
 import type { NbtCompound, NbtList } from '../nbt/index.js'
 import { NbtType } from '../nbt/index.js'
+import { Color } from '../util/index.js'
 import { BlockColors } from './BlockColors.js'
 import { BlockModel } from './BlockModel.js'
 import { Cull } from './Cull.js'
-import { DyeColors } from './DyeColors.js'
 import { Mesh } from './Mesh.js'
 import type { TextureAtlasProvider } from './TextureAtlas.js'
 
@@ -29,6 +29,24 @@ function liquidRenderer(type: string, level: number, atlas: TextureAtlasProvider
 	}]).getMesh(atlas, cull, BlockColors[type]?.({}))
 }
 
+const DyeColors: Record<string, Color> = {
+	white: Color.intToRgb(16383998),
+	orange: Color.intToRgb(16351261),
+	magenta: Color.intToRgb(13061821),
+	light_blue: Color.intToRgb(3847130),
+	yellow: Color.intToRgb(16701501),
+	lime: Color.intToRgb(8439583),
+	pink: Color.intToRgb(15961002),
+	gray: Color.intToRgb(4673362),
+	light_gray: Color.intToRgb(10329495),
+	cyan: Color.intToRgb(1481884),
+	purple: Color.intToRgb(8991416),
+	blue: Color.intToRgb(3949738),
+	brown: Color.intToRgb(8606770),
+	green: Color.intToRgb(6192150),
+	red: Color.intToRgb(11546150),
+	black: Color.intToRgb(1908001),
+}
 
 export namespace SpecialRenderers {
 	export function chestRenderer(texture: Identifier) {
@@ -624,7 +642,7 @@ export namespace SpecialRenderers {
 			})
 
 			return new BlockModel(undefined, textures, elements)
-				.getMesh(atlas, Cull.none(), (index: number) => DyeColors[colors[index]]?.({}))
+				.getMesh(atlas, Cull.none(), (index: number) => DyeColors[colors[index]])
 		}
 	}
 
@@ -888,7 +906,7 @@ export namespace SpecialRenderers {
 		)
 	)
 
-	export function getBlockMesh(block: BlockState, nbt: NbtCompound, atlas: TextureAtlasProvider, cull: Cull): Mesh {
+	export function getBlockMesh(block: BlockState, nbt: NbtCompound | undefined, atlas: TextureAtlasProvider, cull: Cull): Mesh {
 		const mesh = new Mesh()
 		if (block.is('water')) {
 			mesh.merge(liquidRenderer('water', getInt(block, 'level'), atlas, cull, 0))
