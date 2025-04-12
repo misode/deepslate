@@ -65,7 +65,8 @@ export namespace ItemModel {
 			)
 			case 'bundle/selected_item': return new BundleSelectedItem()
 			default:
-				throw new Error(`Invalid item model type ${type}`)
+				console.warn(`[deepslate]: Unknown item model type '${type}'`)
+				return { getMesh: () => new Mesh() }
 		}
 	}
 
@@ -84,7 +85,9 @@ export namespace ItemModel {
 		public getMesh(item: ItemStack, resources: ItemRendererResources, context: ItemRenderingContext): Mesh {
 			const model = resources.getBlockModel(this.modelId)
 			if (!model) {
-				throw new Error(`Model ${this.modelId} does not exist (trying to render ${item.toString()})`)
+				
+				console.warn(`[deepslate]: Model '${this.modelId}' does not exist`)
+				return new Mesh()
 			}
 
 			const tint = (i: number): Color => {
@@ -166,7 +169,8 @@ export namespace ItemModel {
 						return flag !== undefined && flag !== 0
 					}
 				default:
-					throw new Error(`Invalid condition property ${property}`)
+					console.warn(`[deepslate]: Unknown condition property '${property}'`)
+					return () => false
 			}
 		}		
 	}
@@ -241,7 +245,8 @@ export namespace ItemModel {
 						return list.getString(index)
 					}
 				default:
-					throw new Error(`Invalid select property ${property}`)
+					console.warn(`[deepslate]: Unknown select property '${property}'`)
+					return () => null
 	
 			}
 		}
@@ -361,7 +366,8 @@ export namespace ItemModel {
 						return tag.getList('floats').getNumber(index)
 					}
 				default:
-					throw new Error(`Invalid select property ${property}`)
+					console.warn(`[deepslate]: Unknown range dispatch property '${property}'`)
+					return () => 0
 			}
 		}
 	}
@@ -376,7 +382,8 @@ export namespace ItemModel {
 			const mesh = this.specialModel.getMesh(item, resources)
 			const model = resources.getBlockModel(this.base)
 			if (!model) {
-				throw new Error(`Base model ${this.base} does not exist (trying to render ${item.toString()})`)
+				console.warn(`[deepslate]: Special model base '${this.base}' does not exist`)
+				return new Mesh()
 			}
 			mesh.transform(model.getDisplayTransform(context.display_context ?? 'gui'))
 			return mesh

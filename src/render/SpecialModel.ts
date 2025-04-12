@@ -1,7 +1,6 @@
 import { mat4 } from 'gl-matrix'
-import type {Direction, ItemStack, NbtCompound, TextureAtlasProvider} from '../index.js'
-import { NbtList } from '../index.js'
-import { Identifier, Json, SpecialRenderers } from '../index.js'
+import type { Direction, ItemStack, NbtCompound, TextureAtlasProvider } from '../index.js'
+import { Identifier, Json, NbtList, SpecialRenderers } from '../index.js'
 import { Mesh } from './Mesh.js'
 
 export interface SpecialModel {
@@ -46,11 +45,12 @@ export namespace SpecialModel {
 				typeof root.texture === 'string' ? Identifier.parse(root.texture) : undefined
 			)
 			default:
-				throw new Error(`Invalid item model type ${type}`)
+				console.warn(`[deepslate]: Unknown special model ${type}`)
+				return { getMesh: () => new Mesh() }
 		}
 	}
 
-	class Bed {
+	class Bed implements SpecialModel {
 		private readonly renderer
 
 		constructor(texture: Identifier) {
@@ -66,7 +66,7 @@ export namespace SpecialModel {
 		}
 	}
 
-	class Banner {
+	class Banner implements SpecialModel {
 		private readonly renderer
 
 		constructor(color: string) {
@@ -84,13 +84,13 @@ export namespace SpecialModel {
 		}
 	}
 
-	class Conduit {
+	class Conduit implements SpecialModel {
 		public getMesh(item: ItemStack, resources: TextureAtlasProvider): Mesh {
 			return SpecialRenderers.conduitRenderer(resources)
 		}
 	}
 
-	class Chest {
+	class Chest implements SpecialModel {
 		private readonly renderer
 
 		constructor(
@@ -109,7 +109,7 @@ export namespace SpecialModel {
 		}
 	}
 
-	class Head {
+	class Head implements SpecialModel {
 		private readonly renderer
 
 		constructor(kind: string, texture: Identifier | undefined, animation: number) {
@@ -129,7 +129,7 @@ export namespace SpecialModel {
 		}
 	}
 
-	class ShulkerBox {
+	class ShulkerBox implements SpecialModel {
 		private readonly renderer
 
 		constructor(texture: Identifier, openness: number, orientation: Direction) {
@@ -141,7 +141,7 @@ export namespace SpecialModel {
 		}
 	}
 
-	class Shield {
+	class Shield implements SpecialModel {
 		public getMesh(item: ItemStack, resources: TextureAtlasProvider): Mesh {
 			const shieldMesh = SpecialRenderers.shieldRenderer(resources)
 			const t = mat4.create()
@@ -153,19 +153,19 @@ export namespace SpecialModel {
 		}
 	}
 
-	class Trident {
+	class Trident implements SpecialModel {
 		public getMesh(item: ItemStack, resources: TextureAtlasProvider): Mesh {
 			return new Mesh() // TODO
 		}
 	}
 	
-	class DecoratedPot {
+	class DecoratedPot implements SpecialModel {
 		public getMesh(item: ItemStack, resources: TextureAtlasProvider): Mesh {
 			return SpecialRenderers.decoratedPotRenderer(resources)
 		}
 	}	
 
-	class StandingSign {
+	class StandingSign implements SpecialModel {
 		private readonly renderer
 
 		constructor(wood_type: string, texture?: Identifier) {
@@ -177,7 +177,7 @@ export namespace SpecialModel {
 		}
 	}
 
-	class HangingSign {
+	class HangingSign implements SpecialModel {
 		private readonly renderer
 
 		constructor(wood_type: string, texture?: Identifier) {
