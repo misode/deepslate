@@ -5,6 +5,7 @@ import { ShaderProgram } from './ShaderProgram.js'
 const vsSource = `
   attribute vec4 vertPos;
   attribute vec2 texCoord;
+  attribute vec4 texLimit;
   attribute vec3 vertColor;
   attribute vec3 normal;
 
@@ -12,12 +13,14 @@ const vsSource = `
   uniform mat4 mProj;
 
   varying highp vec2 vTexCoord;
+  varying highp vec4 vTexLimit;
   varying highp vec3 vTintColor;
   varying highp float vLighting;
 
   void main(void) {
     gl_Position = mProj * mView * vertPos;
     vTexCoord = texCoord;
+	vTexLimit = texLimit;
     vTintColor = vertColor;
     vLighting = normal.y * 0.2 + abs(normal.z) * 0.1 + 0.8;
   }
@@ -26,13 +29,18 @@ const vsSource = `
 const fsSource = `
   precision highp float;
   varying highp vec2 vTexCoord;
+  varying highp vec4 vTexLimit;
   varying highp vec3 vTintColor;
   varying highp float vLighting;
 
   uniform sampler2D sampler;
+  uniform highp float pixelSize;
 
   void main(void) {
-		vec4 texColor = texture2D(sampler, vTexCoord);
+		vec4 texColor = texture2D(sampler, clamp(vTexCoord,
+			vTexLimit.xy + vec2(0.5, 0.5) * pixelSize,
+			vTexLimit.zw - vec2(0.5, 0.5) * pixelSize
+		));
 		if(texColor.a < 0.01) discard;
 		gl_FragColor = vec4(texColor.xyz * vTintColor * vLighting, texColor.a);
   }
@@ -43,9 +51,10 @@ export class Renderer {
 	
 	protected projMatrix: mat4
 	private activeShader: WebGLProgram
+	private pixelSize: number = 0
 
 	constructor(
-		protected readonly gl: WebGLRenderingContext,
+		protected readonly gl: WebGLRenderingContext
 	) {
 		this.shaderProgram = new ShaderProgram(gl, vsSource, fsSource).getProgram()
 		this.activeShader = this.shaderProgram
@@ -95,9 +104,10 @@ export class Renderer {
 		this.gl.uniformMatrix4fv(location, false, value)
 	}
 
-	protected setTexture(texture: WebGLTexture) {
+	protected setTexture(texture: WebGLTexture, pixelSize?: number) {
 		this.gl.activeTexture(this.gl.TEXTURE0)
 		this.gl.bindTexture(this.gl.TEXTURE_2D, texture)
+		this.pixelSize = pixelSize ?? 0
 	}
 
 	protected createAtlasTexture(image: ImageData) {
@@ -112,13 +122,18 @@ export class Renderer {
 	protected prepareDraw(viewMatrix: mat4) {
 		this.setUniform('mView', viewMatrix)
 		this.setUniform('mProj', this.projMatrix)
+		const location = this.gl.getUniformLocation(this.activeShader, 'pixelSize')    
+		this.gl.uniform1f(location, this.pixelSize)
 	}
 
 	protected drawMesh(mesh: Mesh, options: { pos?: boolean, color?: boolean, texture?: boolean, normal?: boolean, blockPos?: boolean }) {
 		if (mesh.quadVertices() > 0) {
 			if (options.pos) this.setVertexAttr('vertPos', 3, mesh.posBuffer)
 			if (options.color) this.setVertexAttr('vertColor', 3, mesh.colorBuffer)
-			if (options.texture) this.setVertexAttr('texCoord', 2, mesh.textureBuffer)
+			if (options.texture){
+				this.setVertexAttr('texCoord', 2, mesh.textureBuffer)
+				this.setVertexAttr('texLimit', 4, mesh.textureLimitBuffer)
+			}
 			if (options.normal) this.setVertexAttr('normal', 3, mesh.normalBuffer)
 			if (options.blockPos) this.setVertexAttr('blockPos', 3, mesh.blockPosBuffer)
 	

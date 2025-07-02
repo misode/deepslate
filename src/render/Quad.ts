@@ -44,7 +44,12 @@ export class Quad {
 		return this
 	}
 
-	public setTexture(texture: number[]) {
+	public setTexture(texture: number[], textureLimit?: [number, number, number, number]) {
+		this.v1.textureLimit = textureLimit 
+		this.v2.textureLimit = textureLimit
+		this.v3.textureLimit = textureLimit
+		this.v4.textureLimit = textureLimit
+
 		this.v1.texture = [texture[0], texture[1]]
 		this.v2.texture = [texture[2], texture[3]]
 		this.v3.texture = [texture[4], texture[5]]

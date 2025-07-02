@@ -146,7 +146,8 @@ export class BlockModel {
 				u0 + uv[r[0]], v0 + uv[r[1]],
 				u0 + uv[r[2]], v0 + uv[r[3]],
 				u0 + uv[r[4]], v0 + uv[r[5]],
-				u0 + uv[r[6]], v0 + uv[r[7]]])
+				u0 + uv[r[6]], v0 + uv[r[7]],
+			], [u0, v0, u1, v1])
 			mesh.quads.push(quad)
 		}
 	
