@@ -6,6 +6,7 @@ export type UV = [number, number, number, number]
 export interface TextureAtlasProvider {
 	getTextureAtlas(): ImageData
 	getTextureUV(texture: Identifier): UV
+	getPixelSize?(): number;
 }
 
 export class TextureAtlas implements TextureAtlasProvider {
@@ -27,6 +28,10 @@ export class TextureAtlas implements TextureAtlasProvider {
 
 	public getTextureUV(id: Identifier) {
 		return this.idMap[id.toString()] ?? [0, 0, this.part, this.part]
+	}
+
+	public getPixelSize() {
+		return this.part / 16
 	}
 
 	public static async fromBlobs(textures: { [id: string]: Blob }): Promise<TextureAtlas> {   

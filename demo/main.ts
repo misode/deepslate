@@ -1,6 +1,6 @@
 import { mat4 } from 'gl-matrix'
 import type { ItemRendererResources, ItemRenderingContext, NbtTag, Resources, Voxel } from '../src/index.js'
-import { BlockDefinition, BlockModel, Identifier, ItemRenderer, ItemStack, jsonToNbt, NormalNoise, Structure, StructureRenderer, TextureAtlas, upperPowerOfTwo, VoxelRenderer, XoroshiroRandom } from '../src/index.js'
+import { BlockDefinition, BlockModel, Identifier, ItemRenderer, ItemStack, NormalNoise, Structure, StructureRenderer, TextureAtlas, VoxelRenderer, XoroshiroRandom, jsonToNbt, upperPowerOfTwo } from '../src/index.js'
 import { } from '../src/nbt/Util.js'
 import { ItemModel } from '../src/render/ItemModel.js'
 
@@ -136,6 +136,7 @@ Promise.all([
 		getBlockModel(id) { return blockModels[id.toString()] },
 		getTextureUV(id) { return textureAtlas.getTextureUV(id) },
 		getTextureAtlas() { return textureAtlas.getTextureAtlas() },
+		getPixelSize() { return textureAtlas.getPixelSize() },
 		getBlockFlags(id) { return { opaque: false } },
 		getBlockProperties(id) { return null },
 		getDefaultBlockProperties(id) { return null },
@@ -174,13 +175,14 @@ Promise.all([
 
 	// === Structure rendering ===
 
-	const structure = new Structure([3, 2, 1])
+	const structure = new Structure([3, 2, 2])
 	const size = structure.getSize()
 	structure.addBlock([1, 0, 0], 'minecraft:grass_block', { snowy: 'false' })
 	structure.addBlock([2, 0, 0], 'minecraft:stone')
 	structure.addBlock([1, 1, 0], 'minecraft:skeleton_skull', { rotation: '15' })
 	structure.addBlock([2, 1, 0], 'minecraft:acacia_fence', { waterlogged: 'true', north: 'true' })
 	structure.addBlock([0, 0, 0], 'minecraft:wall_torch', { facing: 'west' })
+	structure.addBlock([1, 0, 1], 'minecraft:oak_trapdoor', { facing: 'south', half: 'bottom', open: 'true', powered: 'false', waterlogged: 'false' })
 
 	const structureCanvas = document.getElementById('structure-display') as HTMLCanvasElement
 	const structureGl = structureCanvas.getContext('webgl')!

@@ -10,6 +10,7 @@ export class Vertex {
 		public pos: Vector,
 		public color: Color,
 		public texture: [number, number] | undefined,
+		public textureLimit: [number, number, number, number] | undefined,
 		public normal: Vector | undefined,
 		public blockPos: Vector | undefined,
 	) {}
@@ -24,6 +25,6 @@ export class Vertex {
 	}
 
 	public static fromPos(pos: Vector) {
-		return new Vertex(pos, [0, 0, 0], [0, 0], undefined, undefined)
+		return new Vertex(pos, [0, 0, 0], [0, 0], [0, 0, 0, 0], undefined, undefined)
 	}
 }

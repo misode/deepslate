@@ -209,7 +209,7 @@ export class StructureRenderer extends Renderer {
 
 	public drawStructure(viewMatrix: mat4) {
 		this.setShader(this.shaderProgram)
-		this.setTexture(this.atlasTexture)
+		this.setTexture(this.atlasTexture, this.resources.getPixelSize?.())
 		this.prepareDraw(viewMatrix)
 
 		this.chunkBuilder.getMeshes().forEach(mesh => {
