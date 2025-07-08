@@ -188,10 +188,14 @@ export class BlockModel {
 	}
 
 	private getTexture(textureRef: string) {
-		while (textureRef.startsWith('#')) {
-			textureRef = this.textures?.[textureRef.slice(1)] ?? ''
+		let key = textureRef.startsWith('#') ? textureRef.slice(1) : textureRef;
+		let currentRef = this.textures?.[key] ?? ''
+
+		while (currentRef.startsWith('#')) {
+			currentRef = this.textures?.[currentRef.slice(1)] ?? ''
 		}
-		return Identifier.parse(textureRef)
+
+		return Identifier.parse(currentRef)
 	}
 
 	public flatten(accessor: BlockModelProvider) {
