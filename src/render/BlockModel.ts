@@ -188,15 +188,13 @@ export class BlockModel {
 	}
 
 	private getTexture(textureRef: string) {
-		let currentRef = textureRef;
-		for (let i = 0; i < 7; i++) {
-			const key = currentRef.startsWith('#') ? currentRef.slice(1) : currentRef;
-			const nextRef = this.textures?.[key];
-			if (nextRef === undefined) {
-				break;
-			}
-			currentRef = nextRef;
+		let key = textureRef.startsWith('#') ? textureRef.slice(1) : textureRef;
+		let currentRef = this.textures?.[key] ?? ''
+
+		while (currentRef.startsWith('#')) {
+			currentRef = this.textures?.[currentRef.slice(1)] ?? ''
 		}
+
 		return Identifier.parse(currentRef)
 	}
 
