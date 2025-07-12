@@ -6,7 +6,7 @@ import { Cull } from './Cull.js'
 import { Mesh } from './Mesh.js'
 import type { TextureAtlasProvider } from './TextureAtlas.js'
 
-type ModelVariant = {
+export type ModelVariant = {
 	model: string,
 	x?: number,
 	y?: number,
@@ -62,7 +62,7 @@ export class BlockDefinition {
 				throw new Error(`Cannot find block model ${variant.model}`)
 			}
 			const tint = name ? BlockColors[name.path]?.(props) : undefined
-			const variantMesh = blockModel.getMesh(atlas, newCull, tint)
+			const variantMesh = blockModel.getMesh(atlas, newCull, variant, tint)
 
 			if (variant.x || variant.y) {
 				const t = mat4.create()
