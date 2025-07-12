@@ -98,7 +98,7 @@ export namespace ItemModel {
 				}
 			}
 			
-			const mesh = model.getMesh(resources, Cull.none(), tint) 
+			const mesh = model.getMesh(resources, Cull.none(), undefined, tint) 
 			mesh.transform(model.getDisplayTransform(context.display_context ?? 'gui'))
 			return mesh
 		}

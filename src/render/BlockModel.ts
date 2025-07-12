@@ -4,6 +4,7 @@ import type { Direction } from '../core/index.js'
 import { Identifier } from '../core/index.js'
 import { Vector } from '../math/index.js'
 import type { Color } from '../util/index.js'
+import type { ModelVariant } from './BlockDefinition.js'
 import type { Cull } from './Cull.js'
 import { Mesh } from './Mesh.js'
 import { Quad } from './Quad.js'
@@ -81,6 +82,7 @@ export class BlockModel {
 		private elements: BlockModelElement[] | undefined,
 		private display?: BlockModelDisplay | undefined,
 		private guiLight?: BlockModelGuiLight | undefined,
+		private uvLock?: boolean | undefined,
 	) {}
 
 	public getDisplayTransform(display: Display) {
@@ -102,7 +104,7 @@ export class BlockModel {
 		return t
 	}
 
-	public getMesh(atlas: TextureAtlasProvider, cull: Cull, tint?: Color | ((index: number) => Color)) {
+	public getMesh(atlas: TextureAtlasProvider, cull: Cull, variant: ModelVariant | undefined, tint?: Color | ((index: number) => Color)) {
 		const mesh = new Mesh()
 		const getTint = (index?: number): Color => {
 			if (tint === undefined) return [1, 1, 1]
@@ -111,17 +113,24 @@ export class BlockModel {
 			return tint
 		}
 		for (const e of this.elements ?? []) {
-			mesh.merge(this.getElementMesh(e, atlas, cull, getTint))
+			mesh.merge(this.getElementMesh(e, atlas, cull, variant, getTint))
 		}
 		return mesh
 	}
 
-	public getElementMesh(e: BlockModelElement, atlas: TextureAtlasProvider, cull: Cull, getTint: (index?: number) => Color) {
+	public getElementMesh(e: BlockModelElement, atlas: TextureAtlasProvider, cull: Cull, variant: ModelVariant | undefined, getTint: (index?: number) => Color) {
 		const mesh = new Mesh()
 		const [x0, y0, z0] = e.from
 		const [x1, y1, z1] = e.to
 
-		const addFace = (face: BlockModelFace, uv: UV, pos: number[]) => {
+		variant = variant ?? {
+				model: '',
+				uvlock: false,
+				x: 0,
+				y: 0,
+		}
+
+		const addFace = (face: BlockModelFace, uv: UV, pos: number[], additionalRotate: number) => {
 			const quad = Quad.fromPoints(
 				new Vector(pos[0], pos[1], pos[2]),
 				new Vector(pos[3], pos[4], pos[5]),
@@ -138,7 +147,10 @@ export class BlockModel {
 			uv[1] = (face.uv?.[1] ?? uv[1]) * dv
 			uv[2] = (face.uv?.[2] ?? uv[2]) * du
 			uv[3] = (face.uv?.[3] ?? uv[3]) * dv
-			const r = faceRotations[face.rotation ?? 0]
+			const newRotation = (
+				(( (face.rotation ?? 0) + additionalRotate ) % 360 + 360) % 360
+			) as 0 | 90 | 180 | 270;
+			const r = faceRotations[newRotation]
 			quad.setTexture([
 				u0 + uv[r[0]], v0 + uv[r[1]],
 				u0 + uv[r[2]], v0 + uv[r[3]],
@@ -150,27 +162,27 @@ export class BlockModel {
 	
 		if (e.faces?.up?.texture && (!e.faces.up.cullface || !cull[e.faces.up.cullface])) {
 			addFace(e.faces.up, [x0, 16 - z1, x1, 16 - z0],
-				[x0, y1, z1,  x1, y1, z1,  x1, y1, z0,  x0, y1, z0])
+				[x0, y1, z1,  x1, y1, z1,  x1, y1, z0,  x0, y1, z0], variant.uvlock ? -(variant.y ?? 0) : 0)
 		}
 		if (e.faces?.down?.texture && (!e.faces.down.cullface || !cull[e.faces.down.cullface])) {
 			addFace(e.faces.down, [16 - z1, 16 - x1, 16 - z0, 16 - x0],
-				[x0, y0, z0,  x1, y0, z0,  x1, y0, z1,  x0, y0, z1])
+				[x0, y0, z0,  x1, y0, z0,  x1, y0, z1,  x0, y0, z1], variant.uvlock ? -(variant.y ?? 0) : 0)
 		}
 		if (e.faces?.south?.texture && (!e.faces.south.cullface || !cull[e.faces.south.cullface])) {
 			addFace(e.faces.south, [x0, 16 - y1, x1, 16 - y0], 
-				[x0, y0, z1,  x1, y0, z1,  x1, y1, z1,  x0, y1, z1])
+				[x0, y0, z1,  x1, y0, z1,  x1, y1, z1,  x0, y1, z1], 0)
 		}
 		if (e.faces?.north?.texture && (!e.faces.north.cullface || !cull[e.faces.north.cullface])) {
 			addFace(e.faces.north, [16 - x1, 16 - y1, 16 - x0, 16 - y0], 
-				[x1, y0, z0,  x0, y0, z0,  x0, y1, z0,  x1, y1, z0])
+				[x1, y0, z0,  x0, y0, z0,  x0, y1, z0,  x1, y1, z0], 0)
 		}
 		if (e.faces?.east?.texture && (!e.faces.east.cullface || !cull[e.faces.east.cullface])) {
 			addFace(e.faces.east, [16 - z1, 16 - y1, 16 - z0, 16 - y0], 
-				[x1, y0, z1,  x1, y0, z0,  x1, y1, z0,  x1, y1, z1])
+				[x1, y0, z1,  x1, y0, z0,  x1, y1, z0,  x1, y1, z1], variant.uvlock ? -(variant.x ?? 0) : 0)
 		}
 		if (e.faces?.west?.texture && (!e.faces.west.cullface || !cull[e.faces.west.cullface])) {
 			addFace(e.faces.west, [z0, 16 - y1, z1, 16 - y0], 
-				[x0, y0, z0,  x0, y0, z1,  x0, y1, z1,  x0, y1, z0])
+				[x0, y0, z0,  x0, y0, z1,  x0, y1, z1,  x0, y1, z0], variant.uvlock ? -(variant.x ?? 0) : 0)
 		}
 	
 		const t = mat4.create()
