@@ -11,6 +11,11 @@ import { Mesh } from './Mesh.js'
 import type { TextureAtlasProvider } from './TextureAtlas.js'
 
 function liquidRenderer(type: string, level: number, atlas: TextureAtlasProvider, cull: Cull, tintindex?: number) {
+  const transformation = mat4.create()
+  mat4.translate(transformation, transformation, [8, 8, 8])
+  mat4.scale(transformation, transformation, [0.999, 0.999, 0.999])
+  mat4.translate(transformation, transformation, [-8, -8, -8])
+
 	const y = cull['up'] ? 16 : [14.2, 12.5, 10.5, 9, 7, 5.3, 3.7, 1.9, 16, 16, 16, 16, 16, 16, 16, 16][level]
 	return new BlockModel(undefined, {
 		still: `block/${type}_still`,
@@ -26,7 +31,7 @@ function liquidRenderer(type: string, level: number, atlas: TextureAtlasProvider
 			south: { texture: '#flow', tintindex, cullface: Direction.SOUTH },
 			west: { texture: '#flow', tintindex, cullface: Direction.WEST },
 		},
-	}]).getMesh(atlas, cull, BlockColors[type]?.({}))
+	}]).getMesh(atlas, cull, BlockColors[type]?.({})).transform(transformation)
 }
 
 const DyeColors: Record<string, Color> = {
