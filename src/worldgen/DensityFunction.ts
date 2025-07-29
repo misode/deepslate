@@ -120,6 +120,7 @@ export namespace DensityFunction {
 			case 'half_negative':
 			case 'quarter_negative':
 			case 'squeeze':
+			case 'invert':
 				return new Mapped(type, inputParser(root.argument))
 			case 'add':
 			case 'mul':
@@ -138,6 +139,12 @@ export namespace DensityFunction {
 				Json.readInt(root.to_y) ?? 4062,
 				Json.readNumber(root.from_value) ?? -4064,
 				Json.readNumber(root.to_value) ?? 4062,
+			)
+			case 'find_top_surface': return new FindTopSurface(
+				inputParser(root.density),
+				inputParser(root.upper_bound),
+				Json.readInt(root.lower_bound) ?? 0,
+				Json.readInt(root.cell_height) ?? 1
 			)
 		}
 		return Constant.ZERO
@@ -621,7 +628,7 @@ export namespace DensityFunction {
 		}
 	}
 
-	const MappedType = ['abs', 'square', 'cube', 'half_negative', 'quarter_negative', 'squeeze'] as const
+	const MappedType = ['abs', 'square', 'cube', 'half_negative', 'quarter_negative', 'squeeze', 'invert'] as const
 
 	export class Mapped extends Transformer {
 		private static readonly MappedTypes: Record<typeof MappedType[number], (density: number) => number> = {
@@ -634,6 +641,7 @@ export namespace DensityFunction {
 				const c = clamp(d, -1, 1)
 				return c / 2 - c * c * c / 24
 			},
+			invert: d => 1 / d
 		}
 		private readonly transformer: (density: number) => number
 		constructor(
@@ -661,7 +669,14 @@ export namespace DensityFunction {
 			const minInput = this.input.minValue()
 			let min = this.transformer(minInput)
 			let max = this.transformer(this.input.maxValue())
-			if (this.type === 'abs' || this.type === 'square') {
+			if (this.type === 'invert') {
+				if (min < 0 && max > 0) {
+					min = Number.NEGATIVE_INFINITY,
+					max = Number.POSITIVE_INFINITY
+				} else {
+					[min, max] = [max, min]
+				}
+			} else if (this.type === 'abs' || this.type === 'square') {
 				max = Math.max(min, max)
 				min = Math.max(0, minInput)
 			}
@@ -779,5 +794,43 @@ export namespace DensityFunction {
 		public maxValue() {
 			return Math.max(this.fromValue, this.toValue)
 		}
+	}
+
+	export class FindTopSurface extends DensityFunction {
+		constructor(
+			public readonly density: DensityFunction,
+			public readonly upper_bound: DensityFunction,
+			public readonly lower_bound: number,
+			public readonly cell_height: number
+		) {
+			super()
+		}
+
+		public maxValue(): number {
+			return Math.max(this.lower_bound, this.upper_bound.maxValue())
+		}
+
+		public minValue(): number {
+			return this.lower_bound
+		}
+
+		public mapAll(visitor: Visitor): DensityFunction {
+			return visitor.map(new FindTopSurface(this.density.mapAll(visitor), this.upper_bound.mapAll(visitor), this.lower_bound, this.cell_height))
+		}
+
+		public compute(context: Context): number {
+			const upper_bound = Math.floor(this.upper_bound.compute(context) / this.cell_height) * this.cell_height
+			if (upper_bound <= this.lower_bound)
+				return this.lower_bound
+
+			for (var y = upper_bound; y >= this.lower_bound; y -= this.cell_height) {
+				if (this.density.compute(DensityFunction.context(context.x, y, context.z)) > 0) {
+					return y
+				}
+			}
+
+			return this.lower_bound
+		}
+
 	}
 }

@@ -2,8 +2,8 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { Holder } from '../../src/core/Holder.js'
 import { Identifier } from '../../src/core/Identifier.js'
 import { CubicSpline, NoiseParameters } from '../../src/math/index.js'
-import { DensityFunction as DF, NoiseGeneratorSettings, NoiseRouter, WorldgenRegistries } from '../../src/worldgen/index.js'
 import { RandomState } from '../../src/worldgen/RandomState.js'
+import { DensityFunction as DF, NoiseGeneratorSettings, NoiseRouter, WorldgenRegistries } from '../../src/worldgen/index.js'
 
 describe('DensityFunction', () => {
 	const DELTA = 1e-7
@@ -107,6 +107,13 @@ describe('DensityFunction', () => {
 		expect(fn3.compute(ContextA)).toEqual(-0.33570833333333333)
 	})
 
+	it('Invert', () => {
+		const fn1 = wrap(new DF.Mapped('invert', new DF.Constant(2)))
+		expect(fn1.compute(ContextA)).toEqual(0.5)
+		const fn2 = wrap(new DF.Mapped('invert', new DF.Constant(0)))
+		expect(fn2.compute(ContextA)).toEqual(Number.POSITIVE_INFINITY)
+	})
+
 	it('Add', () => {
 		const fn1 = wrap(new DF.Ap2('add', new DF.Constant(2), new DF.Constant(3)))
 		expect(fn1.compute(ContextA)).toEqual(5)
@@ -176,5 +183,14 @@ describe('DensityFunction', () => {
 		expect(fn2.compute(DF.context(0, 64, 0))).toEqual(-8)
 		expect(fn2.compute(DF.context(0, 128, 0))).toEqual(0)
 		expect(fn2.compute(DF.context(0, 129, 0))).toEqual(0)
+	})
+
+	it('FindTopSurface', () => {
+		const fn1 = wrap(new DF.FindTopSurface(new DF.YClampedGradient(128, -128, -1, 1), new DF.Constant(128), -128, 1))
+		expect(fn1.compute(ContextA)).toEqual(-1)
+		const fn2 = wrap(new DF.FindTopSurface(new DF.YClampedGradient(128, -128, -1, 1), new DF.Constant(-20), -128, 1))
+		expect(fn2.compute(ContextA)).toEqual(-20)
+		const fn3 = wrap(new DF.FindTopSurface(new DF.YClampedGradient(128, -128, -1, 1), new DF.Constant(50), 128, 1))
+		expect(fn3.compute(ContextA)).toEqual(128)
 	})
 })
