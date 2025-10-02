@@ -44,6 +44,9 @@ export class BlockState {
 		if (!this.name.equals(other.name)) {
 			return false
 		}
+		if (Object.keys(this.properties).length !== Object.keys(other.properties).length) {
+            return false
+        }
 		return Object.keys(this.properties).every(p => {
 			return other.properties[p] === this.properties[p]
 		})
