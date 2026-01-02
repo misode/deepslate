@@ -28,6 +28,11 @@ export namespace SpecialModel {
 				typeof root.texture === 'string' ? Identifier.parse(root.texture) : undefined,
 				Json.readNumber(root.animation) ?? 0
 			)
+			case 'player_head': return new Head(
+				'player',
+				undefined,
+				0
+			)
 			case 'shulker_box': return new ShulkerBox(
 				Identifier.parse(Json.readString(root.texture) ?? ''),
 				Json.readNumber(root.openness) ?? 0,

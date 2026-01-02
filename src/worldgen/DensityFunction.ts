@@ -1,7 +1,7 @@
 import { Holder, Identifier } from '../core/index.js'
 import type { BlendedNoise, MinMaxNumberFunction, NormalNoise } from '../math/index.js'
-import { CubicSpline, LegacyRandom, NoiseParameters, SimplexNoise, clamp, clampedMap, lazyLerp3 } from '../math/index.js'
-import { Json, computeIfAbsent } from '../util/index.js'
+import { clamp, clampedMap, CubicSpline, lazyLerp3, LegacyRandom, NoiseParameters, SimplexNoise } from '../math/index.js'
+import { computeIfAbsent, Json } from '../util/index.js'
 import { WorldgenRegistries } from './WorldgenRegistries.js'
 
 export abstract class DensityFunction implements MinMaxNumberFunction<DensityFunction.Context> {
@@ -85,6 +85,12 @@ export namespace DensityFunction {
 				NoiseParser(root.noise),
 			)
 			case 'end_islands': return new EndIslands()
+			case 'find_top_surface': return new FindTopSurface(
+				inputParser(root.density),
+				inputParser(root.upper_bound),
+				Json.readInt(root.lower_bound) ?? 0,
+				Json.readInt(root.cell_height) ?? 1,
+			)
 			case 'weird_scaled_sampler': return new WeirdScaledSampler(
 				inputParser(root.input),
 				Json.readEnum(root.rarity_value_mapper, RarityValueMapper),
@@ -118,6 +124,7 @@ export namespace DensityFunction {
 			case 'square':
 			case 'cube':
 			case 'half_negative':
+			case 'invert':
 			case 'quarter_negative':
 			case 'squeeze':
 			case 'invert':
@@ -139,12 +146,6 @@ export namespace DensityFunction {
 				Json.readInt(root.to_y) ?? 4062,
 				Json.readNumber(root.from_value) ?? -4064,
 				Json.readNumber(root.to_value) ?? 4062,
-			)
-			case 'find_top_surface': return new FindTopSurface(
-				inputParser(root.density),
-				inputParser(root.upper_bound),
-				Json.readInt(root.lower_bound) ?? 0,
-				Json.readInt(root.cell_height) ?? 1
 			)
 		}
 		return Constant.ZERO
@@ -419,6 +420,38 @@ export namespace DensityFunction {
 		}
 	}
 
+	export class FindTopSurface extends DensityFunction {
+		constructor(
+			public readonly density: DensityFunction,
+			public readonly upperBound: DensityFunction,
+			public readonly lowerBound: number,
+			public readonly cellHeight: number,
+		) {
+			super()
+		}
+		public compute(context: DensityFunction.Context) {
+			const topY = Math.floor(this.upperBound.compute(context) / this.cellHeight) * this.cellHeight
+			if (topY < this.lowerBound) {
+				return this.lowerBound
+			}
+			for (let blockY = topY; blockY >= this.lowerBound; blockY -= this.cellHeight) {
+				if (this.density.compute(DensityFunction.context(context.x, blockY, context.z)) > 0) {
+					return blockY
+				}
+			}
+			return this.lowerBound
+		}
+		public mapAll(visitor: Visitor) {
+			return visitor.map(new FindTopSurface(this.density.mapAll(visitor), this.upperBound.mapAll(visitor), this.lowerBound, this.cellHeight))
+		}
+		public minValue() {
+			return this.lowerBound
+		}
+		public maxValue() {
+			return Math.max(this.lowerBound, this.upperBound.maxValue())
+		}
+	}
+
 	const RarityValueMapper = ['type_1', 'type_2'] as const
 
 	export class WeirdScaledSampler extends Transformer {
@@ -628,7 +661,7 @@ export namespace DensityFunction {
 		}
 	}
 
-	const MappedType = ['abs', 'square', 'cube', 'half_negative', 'quarter_negative', 'squeeze', 'invert'] as const
+	const MappedType = ['abs', 'square', 'cube', 'half_negative', 'invert', 'quarter_negative', 'squeeze'] as const
 
 	export class Mapped extends Transformer {
 		private static readonly MappedTypes: Record<typeof MappedType[number], (density: number) => number> = {
@@ -636,12 +669,12 @@ export namespace DensityFunction {
 			square: d => d * d,
 			cube: d => d * d * d,
 			half_negative: d => d > 0 ? d : d * 0.5,
+			invert: d => 1/d,
 			quarter_negative: d => d > 0 ? d : d * 0.25,
 			squeeze: d => {
 				const c = clamp(d, -1, 1)
 				return c / 2 - c * c * c / 24
 			},
-			invert: d => 1 / d
 		}
 		private readonly transformer: (density: number) => number
 		constructor(
@@ -671,8 +704,7 @@ export namespace DensityFunction {
 			let max = this.transformer(this.input.maxValue())
 			if (this.type === 'invert') {
 				if (min < 0 && max > 0) {
-					min = Number.NEGATIVE_INFINITY,
-					max = Number.POSITIVE_INFINITY
+					[min, max] = [-Infinity, Infinity]
 				} else {
 					[min, max] = [max, min]
 				}
@@ -794,43 +826,5 @@ export namespace DensityFunction {
 		public maxValue() {
 			return Math.max(this.fromValue, this.toValue)
 		}
-	}
-
-	export class FindTopSurface extends DensityFunction {
-		constructor(
-			public readonly density: DensityFunction,
-			public readonly upper_bound: DensityFunction,
-			public readonly lower_bound: number,
-			public readonly cell_height: number
-		) {
-			super()
-		}
-
-		public maxValue(): number {
-			return Math.max(this.lower_bound, this.upper_bound.maxValue())
-		}
-
-		public minValue(): number {
-			return this.lower_bound
-		}
-
-		public mapAll(visitor: Visitor): DensityFunction {
-			return visitor.map(new FindTopSurface(this.density.mapAll(visitor), this.upper_bound.mapAll(visitor), this.lower_bound, this.cell_height))
-		}
-
-		public compute(context: Context): number {
-			const upper_bound = Math.floor(this.upper_bound.compute(context) / this.cell_height) * this.cell_height
-			if (upper_bound <= this.lower_bound)
-				return this.lower_bound
-
-			for (var y = upper_bound; y >= this.lower_bound; y -= this.cell_height) {
-				if (this.density.compute(DensityFunction.context(context.x, y, context.z)) > 0) {
-					return y
-				}
-			}
-
-			return this.lower_bound
-		}
-
 	}
 }

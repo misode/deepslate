@@ -272,7 +272,7 @@ export namespace SpecialRenderers {
 						down: {uv: [7.5, 0, 7.375, 0.25], texture: '#0'},
 					},
 				},
-			]).withUvEpsilon(1/256).getMesh(atlas, Cull.none()).transform(transformation)
+			]).getMesh(atlas, Cull.none()).transform(transformation)
 		}
 	}
 
@@ -355,7 +355,7 @@ export namespace SpecialRenderers {
 						down: {uv: [14.25, 1.5, 14, 2.5], texture: '#0'},
 					},
 				},
-			]).withUvEpsilon(1/128).getMesh(atlas, Cull.none())
+			]).getMesh(atlas, Cull.none())
 		}
 	}
 
@@ -388,7 +388,7 @@ export namespace SpecialRenderers {
 						down: {uv: [1.5, 7, 1, 8], texture: '#0'},
 					},
 				},
-			]).withUvEpsilon(1/128).getMesh(atlas, Cull.none())
+			]).getMesh(atlas, Cull.none())
 		}
 	}
 
@@ -409,7 +409,7 @@ export namespace SpecialRenderers {
 						down: {uv: [12.5, 0, 6.5, 1], texture: '#0'},
 					},
 				},
-			]).withUvEpsilon(1/128).getMesh(atlas, Cull.none())
+			]).getMesh(atlas, Cull.none())
 		}
 	}
 
@@ -439,7 +439,7 @@ export namespace SpecialRenderers {
 							south: {uv: [3.5, 3, 6.5, 6], texture: '#0'},
 						},
 					},
-				]).withUvEpsilon(1/128).getMesh(atlas, Cull.none())
+				]).getMesh(atlas, Cull.none())
 			}
 			return new BlockModel(undefined, {
 				0: texture.withPrefix('entity/signs/hanging/').toString(),
@@ -492,7 +492,7 @@ export namespace SpecialRenderers {
 						west: {uv: [1.5, 3, 2.25, 6], texture: '#0'},
 					},
 				},
-			]).withUvEpsilon(1/128).getMesh(atlas, Cull.none())
+			]).getMesh(atlas, Cull.none())
 		}
 	}
 
@@ -561,7 +561,7 @@ export namespace SpecialRenderers {
 						west: {uv: [1.5, 3, 2.25, 6], texture: '#0'},
 					},
 				},
-			]).withUvEpsilon(1/128).getMesh(atlas, Cull.none())
+			]).getMesh(atlas, Cull.none())
 		}
 	}
 
@@ -581,7 +581,7 @@ export namespace SpecialRenderers {
 					down: {uv: [9, 0, 6, 6], texture: '#0'},
 				},
 			},
-		]).withUvEpsilon(1/128).getMesh(atlas, Cull.none())
+		]).getMesh(atlas, Cull.none())
 	}
 
 	export function shulkerBoxRenderer(texture: Identifier) {
@@ -613,7 +613,7 @@ export namespace SpecialRenderers {
 						down: {uv: [12, 0, 8, 4], texture: '#0'},
 					},
 				},
-			]).withUvEpsilon(1/128).getMesh(atlas, Cull.none())
+			]).getMesh(atlas, Cull.none())
 		}
 	}
 
@@ -740,7 +740,7 @@ export namespace SpecialRenderers {
 					down: {uv: [12, 6.5, 8, 10.5], texture: '#0'},
 				},
 			},
-		]).withUvEpsilon(1 / 64).getMesh(atlas, Cull.none())
+		]).getMesh(atlas, Cull.none())
 	}
 
 	export function bedRenderer(texture: Identifier) {
@@ -784,7 +784,7 @@ export namespace SpecialRenderers {
 							down: {uv: [14, 3, 14.75, 3.75], texture: '#0'},
 						},
 					},
-				]).withUvEpsilon(1/128).getMesh(atlas, Cull.none())
+				]).getMesh(atlas, Cull.none())
 			}
 			return new BlockModel(undefined, {
 				0: texture.withPrefix('entity/bed/').toString(),
@@ -824,7 +824,7 @@ export namespace SpecialRenderers {
 						down: {uv: [14, 1.5, 14.75, 2.25], texture: '#0'},
 					},
 				},
-			]).withUvEpsilon(1/128).getMesh(atlas, Cull.none())
+			]).getMesh(atlas, Cull.none())
 		}
 	}
 
@@ -840,6 +840,14 @@ export namespace SpecialRenderers {
 		'minecraft:chest': SpecialRenderers.chestRenderer(Identifier.create('normal')),
 		'minecraft:ender_chest': SpecialRenderers.chestRenderer(Identifier.create('ender')),
 		'minecraft:trapped_chest': SpecialRenderers.chestRenderer(Identifier.create('trapped')),
+		'minecraft:copper_chest': SpecialRenderers.chestRenderer(Identifier.create('copper')),
+		'minecraft:exposed_copper_chest': SpecialRenderers.chestRenderer(Identifier.create('copper_exposed')),
+		'minecraft:weathered_copper_chest': SpecialRenderers.chestRenderer(Identifier.create('copper_weathered')),
+		'minecraft:oxidized_copper_chest': SpecialRenderers.chestRenderer(Identifier.create('copper_oxidized')),
+		'minecraft:waxed_copper_chest': SpecialRenderers.chestRenderer(Identifier.create('copper')),
+		'minecraft:waxed_exposed_copper_chest': SpecialRenderers.chestRenderer(Identifier.create('copper_exposed')),
+		'minecraft:waxed_weathered_copper_chest': SpecialRenderers.chestRenderer(Identifier.create('copper_weathered')),
+		'minecraft:waxed_oxidized_copper_chest': SpecialRenderers.chestRenderer(Identifier.create('copper_oxidized')),
 	}))
 
 	const SkullRenderers = new Map(Object.entries({

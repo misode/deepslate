@@ -18,7 +18,8 @@ type ModelVariantEntry = ModelVariant | (ModelVariant & {
 })[]
 
 type ModelMultiPartCondition = {
-	OR: ModelMultiPartCondition[],
+	OR?: ModelMultiPartCondition[],
+	AND?: ModelMultiPartCondition[],
 } | {
 	[key: string]: string,
 }
@@ -90,6 +91,9 @@ export class BlockDefinition {
 	private matchesCase(condition: ModelMultiPartCondition, props: { [key: string]: string }): boolean {
 		if (Array.isArray(condition.OR)) {
 			return condition.OR.some(c => this.matchesCase(c, props))
+		}
+		if (Array.isArray(condition.AND)) {
+			return condition.AND.every(c => this.matchesCase(c, props))
 		}
 		const states = condition as {[key: string]: string}
 		return Object.keys(states).every(k => {

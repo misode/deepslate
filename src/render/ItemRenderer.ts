@@ -1,6 +1,6 @@
 import { mat4 } from 'gl-matrix'
-import { Identifier } from '../core/index.js'
 import type { ItemComponentsProvider, ItemStack } from '../core/ItemStack.js'
+import { Identifier } from '../core/index.js'
 import type { Color } from '../index.js'
 import type { BlockModelProvider, Display } from './BlockModel.js'
 import type { ItemModelProvider } from './ItemModel.js'
@@ -90,7 +90,7 @@ export class ItemRenderer extends Renderer {
 		mat4.translate(view, view, [0, 0, -32])
 
 		this.setShader(this.shaderProgram)
-		this.setTexture(this.atlasTexture)
+		this.setTexture(this.atlasTexture, this.resources.getPixelSize?.())
 		this.prepareDraw(view)
 		this.drawMesh(this.mesh, { pos: true, color: true, texture: true, normal: true })
 	}
