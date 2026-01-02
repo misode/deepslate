@@ -127,7 +127,6 @@ export namespace DensityFunction {
 			case 'invert':
 			case 'quarter_negative':
 			case 'squeeze':
-			case 'invert':
 				return new Mapped(type, inputParser(root.argument))
 			case 'add':
 			case 'mul':
