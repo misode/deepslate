@@ -88,8 +88,8 @@ export namespace DensityFunction {
 			case 'find_top_surface': return new FindTopSurface(
 				inputParser(root.density),
 				inputParser(root.upper_bound),
-				Json.readNumber(root.lower_bound) ?? 0,
-				Json.readNumber(root.cell_height) ?? 1,
+				Json.readInt(root.lower_bound) ?? 0,
+				Json.readInt(root.cell_height) ?? 1,
 			)
 			case 'weird_scaled_sampler': return new WeirdScaledSampler(
 				inputParser(root.input),

@@ -15,10 +15,10 @@ export class NoiseChunk {
 	public readonly firstNoiseX: number
 	public readonly firstNoiseZ: number
 	public readonly noiseSizeXZ: number
-	private readonly preliminarySurfaceLevel: Map<bigint, number> = new Map()
+	private readonly preliminarySurfaceLevelCache: Map<bigint, number> = new Map()
 	private readonly aquifer: Aquifer
 	private readonly materialRule: MaterialRule
-	private readonly initialDensity: DensityFunction
+	private readonly preliminarySurfaceLevel: DensityFunction
 
 	constructor(
 		public readonly cellCountXZ: number,
@@ -51,7 +51,7 @@ export class NoiseChunk {
 		this.materialRule = MaterialRule.fromList([
 			(context) => this.aquifer.compute(context, finalDensity.compute(context)),
 		])
-		this.initialDensity = randomState.router.initialDensityWithoutJaggedness
+		this.preliminarySurfaceLevel = randomState.router.preliminarySurfaceLevel
 	}
 
 	public getFinalState(x: number, y: number, z: number): BlockState | undefined {
@@ -59,16 +59,11 @@ export class NoiseChunk {
 	}
 
 	public getPreliminarySurfaceLevel(quartX: number, quartZ: number) {
-		return computeIfAbsent(this.preliminarySurfaceLevel, ChunkPos.asLong(quartX, quartZ), () => {
+		return computeIfAbsent(this.preliminarySurfaceLevelCache, ChunkPos.asLong(quartX, quartZ), () => {
 			const x = quartX << 2
 			const z = quartZ << 2
-			for (let y = this.settings.minY + this.settings.height; y >= this.settings.minY; y -= this.cellHeight) {
-				const density = this.initialDensity.compute(DensityFunction.context(x, y, z))
-				if (density > 0.390625) {
-					return y
-				}
-			}
-			return Number.MAX_SAFE_INTEGER
+
+			return Math.floor(this.preliminarySurfaceLevel.compute(DensityFunction.context(x, 0, z)))
 		})
 	}
 }
