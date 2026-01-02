@@ -840,6 +840,14 @@ export namespace SpecialRenderers {
 		'minecraft:chest': SpecialRenderers.chestRenderer(Identifier.create('normal')),
 		'minecraft:ender_chest': SpecialRenderers.chestRenderer(Identifier.create('ender')),
 		'minecraft:trapped_chest': SpecialRenderers.chestRenderer(Identifier.create('trapped')),
+		'minecraft:copper_chest': SpecialRenderers.chestRenderer(Identifier.create('copper')),
+		'minecraft:exposed_copper_chest': SpecialRenderers.chestRenderer(Identifier.create('copper_exposed')),
+		'minecraft:weathered_copper_chest': SpecialRenderers.chestRenderer(Identifier.create('copper_weathered')),
+		'minecraft:oxidized_copper_chest': SpecialRenderers.chestRenderer(Identifier.create('copper_oxidized')),
+		'minecraft:waxed_copper_chest': SpecialRenderers.chestRenderer(Identifier.create('copper')),
+		'minecraft:waxed_exposed_copper_chest': SpecialRenderers.chestRenderer(Identifier.create('copper_exposed')),
+		'minecraft:waxed_weathered_copper_chest': SpecialRenderers.chestRenderer(Identifier.create('copper_weathered')),
+		'minecraft:waxed_oxidized_copper_chest': SpecialRenderers.chestRenderer(Identifier.create('copper_oxidized')),
 	}))
 
 	const SkullRenderers = new Map(Object.entries({
