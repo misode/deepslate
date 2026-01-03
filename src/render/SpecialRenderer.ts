@@ -26,7 +26,7 @@ function liquidRenderer(type: string, level: number, atlas: TextureAtlasProvider
 			south: { texture: '#flow', tintindex, cullface: Direction.SOUTH },
 			west: { texture: '#flow', tintindex, cullface: Direction.WEST },
 		},
-	}]).getMesh(atlas, cull, BlockColors[type]?.({}))
+	}]).getMesh(atlas, cull, undefined, BlockColors[type]?.({}))
 }
 
 const DyeColors: Record<string, Color> = {
@@ -90,7 +90,7 @@ export namespace SpecialRenderers {
 						down: {uv: [0.75, 0, 1.25, 0.25], rotation: 180, texture: '#0'},
 					},
 				},
-			]).getMesh(atlas, Cull.none())
+			]).getMesh(atlas, Cull.none(), undefined)
 		}
 	}
 
@@ -133,7 +133,7 @@ export namespace SpecialRenderers {
 					down: {uv: [8, 0, 12, 4], texture: '#1'},
 				},
 			},
-		]).getMesh(atlas, Cull.none())
+		]).getMesh(atlas, Cull.none(), undefined)
 	}
 
 	export function shieldRenderer(atlas: TextureAtlasProvider) {
@@ -152,7 +152,7 @@ export namespace SpecialRenderers {
 					down: {uv: [3.25, 0, 6.25, 0.25], texture: '#0'},
 				},
 			},
-		]).getMesh(atlas, Cull.none())
+		]).getMesh(atlas, Cull.none(), undefined)
 	}
 
 	export function headRenderer(texture: Identifier, n: number) {
@@ -173,7 +173,7 @@ export namespace SpecialRenderers {
 					},
 				},
 			])
-				.getMesh(atlas, Cull.none())
+				.getMesh(atlas, Cull.none(), undefined)
 		}
 	}
 
@@ -272,7 +272,7 @@ export namespace SpecialRenderers {
 						down: {uv: [7.5, 0, 7.375, 0.25], texture: '#0'},
 					},
 				},
-			]).getMesh(atlas, Cull.none()).transform(transformation)
+			]).getMesh(atlas, Cull.none(), undefined).transform(transformation)
 		}
 	}
 
@@ -355,7 +355,7 @@ export namespace SpecialRenderers {
 						down: {uv: [14.25, 1.5, 14, 2.5], texture: '#0'},
 					},
 				},
-			]).getMesh(atlas, Cull.none())
+			]).getMesh(atlas, Cull.none(), undefined)
 		}
 	}
 
@@ -388,7 +388,7 @@ export namespace SpecialRenderers {
 						down: {uv: [1.5, 7, 1, 8], texture: '#0'},
 					},
 				},
-			]).getMesh(atlas, Cull.none())
+			]).getMesh(atlas, Cull.none(), undefined)
 		}
 	}
 
@@ -409,7 +409,7 @@ export namespace SpecialRenderers {
 						down: {uv: [12.5, 0, 6.5, 1], texture: '#0'},
 					},
 				},
-			]).getMesh(atlas, Cull.none())
+			]).getMesh(atlas, Cull.none(), undefined)
 		}
 	}
 
@@ -439,7 +439,7 @@ export namespace SpecialRenderers {
 							south: {uv: [3.5, 3, 6.5, 6], texture: '#0'},
 						},
 					},
-				]).getMesh(atlas, Cull.none())
+				]).getMesh(atlas, Cull.none(), undefined)
 			}
 			return new BlockModel(undefined, {
 				0: texture.withPrefix('entity/signs/hanging/').toString(),
@@ -492,7 +492,7 @@ export namespace SpecialRenderers {
 						west: {uv: [1.5, 3, 2.25, 6], texture: '#0'},
 					},
 				},
-			]).getMesh(atlas, Cull.none())
+			]).getMesh(atlas, Cull.none(), undefined)
 		}
 	}
 
@@ -561,7 +561,7 @@ export namespace SpecialRenderers {
 						west: {uv: [1.5, 3, 2.25, 6], texture: '#0'},
 					},
 				},
-			]).getMesh(atlas, Cull.none())
+			]).getMesh(atlas, Cull.none(), undefined)
 		}
 	}
 
@@ -581,7 +581,7 @@ export namespace SpecialRenderers {
 					down: {uv: [9, 0, 6, 6], texture: '#0'},
 				},
 			},
-		]).getMesh(atlas, Cull.none())
+		]).getMesh(atlas, Cull.none(), undefined)
 	}
 
 	export function shulkerBoxRenderer(texture: Identifier) {
@@ -613,7 +613,7 @@ export namespace SpecialRenderers {
 						down: {uv: [12, 0, 8, 4], texture: '#0'},
 					},
 				},
-			]).getMesh(atlas, Cull.none())
+			]).getMesh(atlas, Cull.none(), undefined)
 		}
 	}
 
@@ -642,7 +642,7 @@ export namespace SpecialRenderers {
 			})
 
 			return new BlockModel(undefined, textures, elements)
-				.getMesh(atlas, Cull.none(), (index: number) => DyeColors[colors[index]])
+				.getMesh(atlas, Cull.none(), undefined, (index: number) => DyeColors[colors[index]])
 		}
 	}
 
@@ -740,7 +740,7 @@ export namespace SpecialRenderers {
 					down: {uv: [12, 6.5, 8, 10.5], texture: '#0'},
 				},
 			},
-		]).getMesh(atlas, Cull.none())
+		]).getMesh(atlas, Cull.none(), undefined)
 	}
 
 	export function bedRenderer(texture: Identifier) {
@@ -784,7 +784,7 @@ export namespace SpecialRenderers {
 							down: {uv: [14, 3, 14.75, 3.75], texture: '#0'},
 						},
 					},
-				]).getMesh(atlas, Cull.none())
+				]).getMesh(atlas, Cull.none(), undefined)
 			}
 			return new BlockModel(undefined, {
 				0: texture.withPrefix('entity/bed/').toString(),
@@ -824,7 +824,7 @@ export namespace SpecialRenderers {
 						down: {uv: [14, 1.5, 14.75, 2.25], texture: '#0'},
 					},
 				},
-			]).getMesh(atlas, Cull.none())
+			]).getMesh(atlas, Cull.none(), undefined)
 		}
 	}
 
