@@ -188,6 +188,8 @@ export class BlockModel {
 	}
 
 	private getTexture(textureRef: string) {
+		textureRef = textureRef.startsWith('#') ? textureRef.slice(1) : textureRef
+		textureRef = this.textures?.[textureRef] ?? ''
 		while (textureRef.startsWith('#')) {
 			textureRef = this.textures?.[textureRef.slice(1)] ?? ''
 		}
