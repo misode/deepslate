@@ -138,7 +138,7 @@ export namespace SpecialRenderers {
 
 	export function shieldRenderer(atlas: TextureAtlasProvider) {
 		return new BlockModel(undefined, {
-			0: 'entity/shield_base_nopattern',
+			0: 'entity/shield/shield_base_nopattern',
 		}, [
 			{
 				from: [-6, -11, -2],
@@ -628,7 +628,7 @@ export namespace SpecialRenderers {
 
 	function createBannerRenderer(color: string, config: { base: any[], pattern: (index: number) => any }) {
 		return (atlas: TextureAtlasProvider, patterns?: NbtList<NbtCompound>) => {
-			const textures: { [key: string]: string } = { 0: 'entity/banner_base' }
+			const textures: { [key: string]: string } = { 0: 'entity/banner/banner_base' }
 			const elements = [...config.base]
 			const colors: string[] = [color]
 
@@ -869,6 +869,7 @@ export namespace SpecialRenderers {
 		'dark_oak',
 		'mangrove',
 		'cherry',
+		'pale_oak',
 		'bamboo',
 		'crimson',
 		'warped',
@@ -970,7 +971,6 @@ export namespace SpecialRenderers {
 			const t = mat4.create()
 			mat4.translate(t, t, [8, 8, 8])
 			mat4.rotateY(t, t, rotation)
-			mat4.scale(t, t, [2/3, 2/3, 2/3])
 			mat4.translate(t, t, [-8, -8, -8])
 			mesh.merge(hangingSignRenderer(attached, atlas).transform(t))
 		}

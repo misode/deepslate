@@ -1,6 +1,6 @@
 import { mat4 } from 'gl-matrix'
 import type { Direction, ItemStack, NbtCompound, TextureAtlasProvider } from '../index.js'
-import { Identifier, Json, NbtList, SpecialRenderers } from '../index.js'
+import { Identifier, Json, NbtList, NbtType, SpecialRenderers } from '../index.js'
 import { Mesh } from './Mesh.js'
 
 export interface SpecialModel {
@@ -80,12 +80,15 @@ export namespace SpecialModel {
 
 		public getMesh(item: ItemStack, resources: TextureAtlasProvider): Mesh {
 			const patterns = item.getComponent('banner_patterns', undefined)
+			const patternList = patterns?.isList() && patterns.getType() === NbtType.Compound
+				? (patterns as NbtList<NbtCompound>)
+				: undefined
 			const t = mat4.create()
 			mat4.translate(t, t, [8, 24, 8])
 			mat4.rotateY(t, t, Math.PI)
 			mat4.scale(t, t, [2/3, 2/3, 2/3])
 			mat4.translate(t, t, [-8, -24, -8])
-			return this.renderer(resources, patterns instanceof NbtList<NbtCompound> ? patterns : undefined).transform(t)
+			return this.renderer(resources, patternList).transform(t)
 		}
 	}
 
