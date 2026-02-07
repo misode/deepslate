@@ -5,7 +5,7 @@ import type { NbtCompound, NbtList } from '../nbt/index.js'
 import { NbtType } from '../nbt/index.js'
 import { Color } from '../util/index.js'
 import { BlockColors } from './BlockColors.js'
-import { BlockModel } from './BlockModel.js'
+import { BlockModel, BlockModelElement } from './BlockModel.js'
 import { Cull } from './Cull.js'
 import { Mesh } from './Mesh.js'
 import type { TextureAtlasProvider } from './TextureAtlas.js'
@@ -136,23 +136,42 @@ export namespace SpecialRenderers {
 		]).getMesh(atlas, Cull.none())
 	}
 
-	export function shieldRenderer(atlas: TextureAtlasProvider) {
-		return new BlockModel(undefined, {
-			0: 'entity/shield/shield_base_nopattern',
-		}, [
+    const shieldFace = (index: number): BlockModelElement['faces'] => ({
+		south: {uv: [0.5, 0.5, 3, 5.5], texture: `#${index}`, tintindex: index},
+	})
+
+	export function shieldRenderer(atlas: TextureAtlasProvider, layers: { color: string; pattern: string }[]) {
+		const patternFn = (index: number): BlockModelElement => ({
+			from: [-5, -10, -0.99],
+			to: [5, 10, -0.99],
+			faces: shieldFace(index),
+		})
+
+		const textures: Record<string, string> = { 0: 'entity/shield/shield_base_nopattern' }
+		const elements: BlockModelElement[] = [
 			{
-				from: [-6, -11, -2],
-				to: [6, 11, -1],
-				faces: {
-					north: {uv: [3.5, 0.25, 6.5, 5.75], texture: '#0'},
-					east: {uv: [3.25, 0.25, 3.5, 5.75], texture: '#0'},
-					south: {uv: [0.25, 0.25, 3.25, 5.75], texture: '#0'},
-					west: {uv: [0, 0.25, 0.25, 5.75], texture: '#0'},
-					up: {uv: [0.25, 0, 3.25, 0.25], texture: '#0'},
-					down: {uv: [3.25, 0, 6.25, 0.25], texture: '#0'},
+			from: [-6, -11, -2],
+			to: [6, 11, -1],
+			faces: {
+				north: {uv: [3.5, 0.25, 6.5, 5.75], texture: '#0'},
+				east: {uv: [3.25, 0.25, 3.5, 5.75], texture: '#0'},
+				south: {uv: [0.25, 0.25, 3.25, 5.75], texture: '#0'},
+				west: {uv: [0, 0.25, 0.25, 5.75], texture: '#0'},
+				up: {uv: [0.25, 0, 3.25, 0.25], texture: '#0'},
+				down: {uv: [3.25, 0, 6.25, 0.25], texture: '#0'},
 				},
-			},
-		]).getMesh(atlas, Cull.none())
+			}
+		]
+		const tints: string[] = ['']
+
+		layers?.forEach((layer, index) => {
+			textures[index + 1] = `entity/shield/${layer.pattern}`
+			elements.push(patternFn(index + 1))
+			tints.push(layer.color)
+		})
+
+		return new BlockModel(undefined, textures, elements)
+			.getMesh(atlas, Cull.none(), (index: number) => DyeColors[tints[index] ?? ''] ?? [1, 1, 1])
 	}
 
 	export function headRenderer(texture: Identifier, n: number) {

@@ -151,7 +151,29 @@ export namespace SpecialModel {
 
 	class Shield implements SpecialModel {
 		public getMesh(item: ItemStack, resources: TextureAtlasProvider): Mesh {
-			const shieldMesh = SpecialRenderers.shieldRenderer(resources)
+			const layers: { color: string; pattern: string }[] = []
+			const bannerPatterns = item.getComponent('banner_patterns', undefined)
+			const patternList = bannerPatterns?.isList() && bannerPatterns.getType() === NbtType.Compound
+				? (bannerPatterns as NbtList<NbtCompound>)
+				: undefined
+			let baseColor = item.getComponent('base_color', undefined)?.getAsString()
+			if (!baseColor && (patternList?.length ?? 0) > 0) {
+				baseColor = 'white'
+			}
+			if (baseColor) {
+				layers.push({
+					color: baseColor,
+					pattern: 'base',
+				})
+				patternList?.forEach((compound) => {
+					layers.push({
+						pattern: Identifier.parse(compound.getString('pattern')).path,
+						color: compound.getString('color'),
+					})
+				})
+			}
+            
+			const shieldMesh = SpecialRenderers.shieldRenderer(resources, layers)
 			const t = mat4.create()
 			mat4.translate(t, t, [-3, 1, 0])
 			mat4.rotateX(t, t, -10 * Math.PI/180)

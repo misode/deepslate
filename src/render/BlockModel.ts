@@ -21,7 +21,7 @@ type BlockModelFace = {
 	tintindex?: number,
 }
 
-type BlockModelElement = {
+export type BlockModelElement = {
 	from: number[],
 	to: number[],
 	rotation?: {
