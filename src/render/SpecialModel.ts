@@ -1,6 +1,6 @@
 import { mat4 } from 'gl-matrix'
-import type { Direction, ItemStack, NbtCompound, TextureAtlasProvider } from '../index.js'
-import { Identifier, Json, NbtList, SpecialRenderers } from '../index.js'
+import type { Direction, ItemStack, TextureAtlasProvider } from '../index.js'
+import { Identifier, Json, NbtCompound, NbtList, SpecialRenderers } from '../index.js'
 import { Mesh } from './Mesh.js'
 
 export interface SpecialModel {
@@ -49,6 +49,12 @@ export namespace SpecialModel {
 				Json.readString(root.wood_type) ?? '',
 				typeof root.texture === 'string' ? Identifier.parse(root.texture) : undefined
 			)
+			case 'copper_golem_statue': {
+                const texturePath = Json.readString(root.texture) ?? ''
+                const lastPart = texturePath.substring(texturePath.lastIndexOf('/') + 1)
+                const textureId = lastPart.endsWith('.png') ? lastPart.slice(0, -4) : lastPart
+                return new CopperGolemStatue(Identifier.parse(textureId))
+			}
 			default:
 				console.warn(`[deepslate]: Unknown special model ${type}`)
 				return { getMesh: () => new Mesh() }
@@ -193,4 +199,26 @@ export namespace SpecialModel {
 			return this.renderer(false, resources)
 		}
 	}
+
+	class CopperGolemStatue implements SpecialModel {
+        private readonly renderer
+
+        constructor(texture: Identifier) {
+            this.renderer = SpecialRenderers.copperGolemStatueRenderer(texture)
+        }
+
+        public getMesh(item: ItemStack, resources: TextureAtlasProvider): Mesh {
+            const blockState = item.getComponent('block_state', undefined)
+            let pose = 'standing';
+            if (blockState instanceof NbtCompound) {
+                pose = blockState.getString('copper_golem_pose') || pose;
+            }
+            const t = mat4.create()
+            mat4.translate(t, t, [8, 12, 8])
+            mat4.rotateY(t, t, Math.PI)
+            mat4.rotateZ(t, t, Math.PI)
+            mat4.translate(t, t, [-8, -12, -8])
+            return this.renderer(resources, pose).transform(t)
+        }
+    }
 }
