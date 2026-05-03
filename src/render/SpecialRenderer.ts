@@ -5,6 +5,7 @@ import type { NbtCompound, NbtList } from '../nbt/index.js'
 import { NbtType } from '../nbt/index.js'
 import { Color } from '../util/index.js'
 import { BlockColors } from './BlockColors.js'
+import type { BlockModelElement } from './BlockModel.js'
 import { BlockModel } from './BlockModel.js'
 import { Cull } from './Cull.js'
 import { Mesh } from './Mesh.js'
@@ -136,10 +137,19 @@ export namespace SpecialRenderers {
 		]).getMesh(atlas, Cull.none())
 	}
 
-	export function shieldRenderer(atlas: TextureAtlasProvider) {
-		return new BlockModel(undefined, {
-			0: 'entity/shield_base_nopattern',
-		}, [
+	const shieldFace = (index: number): BlockModelElement['faces'] => ({
+		south: {uv: [0.5, 0.5, 3, 5.5], texture: `#${index}`, tintindex: index},
+	})
+
+	export function shieldRenderer(atlas: TextureAtlasProvider, layers: { color: string, pattern: string }[]) {
+		const patternFn = (index: number): BlockModelElement => ({
+			from: [-5, -10, -0.99],
+			to: [5, 10, -0.99],
+			faces: shieldFace(index),
+		})
+
+		const textures: Record<string, string> = { 0: 'entity/shield/shield_base_nopattern' }
+		const elements: BlockModelElement[] = [
 			{
 				from: [-6, -11, -2],
 				to: [6, 11, -1],
@@ -152,7 +162,17 @@ export namespace SpecialRenderers {
 					down: {uv: [3.25, 0, 6.25, 0.25], texture: '#0'},
 				},
 			},
-		]).getMesh(atlas, Cull.none())
+		]
+		const tints: string[] = ['']
+
+		layers?.forEach((layer, index) => {
+			textures[index + 1] = `entity/shield/${layer.pattern}`
+			elements.push(patternFn(index + 1))
+			tints.push(layer.color)
+		})
+
+		return new BlockModel(undefined, textures, elements)
+			.getMesh(atlas, Cull.none(), (index: number) => DyeColors[tints[index] ?? ''] ?? [1, 1, 1])
 	}
 
 	export function headRenderer(texture: Identifier, n: number) {
@@ -628,7 +648,7 @@ export namespace SpecialRenderers {
 
 	function createBannerRenderer(color: string, config: { base: any[], pattern: (index: number) => any }) {
 		return (atlas: TextureAtlasProvider, patterns?: NbtList<NbtCompound>) => {
-			const textures: { [key: string]: string } = { 0: 'entity/banner_base' }
+			const textures: { [key: string]: string } = { 0: 'entity/banner/banner_base' }
 			const elements = [...config.base]
 			const colors: string[] = [color]
 
@@ -1152,6 +1172,7 @@ export namespace SpecialRenderers {
 		'dark_oak',
 		'mangrove',
 		'cherry',
+		'pale_oak',
 		'bamboo',
 		'crimson',
 		'warped',
@@ -1264,7 +1285,6 @@ export namespace SpecialRenderers {
 			const t = mat4.create()
 			mat4.translate(t, t, [8, 8, 8])
 			mat4.rotateY(t, t, rotation)
-			mat4.scale(t, t, [2/3, 2/3, 2/3])
 			mat4.translate(t, t, [-8, -8, -8])
 			mesh.merge(hangingSignRenderer(attached, atlas).transform(t))
 		}
