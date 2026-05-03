@@ -1,6 +1,6 @@
 import { mat4 } from 'gl-matrix'
-import type { Direction, ItemStack, NbtCompound, TextureAtlasProvider } from '../index.js'
-import { Identifier, Json, NbtList, NbtType, SpecialRenderers } from '../index.js'
+import type { Direction, ItemStack, NbtCompound, NbtList, TextureAtlasProvider } from '../index.js'
+import { Identifier, Json, NbtType, SpecialRenderers } from '../index.js'
 import { Mesh } from './Mesh.js'
 
 export interface SpecialModel {
@@ -151,7 +151,7 @@ export namespace SpecialModel {
 
 	class Shield implements SpecialModel {
 		public getMesh(item: ItemStack, resources: TextureAtlasProvider): Mesh {
-			const layers: { color: string; pattern: string }[] = []
+			const layers: { color: string, pattern: string }[] = []
 			const bannerPatterns = item.getComponent('banner_patterns', undefined)
 			const patternList = bannerPatterns?.isList() && bannerPatterns.getType() === NbtType.Compound
 				? (bannerPatterns as NbtList<NbtCompound>)
@@ -172,7 +172,6 @@ export namespace SpecialModel {
 					})
 				})
 			}
-            
 			const shieldMesh = SpecialRenderers.shieldRenderer(resources, layers)
 			const t = mat4.create()
 			mat4.translate(t, t, [-3, 1, 0])
