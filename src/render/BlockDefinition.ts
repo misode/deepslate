@@ -91,6 +91,8 @@ export class BlockDefinition {
 	private matchesCase(condition: ModelMultiPartCondition, props: { [key: string]: string }): boolean {
 		if (Array.isArray(condition.OR)) {
 			return condition.OR.some(c => this.matchesCase(c, props))
+		} else if (Array.isArray(condition.AND)) {
+			return condition.AND.every(c => this.matchesCase(c, props))
 		}
 		if (Array.isArray(condition.AND)) {
 			return condition.AND.every(c => this.matchesCase(c, props))
