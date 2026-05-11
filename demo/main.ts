@@ -1,6 +1,6 @@
 import { mat4 } from 'gl-matrix'
 import type { ItemRendererResources, ItemRenderingContext, NbtTag, Resources, Voxel } from '../src/index.js'
-import { BlockDefinition, BlockModel, Identifier, ItemRenderer, ItemStack, NormalNoise, Structure, StructureRenderer, TextureAtlas, VoxelRenderer, XoroshiroRandom, jsonToNbt, upperPowerOfTwo } from '../src/index.js'
+import { BlockDefinition, BlockModel, Identifier, ItemRenderer, ItemStack, jsonToNbt, NormalNoise, Structure, StructureRenderer, TextureAtlas, upperPowerOfTwo, VoxelRenderer, XoroshiroRandom } from '../src/index.js'
 import { } from '../src/nbt/Util.js'
 import { ItemModel } from '../src/render/ItemModel.js'
 
@@ -83,7 +83,7 @@ Promise.all([
 
 	const itemList = document.createElement('datalist')
 	itemList.id = 'item-list'
-	items.forEach(item => {
+	items.forEach((item: any) => {
 		const option = document.createElement('option')
 		option.textContent = item
 		itemList.append(option)
@@ -99,7 +99,7 @@ Promise.all([
 	Object.keys(models).forEach(id => {
 		blockModels['minecraft:' + id] = BlockModel.fromJson(models[id])
 	})
-	Object.values(blockModels).forEach((m: any) => m.flatten({ getBlockModel: id => blockModels[id] }))
+	Object.values(blockModels).forEach((m: any) => m.flatten({ getBlockModel: (id: any) => blockModels[id] }))
 
 
 	const itemModels: Record<string, ItemModel> = {}
@@ -123,7 +123,7 @@ Promise.all([
 	const atlasCtx = atlasCanvas.getContext('2d')!
 	atlasCtx.drawImage(atlas, 0, 0)
 	const atlasData = atlasCtx.getImageData(0, 0, atlasSize, atlasSize)
-	const idMap = {}
+	const idMap: Record<string, any> = {}
 	Object.keys(uvMap).forEach(id => {
 		const [u, v, du, dv] = uvMap[id]
 		const dv2 = (du !== dv && id.startsWith('block/')) ? du : dv
