@@ -195,11 +195,17 @@ export class BlockModel {
 	private getTexture(textureRef: string) {
 		textureRef = textureRef.startsWith('#') ? textureRef.slice(1) : textureRef
 		let value: TextureRef = this.textures?.[textureRef] ?? ''
-		while (typeof value === 'string' && value.startsWith('#')) {
+		let hops = this.textures ? Object.keys(this.textures).length : 0
+		while (hops-- > 0) {
+			if (typeof value !== 'string') {
+				value = value.sprite
+			}
+			if (!value.startsWith('#')) {
+				break
+			}
 			value = this.textures?.[value.slice(1)] ?? ''
 		}
-		const sprite = typeof value === 'string' ? value : value.sprite
-		return Identifier.parse(sprite)
+		return Identifier.parse(typeof value === 'string' ? value : value.sprite)
 	}
 
 	public flatten(accessor: BlockModelProvider) {

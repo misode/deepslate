@@ -53,4 +53,25 @@ describe('BlockModel', () => {
 		model.getMesh(collectingAtlas(requested), {})
 		expect(requested).toContain('minecraft:block/white_stained_glass')
 	})
+
+	it('resolves an object whose sprite is itself a reference', () => {
+		const requested: string[] = []
+		const model = BlockModel.fromJson({
+			...cube,
+			textures: {
+				all: { sprite: '#base', force_translucent: true },
+				base: 'minecraft:block/tinted_glass',
+			},
+		})
+		model.getMesh(collectingAtlas(requested), {})
+		expect(requested).toContain('minecraft:block/tinted_glass')
+	})
+
+	it('terminates on a cyclic reference instead of looping forever', () => {
+		const model = BlockModel.fromJson({
+			...cube,
+			textures: { all: '#a', a: '#b', b: '#a' },
+		})
+		expect(() => model.getMesh(collectingAtlas([]), {})).not.toThrow()
+	})
 })
