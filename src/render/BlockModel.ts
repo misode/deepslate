@@ -21,6 +21,11 @@ type BlockModelFace = {
 	tintindex?: number,
 }
 
+export type TextureRef = string | {
+	sprite: string,
+	force_translucent?: boolean,
+}
+
 export type BlockModelElement = {
 	from: number[],
 	to: number[],
@@ -77,7 +82,7 @@ export class BlockModel {
 
 	constructor(
 		private parent: Identifier | undefined,
-		private textures: { [key: string]: string } | undefined,
+		private textures: { [key: string]: TextureRef } | undefined,
 		private elements: BlockModelElement[] | undefined,
 		private display?: BlockModelDisplay | undefined,
 		private guiLight?: BlockModelGuiLight | undefined,
@@ -189,11 +194,12 @@ export class BlockModel {
 
 	private getTexture(textureRef: string) {
 		textureRef = textureRef.startsWith('#') ? textureRef.slice(1) : textureRef
-		textureRef = this.textures?.[textureRef] ?? ''
-		while (textureRef.startsWith('#')) {
-			textureRef = this.textures?.[textureRef.slice(1)] ?? ''
+		let value: TextureRef = this.textures?.[textureRef] ?? ''
+		while (typeof value === 'string' && value.startsWith('#')) {
+			value = this.textures?.[value.slice(1)] ?? ''
 		}
-		return Identifier.parse(textureRef)
+		const sprite = typeof value === 'string' ? value : value.sprite
+		return Identifier.parse(sprite)
 	}
 
 	public flatten(accessor: BlockModelProvider) {
