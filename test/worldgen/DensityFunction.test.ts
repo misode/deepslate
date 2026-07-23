@@ -193,4 +193,22 @@ describe('DensityFunction', () => {
 		const fn3 = wrap(new DF.FindTopSurface(new DF.YClampedGradient(128, -128, -1, 1), new DF.Constant(50), 128, 1))
 		expect(fn3.compute(ContextA)).toEqual(128)
 	})
+
+	it('Mul with 0 and Infinity', () => {
+		const fn = wrap(DF.createAp2('add', DF.createAp2('mul', DF.Constant.ZERO, new DF.Mapped('invert', DF.Constant.ZERO)), new DF.Constant(5)))
+		expect(fn.compute(ContextA)).toEqual(Number.NaN)
+	})
+
+	it('IntervalSelect', () => {
+		const fn = wrap(new DF.IntervalSelect(new DF.YClampedGradient(0, 10, 0, 10), [2, 5, 8], [
+			new DF.Constant(100),
+			new DF.Constant(200),
+			new DF.Constant(300),
+			new DF.Constant(400),
+		]))
+		expect(fn.compute(DF.context(0, 1, 0))).toEqual(100)
+		expect(fn.compute(DF.context(0, 3, 0))).toEqual(200)
+		expect(fn.compute(DF.context(0, 6, 0))).toEqual(300)
+		expect(fn.compute(DF.context(0, 9, 0))).toEqual(400)
+	})
 })

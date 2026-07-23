@@ -128,10 +128,15 @@ export namespace DensityFunction {
 			case 'quarter_negative':
 			case 'squeeze':
 				return new Mapped(type, inputParser(root.argument))
+			case 'interval_select': return new IntervalSelect(
+				inputParser(root.input),
+				Json.readArray(root.thresholds, Json.readNumber) ?? [],
+				Json.readArray(root.functions, inputParser) ?? []
+			)
 			case 'add':
 			case 'mul':
 			case 'min':
-			case 'max': return new Ap2(
+			case 'max': return createAp2(
 				Json.readEnum(type, Ap2Type),
 				inputParser(root.argument1),
 				inputParser(root.argument2),
@@ -737,7 +742,7 @@ export namespace DensityFunction {
 			}
 		}
 		public mapAll(visitor: Visitor) {
-			return visitor.map(new Ap2(this.type, this.argument1.mapAll(visitor), this.argument2.mapAll(visitor)))
+			return visitor.map(createAp2(this.type, this.argument1.mapAll(visitor), this.argument2.mapAll(visitor)))
 		}
 		public minValue() {
 			return this.min ?? -Infinity
@@ -824,6 +829,103 @@ export namespace DensityFunction {
 		}
 		public maxValue() {
 			return Math.max(this.fromValue, this.toValue)
+		}
+	}
+
+	export type MulOrAddType = 'add' | 'mul'
+
+	export class MulOrAdd extends Transformer {
+		constructor(
+			public readonly type: MulOrAddType,
+			input: DensityFunction,
+			public readonly argument: number,
+			private readonly min?: number,
+			private readonly max?: number,
+		) {
+			super(input)
+		}
+		public transform(context: Context, density: number) {
+			switch (this.type) {
+				case 'add': return density + this.argument
+				case 'mul': return density * this.argument
+			}
+		}
+		public mapAll(visitor: Visitor) {
+			return visitor.map(new MulOrAdd(this.type, this.input.mapAll(visitor), this.argument))
+		}
+		public minValue() {
+			return this.min ?? -Infinity
+		}
+		public maxValue() {
+			return this.max ?? Infinity
+		}
+		public withMinMax() {
+			const min1 = this.input.minValue()
+			const max1 = this.input.maxValue()
+			const min2 = this.argument
+			const max2 = this.argument
+			let min, max
+			switch (this.type) {
+				case 'add':
+					min = min1 + min2
+					max = max1 + max2
+					break
+				case 'mul':
+					min = min1 > 0 && min2 > 0 ? (min1 * min2) || 0
+						: max1 < 0 && max2 < 0 ? (max1 * max2) || 0
+							: Math.min((min1 * max2) || 0, (min2 * max1) || 0)
+					max = min1 > 0 && min2 > 0 ? (max1 * max2) || 0
+						: max1 < 0 && max2 < 0 ? (min1 * min2) || 0
+							: Math.max((min1 * min2) || 0, (max1 * max2) || 0)
+					break
+			}
+			return new MulOrAdd(this.type, this.input, this.argument, min, max)
+		}
+	}
+
+	export function createAp2(type: typeof Ap2Type[number], argument1: DensityFunction, argument2: DensityFunction) {
+		if ((type === 'add' || type === 'mul') && argument1 instanceof Constant) {
+			return new MulOrAdd(type, argument2, argument1.minValue())
+		}
+		if ((type === 'add' || type === 'mul') && argument2 instanceof Constant) {
+			return new MulOrAdd(type, argument1, argument2.minValue())
+		}
+		return new Ap2(type, argument1, argument2)
+	}
+
+	export class IntervalSelect extends DensityFunction {
+		constructor(
+			public readonly input: DensityFunction,
+			public readonly thresholds: number[],
+			public readonly functions: DensityFunction[],
+		) {
+			super()
+		}
+		public compute(context: Context) {
+			const inputValue = this.input.compute(context)
+			for (let i = 0; i < this.thresholds.length; i++) {
+				if (inputValue < this.thresholds[i]) {
+					return this.functions[i].compute(context)
+				}
+			}
+			return this.functions[this.functions.length - 1].compute(context)
+		}
+		public mapAll(visitor: Visitor) {
+			return visitor.map(new IntervalSelect(this.input.mapAll(visitor), this.thresholds, this.functions.map(f => f.mapAll(visitor))))
+		}
+		public minValue() {
+			let min = Infinity
+			for (const f of this.functions) {
+				min = Math.min(min, f.minValue())
+			}
+			return min
+		}
+		public maxValue() {
+			let max = -Infinity
+			for (const f of this.functions) {
+				max = Math.max(max, f.maxValue())
+			}
+			return max
 		}
 	}
 }
