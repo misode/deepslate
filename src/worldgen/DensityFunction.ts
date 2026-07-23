@@ -130,7 +130,7 @@ export namespace DensityFunction {
 				return new Mapped(type, inputParser(root.argument))
 			case 'interval_select': return new IntervalSelect(
 				inputParser(root.input),
-				Json.readArray(root.thresholds, Json.readNumber) ?? [],
+				Json.readArray(root.thresholds, (e) => Json.readNumber(e) ?? 0) ?? [],
 				Json.readArray(root.functions, inputParser) ?? []
 			)
 			case 'add':
