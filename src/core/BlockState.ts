@@ -1,4 +1,4 @@
-import type { NbtCompound } from '../nbt/index.js'
+import type { NbtTag } from '../nbt/index.js'
 import { Json } from '../util/index.js'
 import { Identifier } from './Identifier.js'
 
@@ -81,9 +81,15 @@ export class BlockState {
 		}
 	}
 
-	public static fromNbt(nbt: NbtCompound) {
-		const name = Identifier.parse(nbt.getString('Name'))
-		const properties = nbt.getCompound('Properties')
+	public static fromNbt(nbt: NbtTag) {
+		if (nbt.isString()) {
+			return new BlockState(nbt.getAsString())
+		}
+		if (!nbt.isCompound()) {
+			throw new Error(`Invalid block state format ${nbt.toString()}`)
+		}
+		const name = Identifier.parse(nbt.hasString('id') ? nbt.getString('id') : nbt.getString('Name'))
+		const properties = (nbt.hasCompound('properties') ? nbt.getCompound('properties') : nbt.getCompound('Properties'))
 			.map((key, value) => [key, value.getAsString()])
 		return new BlockState(name, properties)
 	}
