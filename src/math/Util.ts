@@ -114,7 +114,7 @@ export function isPowerOfTwo(x: number) {
 }
 
 export function upperPowerOfTwo(x: number) {
-	x -= 1
+	x = Math.ceil(x) - 1
 	x |= x >> 1
 	x |= x >> 2
 	x |= x >> 4
