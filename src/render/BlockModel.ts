@@ -77,7 +77,7 @@ export class BlockModel {
 
 	constructor(
 		private parent: Identifier | undefined,
-		private textures: { [key: string]: string } | undefined,
+		private textures: { [key: string]: string | { sprite: string } } | undefined,
 		private elements: BlockModelElement[] | undefined,
 		private display?: BlockModelDisplay | undefined,
 		private guiLight?: BlockModelGuiLight | undefined,
@@ -189,11 +189,16 @@ export class BlockModel {
 
 	private getTexture(textureRef: string) {
 		textureRef = textureRef.startsWith('#') ? textureRef.slice(1) : textureRef
-		textureRef = this.textures?.[textureRef] ?? ''
+		textureRef = this.resolveTextureRef(textureRef)
 		while (textureRef.startsWith('#')) {
-			textureRef = this.textures?.[textureRef.slice(1)] ?? ''
+			textureRef = this.resolveTextureRef(textureRef.slice(1))
 		}
 		return Identifier.parse(textureRef)
+	}
+
+	private resolveTextureRef(ref: string) {
+		const sprite = this.textures?.[ref]
+		return typeof sprite === 'object' && sprite !== null ? sprite.sprite : sprite ?? ''
 	}
 
 	public flatten(accessor: BlockModelProvider) {
