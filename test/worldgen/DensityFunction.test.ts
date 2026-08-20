@@ -193,4 +193,14 @@ describe('DensityFunction', () => {
 		const fn3 = wrap(new DF.FindTopSurface(new DF.YClampedGradient(128, -128, -1, 1), new DF.Constant(50), 128, 1))
 		expect(fn3.compute(ContextA)).toEqual(128)
 	})
+
+	it('IntervalSelect', () => {
+		const fn = wrap(new DF.IntervalSelect(new DF.YClampedGradient(0, 128, 0, 128), [4, 7, 15], [new DF.Constant(-1), new DF.Constant(0), new DF.Constant(1)]))
+		expect(fn.compute(DF.context(0, 0, 0))).toEqual(-1)
+		expect(fn.compute(DF.context(0, 3, 0))).toEqual(-1)
+		expect(fn.compute(DF.context(0, 4, 0))).toEqual(0)
+		expect(fn.compute(DF.context(0, 6, 0))).toEqual(0)
+		expect(fn.compute(DF.context(0, 12, 0))).toEqual(1)
+		expect(fn.compute(DF.context(0, 18, 0))).toEqual(1)
+	})
 })

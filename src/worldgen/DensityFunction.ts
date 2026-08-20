@@ -120,6 +120,12 @@ export namespace DensityFunction {
 				Json.readNumber(root.min) ?? 0,
 				Json.readNumber(root.max) ?? 1,
 			)
+			case 'interval_select':
+				return new IntervalSelect(
+					inputParser(root.input),
+					Json.readArray(root.thresholds, (e) => Json.readNumber(e) ?? 0) ?? [],
+					Json.readArray(root.functions, inputParser) ?? [],
+				)
 			case 'abs':
 			case 'square':
 			case 'cube':
@@ -657,6 +663,45 @@ export namespace DensityFunction {
 		}
 		public maxValue() {
 			return this.max
+		}
+	}
+
+	export class IntervalSelect extends DensityFunction {
+		constructor(
+			public readonly input: DensityFunction,
+			public readonly thresholds: number[],
+			public readonly functions: DensityFunction[],
+		) {
+			super()
+			const minLength = Math.min(thresholds.length, functions.length)
+			this.thresholds = this.thresholds.slice(0, minLength)
+			this.functions = this.functions.slice(0, minLength)
+		}
+		public compute(context: Context) {
+			const input = this.input.compute(context)
+			for (let i = 0; i < this.thresholds.length; i += 1) {
+				if (input < this.thresholds[i]) {
+					return this.functions[i].compute(context)
+				}
+			}
+			return this.functions[this.functions.length-1].compute(context)
+		}
+		public mapAll(visitor: Visitor) {
+			return visitor.map(new IntervalSelect(this.input.mapAll(visitor), this.thresholds, this.functions.map(f => f.mapAll(visitor))))
+		}
+		public minValue() {
+			let min = Infinity
+			for (const f of this.functions) {
+				min = Math.min(min, f.minValue())
+			}
+			return min
+		}
+		public maxValue() {
+			let max = -Infinity
+			for (const f of this.functions) {
+				max = Math.max(max, f.maxValue())
+			}
+			return max
 		}
 	}
 
