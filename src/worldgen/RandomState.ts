@@ -89,6 +89,9 @@ export class RandomState {
 				if (fn instanceof DensityFunction.EndIslands) {
 					return new DensityFunction.EndIslands(this.seed)
 				}
+				if (fn instanceof DensityFunction.Binary) {
+					return fn.trySimplify()
+				}
 				return fn
 			},
 		}

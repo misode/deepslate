@@ -1,10 +1,10 @@
 import { Holder, Identifier } from '../core/index.js'
-import type { BlendedNoise, MinMaxNumberFunction, NormalNoise } from '../math/index.js'
-import { clamp, clampedMap, CubicSpline, lazyLerp3, LegacyRandom, NoiseParameters, SimplexNoise } from '../math/index.js'
+import type { BlendedNoise, NormalNoise } from '../math/index.js'
+import { clamp, clampedMap, CubicSpline, Interval, lazyLerp3, LegacyRandom, NoiseParameters, SimplexNoise } from '../math/index.js'
 import { computeIfAbsent, Json } from '../util/index.js'
 import { WorldgenRegistries } from './WorldgenRegistries.js'
 
-export abstract class DensityFunction implements MinMaxNumberFunction<DensityFunction.Context> {
+export abstract class DensityFunction {
 	public abstract compute(context: DensityFunction.Context): number
 
 	public abstract mapChildren(visitor: DensityFunction.Visitor): DensityFunction
@@ -18,11 +18,7 @@ export abstract class DensityFunction implements MinMaxNumberFunction<DensityFun
 		return recursiveVisitor.apply(this)
 	}
 
-	public minValue(): number {
-		return -this.maxValue()
-	}
-
-	public abstract maxValue(): number
+	public abstract range(): Interval
 }
 
 export namespace DensityFunction {
@@ -140,12 +136,12 @@ export namespace DensityFunction {
 			case 'invert':
 			case 'quarter_negative':
 			case 'squeeze':
-				return Mapped.create(type, inputParser(root.argument))
+				return new Unary(type, inputParser(root.argument))
 			case 'add':
 			case 'mul':
 			case 'min':
-			case 'max': return Ap2.create(
-				Json.readEnum(type, Ap2Type),
+			case 'max': return new Binary(
+				Json.readEnum(type, BinaryType),
 				inputParser(root.argument1),
 				inputParser(root.argument2),
 			)
@@ -175,11 +171,8 @@ export namespace DensityFunction {
 		public mapChildren(visitor: Visitor): DensityFunction {
 			return this
 		}
-		public minValue() {
-			return this.value
-		}
-		public maxValue() {
-			return this.value
+		public range(): Interval {
+			return Interval.ofExact(this.value)
 		}
 	}
 
@@ -195,11 +188,8 @@ export namespace DensityFunction {
 		public mapChildren(visitor: Visitor): DensityFunction {
 			return new HolderHolder(Holder.direct(visitor.apply(this.holder.value())))
 		}
-		public minValue(): number {
-			return this.holder.value().minValue()
-		}
-		public maxValue(): number {
-			return this.holder.value().maxValue()
+		public range(): Interval {
+			return this.holder.value().range()
 		}
 	}
 
@@ -211,11 +201,8 @@ export namespace DensityFunction {
 		){
 			super(value)
 		}
-		public minValue() {
-			return this.min
-		}
-		public maxValue() {
-			return this.max
+		public range(): Interval {
+			return Interval.of(this.min, this.max)
 		}
 	}
 
@@ -236,8 +223,11 @@ export namespace DensityFunction {
 		public mapChildren(visitor: Visitor): DensityFunction {
 			return this
 		}
-		public maxValue() {
-			return this.blendedNoise?.maxValue ?? 0
+		public range(): Interval {
+			if (!this.blendedNoise) {
+				return Interval.INFINITE
+			}
+			return Interval.ofSymmetric(this.blendedNoise.maxValue)
 		}
 	}
 
@@ -247,11 +237,8 @@ export namespace DensityFunction {
 		) {
 			super()
 		}
-		public minValue() {
-			return this.wrapped.minValue()
-		}
-		public maxValue() {
-			return this.wrapped.maxValue()
+		public range(): Interval {
+			return this.wrapped.range()
 		}
 	}
 
@@ -393,8 +380,11 @@ export namespace DensityFunction {
 		public mapChildren(visitor: Visitor): DensityFunction {
 			return this
 		}
-		public maxValue() {
-			return this.noise?.maxValue ?? 2
+		public range(): Interval {
+			if (!this.noise) {
+				return Interval.INFINITE
+			}
+			return Interval.ofSymmetric(this.noise.maxValue)
 		}
 	}
 
@@ -437,11 +427,8 @@ export namespace DensityFunction {
 		public mapChildren(visitor: Visitor) {
 			return this
 		}
-		public minValue() {
-			return -0.84375
-		}
-		public maxValue() {
-			return 0.5625
+		public range(): Interval {
+			return Interval.of(-0.84375, 0.5625)
 		}
 	}
 
@@ -469,11 +456,8 @@ export namespace DensityFunction {
 		public mapChildren(visitor: Visitor) {
 			return new FindTopSurface(visitor.apply(this.density), visitor.apply(this.upperBound), this.lowerBound, this.cellHeight)
 		}
-		public minValue() {
-			return this.lowerBound
-		}
-		public maxValue() {
-			return Math.max(this.lowerBound, this.upperBound.maxValue())
+		public range() {
+			return Interval.of(this.lowerBound, Math.max(this.lowerBound, this.upperBound.range().max))
 		}
 	}
 
@@ -504,11 +488,8 @@ export namespace DensityFunction {
 		public mapChildren(visitor: Visitor) {
 			return new WeirdScaledSampler(visitor.apply(this.input), this.rarityValueMapper, this.noiseData, this.noise)
 		}
-		public minValue(): number {
-			return 0
-		}
-		public maxValue(): number {
-			return this.rarityValueMapper === 'type_1' ? 2 : 3
+		public range(): Interval {
+			return Interval.of(0, this.rarityValueMapper === 'type_1' ? 2 : 3)
 		}
 		public static rarityValueMapper1(value: number) {
 			if (value < -0.5) {
@@ -578,11 +559,8 @@ export namespace DensityFunction {
 		public mapChildren(visitor: Visitor) {
 			return new RangeChoice(visitor.apply(this.input), this.minInclusive, this.maxExclusive, visitor.apply(this.whenInRange), visitor.apply(this.whenOutOfRange))
 		}
-		public minValue() {
-			return Math.min(this.whenInRange.minValue(), this.whenOutOfRange.minValue())
-		}
-		public maxValue() {
-			return Math.max(this.whenInRange.maxValue(), this.whenOutOfRange.maxValue())
+		public range(): Interval {
+			return Interval.encapsulating(this.whenInRange.range(), this.whenOutOfRange.range())
 		}
 	}
 
@@ -596,8 +574,14 @@ export namespace DensityFunction {
 		public compute(context: Context) {
 			return (this.offsetNoise?.sample(context.x * 0.25, context.y * 0.25, context.z * 0.25) ?? 0) * 4
 		}
-		public maxValue() {
-			return (this.offsetNoise?.maxValue ?? 2) * 4 
+		public mapChildren(visitor: Visitor): DensityFunction {
+			return this
+		}
+		public range(): Interval {
+			if (!this.offsetNoise) {
+				return Interval.INFINITE
+			}
+			return Interval.mul(Interval.ofSymmetric(this.offsetNoise.maxValue), Interval.ofExact(4))
 		}
 		public abstract withNewNoise(noise: NormalNoise): ShiftNoise
 	}
@@ -611,9 +595,6 @@ export namespace DensityFunction {
 		}
 		public compute(context: Context) {
 			return super.compute(DensityFunction.context(context.x, 0, context.z))
-		}
-		public mapChildren(visitor: Visitor): DensityFunction {
-			return this
 		}
 		public withNewNoise(newNoise: NormalNoise) {
 			return new ShiftA(this.noiseData, newNoise)
@@ -630,9 +611,6 @@ export namespace DensityFunction {
 		public compute(context: Context) {
 			return super.compute(DensityFunction.context(context.z, context.x, 0))
 		}
-		public mapChildren(visitor: Visitor): DensityFunction {
-			return this
-		}
 		public withNewNoise(newNoise: NormalNoise) {
 			return new ShiftB(this.noiseData, newNoise)
 		}
@@ -644,9 +622,6 @@ export namespace DensityFunction {
 			offsetNoise?: NormalNoise,
 		) {
 			super(noiseData, offsetNoise)
-		}
-		public mapChildren(visitor: Visitor): DensityFunction {
-			return this
 		}
 		public withNewNoise(newNoise: NormalNoise) {
 			return new Shift(this.noiseData, newNoise)
@@ -665,11 +640,8 @@ export namespace DensityFunction {
 		public mapChildren(visitor: Visitor): DensityFunction {
 			return new BlendDensity(visitor.apply(this.input))
 		}
-		public minValue() {
-			return -Infinity
-		}
-		public maxValue() {
-			return Infinity
+		public range(): Interval {
+			return Interval.INFINITE
 		}
 	}
 
@@ -687,11 +659,8 @@ export namespace DensityFunction {
 		public mapChildren(visitor: Visitor): DensityFunction {
 			return new Clamp(visitor.apply(this.input), this.min, this.max)
 		}
-		public minValue() {
-			return this.min
-		}
-		public maxValue() {
-			return this.max
+		public range() {
+			return Interval.clamp(this.input.range(), this.min, this.max)
 		}
 	}
 
@@ -715,40 +684,27 @@ export namespace DensityFunction {
 			}
 			return this.functions[this.functions.length-1].compute(context)
 		}
-		public mapChildren(visitor: Visitor) {
+		public mapChildren(visitor: Visitor): DensityFunction {
 			return new IntervalSelect(visitor.apply(this.input), this.thresholds, this.functions.map(visitor.apply))
 		}
-		public minValue() {
-			let min = Infinity
-			for (const fn of this.functions) {
-				min = Math.min(min, fn.minValue())
-			}
-			return min
-		}
-		public maxValue() {
-			let max = -Infinity
-			for (const f of this.functions) {
-				max = Math.max(max, f.maxValue())
-			}
-			return max
+		public range(): Interval {
+			return Interval.encapsulating(...this.functions.map(fn => fn.range()))
 		}
 	}
 
-	const MappedType = ['abs', 'square', 'cube', 'half_negative', 'invert', 'quarter_negative', 'squeeze'] as const
+	const UnaryType = ['abs', 'square', 'cube', 'half_negative', 'quarter_negative', 'invert', 'squeeze'] as const
 
-	export class Mapped extends Transformer {
+	export class Unary extends Transformer {
 		constructor(
-			public readonly type: typeof MappedType[number],
+			public readonly type: typeof UnaryType[number],
 			input: DensityFunction,
-			private readonly min: number,
-			private readonly max: number,
 		) {
 			super(input)
 		}
 		public transform(context: Context, density: number) {
-			return Mapped.transform(this.type, density)
+			return Unary.transform(this.type, density)
 		}
-		private static transform(type: typeof MappedType[number], d: number) {
+		private static transform(type: typeof UnaryType[number], d: number) {
 			switch (type) {
 				case 'abs':
 					return Math.abs(d)
@@ -768,99 +724,74 @@ export namespace DensityFunction {
 			}
 		}
 		public mapChildren(visitor: Visitor): DensityFunction {
-			return new Mapped(this.type, visitor.apply(this.input), this.min, this.max)
+			return new Unary(this.type, visitor.apply(this.input))
 		}
-		public minValue() {
-			return this.min
-		}
-		public maxValue() {
-			return this.max
-		}
-		public static create(type: typeof MappedType[number], input: DensityFunction) {
-			const minInput = input.minValue()
-			const maxInput = input.maxValue()
-			const min = Mapped.transform(type, minInput)
-			const max = Mapped.transform(type, maxInput)
-			if (type === 'invert') {
-				if (minInput < 0 && maxInput > 0) {
-					return new Mapped(type, input, -Infinity, Infinity)
-				} else {
-					return new Mapped(type, input, max, min)
-				}
-			} else if (type === 'abs' || type === 'square') {
-				return new Mapped(type, input, Math.max(0, minInput), Math.max(min, max))
+		public range() {
+			const inputRange = this.input.range()
+			switch (this.type) {
+				case 'abs':
+					return Interval.abs(inputRange)
+				case 'square':
+					return Interval.square(inputRange)
+				case 'cube':
+				case 'half_negative':
+				case 'quarter_negative':
+				case 'squeeze':
+					return Interval.mapMonotonic(inputRange, value => Unary.transform(this.type, value))
+				case 'invert':
+					return Interval.reciprocal(inputRange)
 			}
-			return new Mapped(type, input, min, max)
 		}
 	}
 
-	const Ap2Type = ['add', 'mul', 'min', 'max'] as const
+	const BinaryType = ['add', 'mul', 'min', 'max'] as const
 
-	export class Ap2 extends DensityFunction {
+	export class Binary extends DensityFunction {
+		private readonly rightRange: Interval
 		constructor(
-			public readonly type: typeof Ap2Type[number],
+			public readonly type: typeof BinaryType[number],
 			public readonly argument1: DensityFunction,
 			public readonly argument2: DensityFunction,
-			private readonly min: number,
-			private readonly max: number,
 		) {
 			super()
+			this.rightRange = argument2.range()
 		}
 		public compute(context: Context) {
 			const a = this.argument1.compute(context)
 			switch (this.type) {
 				case 'add': return a + this.argument2.compute(context)
 				case 'mul': return a === 0 ? 0 : a * this.argument2.compute(context)
-				case 'min': return a < this.argument2.minValue() ? a : Math.min(a, this.argument2.compute(context))
-				case 'max': return a > this.argument2.maxValue() ? a : Math.max(a, this.argument2.compute(context))
+				case 'min': return a < this.rightRange.min ? a : Math.min(a, this.argument2.compute(context))
+				case 'max': return a > this.rightRange.max ? a : Math.max(a, this.argument2.compute(context))
 			}
 		}
 		public mapChildren(visitor: Visitor) {
-			return new Ap2(this.type, visitor.apply(this.argument1), visitor.apply(this.argument2), this.min, this.max)
+			return new Binary(this.type, visitor.apply(this.argument1), visitor.apply(this.argument2))
 		}
-		public minValue() {
-			return this.min
-		}
-		public maxValue() {
-			return this.max
-		}
-		public static create(type: typeof Ap2Type[number], argument1: DensityFunction, argument2: DensityFunction) {
-			const min1 = argument1.minValue()
-			const min2 = argument2.minValue()
-			const max1 = argument1.maxValue()
-			const max2 = argument2.maxValue()
-			let min, max
-			switch (type) {
+		public range(): Interval {
+			const left = this.argument1.range()
+			const right = this.argument2.range()
+			switch (this.type) {
 				case 'add':
-					min = min1 + min2
-					max = max1 + max2
-					break
+					return Interval.add(left, right)
 				case 'mul':
-					min = min1 > 0 && min2 > 0 ? (min1 * min2) || 0
-						: max1 < 0 && max2 < 0 ? (max1 * max2) || 0
-							: Math.min((min1 * max2) || 0, (min2 * max1) || 0)
-					max = min1 > 0 && min2 > 0 ? (max1 * max2) || 0
-						: max1 < 0 && max2 < 0 ? (min1 * min2) || 0
-							: Math.max((min1 * min2) || 0, (max1 * max2) || 0)
-					break
+					return Interval.mul(left, right)
 				case 'min':
-					min = Math.min(min1, min2)
-					max = Math.min(max1, max2)
-					break
+					return Interval.min(left, right)
 				case 'max':
-					min = Math.max(min1, min2)
-					max = Math.max(max1, max2)
-					break
+					return Interval.max(left, right)
 			}
-			if (type === 'mul' || type === 'add') {
-				if (argument1 instanceof Constant) {
-					return new MulOrAdd(type, argument2, min, max, argument1.value)
+		}
+		public trySimplify(): DensityFunction {
+			if (this.type === 'mul' || this.type === 'add') {
+				if (this.argument1 instanceof Constant) {
+					return new MulOrAdd(this.type, this.argument2, this.argument1.value)
 				}
-				if (argument2 instanceof Constant) {
-					return new MulOrAdd(type, argument1, min, max, argument2.value)
+				if (this.argument2 instanceof Constant) {
+					return new MulOrAdd(this.type, this.argument1, this.argument2.value)
 				}
 			}
-			return new Ap2(type, argument1, argument2, min, max)
+			return this
 		}
 	}
 
@@ -870,8 +801,6 @@ export namespace DensityFunction {
 		constructor(
 			private readonly type: typeof MulOrAddType[number],
 			input: DensityFunction,
-			private readonly min: number,
-			private readonly max: number,
 			private readonly value: number,
 		) {
 			super(input)
@@ -885,28 +814,15 @@ export namespace DensityFunction {
 			}
 		}
 		public mapChildren(visitor: Visitor): DensityFunction {
-			const newInput = visitor.apply(this.input)
-			const min = newInput.minValue()
-			const max = newInput.maxValue()
-			let newMin: number
-			let newMax: number
-			if (this.type == 'add') {
-				newMin = min + this.value
-				newMax = max + this.value
-			} else if (this.value >= 0) {
-				newMin = min * this.value
-				newMax = max * this.value
-			} else {
-				newMin = max * this.value
-				newMax = min * this.value
+			return new MulOrAdd(this.type, visitor.apply(this.input), this.value)
+		}
+		public range(): Interval {
+			switch (this.type) {
+				case 'mul':
+					return Interval.mul(this.input.range(), Interval.ofExact(this.value))
+				case 'add':
+					return Interval.add(this.input.range(), Interval.ofExact(this.value))
 			}
-			return new MulOrAdd(this.type, newInput, newMin, newMax, this.value)
-		}
-		public minValue() {
-			return this.min
-		}
-		public maxValue() {
-			return this.max
 		}
 	}
 
@@ -920,20 +836,15 @@ export namespace DensityFunction {
 			return this.spline.compute(context)
 		}
 		public mapChildren(visitor: Visitor): DensityFunction {
-			const newCubicSpline = this.spline.mapCoordinates((fn) => {
-				if (fn instanceof DensityFunction) {
-					return visitor.apply(fn)
+			return new Spline(this.spline.mapCoordinates(c => {
+				if (c instanceof DensityFunction) {
+					return visitor.apply(c)
 				}
-				return fn
-			})
-			newCubicSpline.calculateMinMax()
-			return new Spline(newCubicSpline)
+				return c
+			}))
 		}
-		public minValue() {
-			return this.spline.min()
-		}
-		public maxValue() {
-			return this.spline.max()
+		public range(): Interval {
+			return this.spline.range()
 		}
 	}
 
@@ -952,11 +863,8 @@ export namespace DensityFunction {
 		public mapChildren(visitor: Visitor): DensityFunction {
 			return this
 		}
-		public minValue() {
-			return Math.min(this.fromValue, this.toValue)
-		}
-		public maxValue() {
-			return Math.max(this.fromValue, this.toValue)
+		public range() {
+			return Interval.of(Math.min(this.fromValue, this.toValue), Math.max(this.fromValue, this.toValue))
 		}
 	}
 }
