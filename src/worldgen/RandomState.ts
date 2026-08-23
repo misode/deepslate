@@ -54,7 +54,7 @@ export class RandomState {
 			return this.getOrCreateNoise(key)
 		}
 		const visitor = {
-			map: (fn: DensityFunction): DensityFunction => {
+			apply: (fn: DensityFunction): DensityFunction => {
 				if (fn instanceof DensityFunction.HolderHolder) {
 					const key = fn.holder.key()
 					if (key !== undefined && mapped.has(key.toString())) {

@@ -19,7 +19,7 @@ export namespace MinMaxNumberFunction {
 export interface CubicSpline<C> extends NumberFunction<C> {
 	min(): number,
 	max(): number,
-	mapAll(visitor: CubicSpline.CoordinateVisitor<C>): CubicSpline<C>
+	mapCoordinates(visitor: CubicSpline.CoordinateVisitor<C>): CubicSpline<C>
 	calculateMinMax(): void
 }
 
@@ -58,7 +58,7 @@ export namespace CubicSpline {
 		public max() {
 			return this.value
 		}
-		public mapAll() {
+		public mapCoordinates() {
 			return this
 		}
 
@@ -110,8 +110,8 @@ export namespace CubicSpline {
 			return this.calculatedMax
 		}
 	
-		public mapAll(visitor: CubicSpline.CoordinateVisitor<C>): CubicSpline<C> {
-			return new MultiPoint(visitor(this.coordinate), this.locations, this.values.map(v => v.mapAll(visitor)), this.derivatives)
+		public mapCoordinates(visitor: CubicSpline.CoordinateVisitor<C>): CubicSpline<C> {
+			return new MultiPoint(visitor(this.coordinate), this.locations, this.values.map(v => v.mapCoordinates(visitor)), this.derivatives)
 		}
 	
 		public addPoint(location: number, value: number | CubicSpline<C>, derivative = 0) {
