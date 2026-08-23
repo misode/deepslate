@@ -89,12 +89,6 @@ export class RandomState {
 				if (fn instanceof DensityFunction.EndIslands) {
 					return new DensityFunction.EndIslands(this.seed)
 				}
-				if (fn instanceof DensityFunction.Mapped) {
-					return fn.withMinMax()
-				}
-				if (fn instanceof DensityFunction.Ap2) {
-					return fn.withMinMax()
-				}
 				return fn
 			},
 		}

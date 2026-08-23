@@ -133,11 +133,11 @@ export namespace DensityFunction {
 			case 'invert':
 			case 'quarter_negative':
 			case 'squeeze':
-				return new Mapped(type, inputParser(root.argument))
+				return Mapped.create(type, inputParser(root.argument))
 			case 'add':
 			case 'mul':
 			case 'min':
-			case 'max': return new Ap2(
+			case 'max': return Ap2.create(
 				Json.readEnum(type, Ap2Type),
 				inputParser(root.argument1),
 				inputParser(root.argument2),
@@ -159,7 +159,7 @@ export namespace DensityFunction {
 	export class Constant extends DensityFunction {
 		public static ZERO = new Constant(0)
 		public static ONE = new Constant(1)
-		constructor(private readonly value: number) {
+		constructor(public readonly value: number) {
 			super()
 		}
 		public compute() {
@@ -708,55 +708,60 @@ export namespace DensityFunction {
 	const MappedType = ['abs', 'square', 'cube', 'half_negative', 'invert', 'quarter_negative', 'squeeze'] as const
 
 	export class Mapped extends Transformer {
-		private static readonly MappedTypes: Record<typeof MappedType[number], (density: number) => number> = {
-			abs: d => Math.abs(d),
-			square: d => d * d,
-			cube: d => d * d * d,
-			half_negative: d => d > 0 ? d : d * 0.5,
-			invert: d => 1/d,
-			quarter_negative: d => d > 0 ? d : d * 0.25,
-			squeeze: d => {
-				const c = clamp(d, -1, 1)
-				return c / 2 - c * c * c / 24
-			},
-		}
-		private readonly transformer: (density: number) => number
 		constructor(
 			public readonly type: typeof MappedType[number],
 			input: DensityFunction,
-			private readonly min?: number,
-			private readonly max?: number,
+			private readonly min: number,
+			private readonly max: number,
 		) {
 			super(input)
-			this.transformer = Mapped.MappedTypes[this.type]
 		}
 		public transform(context: Context, density: number) {
-			return this.transformer(density)
+			return Mapped.transform(this.type, density)
+		}
+		private static transform(type: typeof MappedType[number], d: number) {
+			switch (type) {
+				case 'abs':
+					return Math.abs(d)
+				case 'square':
+					return d * d
+				case 'cube':
+					return d * d * d
+				case 'half_negative':
+					return d > 0 ? d : d * 0.5
+				case 'quarter_negative':
+					return d > 0 ? d : d * 0.25
+				case 'invert':
+					return 1/d
+				case 'squeeze':
+					const c = clamp(d, -1, 1)
+					return c / 2 - c * c * c / 24
+			}
 		}
 		public mapAll(visitor: Visitor): DensityFunction {
-			return visitor.map(new Mapped(this.type, this.input.mapAll(visitor)))
+			return visitor.map(new Mapped(this.type, this.input.mapAll(visitor), this.min, this.max))
 		}
 		public minValue() {
-			return this.min ?? -Infinity
+			return this.min
 		}
 		public maxValue() {
-			return this.max ?? Infinity
+			return this.max
 		}
-		public withMinMax() {
-			const minInput = this.input.minValue()
-			let min = this.transformer(minInput)
-			let max = this.transformer(this.input.maxValue())
-			if (this.type === 'invert') {
-				if (min < 0 && max > 0) {
-					[min, max] = [-Infinity, Infinity]
+		public static create(type: typeof MappedType[number], input: DensityFunction) {
+			const minInput = input.minValue()
+			const maxInput = input.maxValue()
+			const min = Mapped.transform(type, minInput)
+			const max = Mapped.transform(type, maxInput)
+			if (type === 'invert') {
+				if (minInput < 0 && maxInput > 0) {
+					return new Mapped(type, input, -Infinity, Infinity)
 				} else {
-					[min, max] = [max, min]
+					return new Mapped(type, input, max, min)
 				}
-			} else if (this.type === 'abs' || this.type === 'square') {
-				max = Math.max(min, max)
-				min = Math.max(0, minInput)
+			} else if (type === 'abs' || type === 'square') {
+				return new Mapped(type, input, Math.max(0, minInput), Math.max(min, max))
 			}
-			return new Mapped(this.type, this.input, min, max)
+			return new Mapped(type, input, min, max)
 		}
 	}
 
@@ -767,8 +772,8 @@ export namespace DensityFunction {
 			public readonly type: typeof Ap2Type[number],
 			public readonly argument1: DensityFunction,
 			public readonly argument2: DensityFunction,
-			private readonly min?: number,
-			private readonly max?: number,
+			private readonly min: number,
+			private readonly max: number,
 		) {
 			super()
 		}
@@ -782,24 +787,21 @@ export namespace DensityFunction {
 			}
 		}
 		public mapAll(visitor: Visitor) {
-			return visitor.map(new Ap2(this.type, this.argument1.mapAll(visitor), this.argument2.mapAll(visitor)))
+			return visitor.map(new Ap2(this.type, this.argument1.mapAll(visitor), this.argument2.mapAll(visitor), this.min, this.max))
 		}
 		public minValue() {
-			return this.min ?? -Infinity
+			return this.min
 		}
 		public maxValue() {
-			return this.max ?? Infinity
+			return this.max
 		}
-		public withMinMax() {
-			const min1 = this.argument1.minValue()
-			const min2 = this.argument2.minValue()
-			const max1 = this.argument1.maxValue()
-			const max2 = this.argument2.maxValue()
-			if ((this.type === 'min' || this.type === 'max') && (min1 >= max2 || min2 >= max1)) {
-				console.warn(`Creating a ${this.type} function between two non-overlapping inputs`)
-			}
+		public static create(type: typeof Ap2Type[number], argument1: DensityFunction, argument2: DensityFunction) {
+			const min1 = argument1.minValue()
+			const min2 = argument2.minValue()
+			const max1 = argument1.maxValue()
+			const max2 = argument2.maxValue()
 			let min, max
-			switch (this.type) {
+			switch (type) {
 				case 'add':
 					min = min1 + min2
 					max = max1 + max2
@@ -821,7 +823,61 @@ export namespace DensityFunction {
 					max = Math.max(max1, max2)
 					break
 			}
-			return new Ap2(this.type, this.argument1, this.argument2, min, max)
+			if (type === 'mul' || type === 'add') {
+				if (argument1 instanceof Constant) {
+					return new MulOrAdd(type, argument2, min, max, argument1.value)
+				}
+				if (argument2 instanceof Constant) {
+					return new MulOrAdd(type, argument1, min, max, argument2.value)
+				}
+			}
+			return new Ap2(type, argument1, argument2, min, max)
+		}
+	}
+
+	const MulOrAddType = ['add', 'mul'] as const
+
+	export class MulOrAdd extends Transformer {
+		constructor(
+			private readonly type: typeof MulOrAddType[number],
+			input: DensityFunction,
+			private readonly min: number,
+			private readonly max: number,
+			private readonly value: number,
+		) {
+			super(input)
+		}
+		public transform(context: Context, density: number) {
+			switch (this.type) {
+				case 'mul':
+					return density * this.value
+				case 'add':
+					return density + this.value
+			}
+		}
+		public minValue() {
+			return this.min
+		}
+		public maxValue() {
+			return this.max
+		}
+		public mapAll(visitor: Visitor): DensityFunction {
+			const newInput = this.input.mapAll(visitor)
+			const min = newInput.minValue()
+			const max = newInput.maxValue()
+			let newMin: number
+			let newMax: number
+			if (this.type == 'add') {
+				newMin = min + this.value
+				newMax = max + this.value
+			} else if (this.value >= 0) {
+				newMin = min * this.value
+				newMax = max * this.value
+			} else {
+				newMin = max * this.value
+				newMax = min * this.value
+			}
+			return visitor.map(new MulOrAdd(this.type, newInput, newMin, newMax, this.value))
 		}
 	}
 
