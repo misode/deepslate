@@ -1,6 +1,6 @@
 import { Holder, Identifier } from '../core/index.js'
 import type { BlendedNoise, NormalNoise } from '../math/index.js'
-import { clamp, clampedMap, CubicSpline, Interval, lazyLerp3, LegacyRandom, NoiseParameters, SimplexNoise } from '../math/index.js'
+import { clamp, clampedLerp, clampedMap, CubicSpline, floatLerp, Interval, lazyLerp3, LegacyRandom, NoiseParameters, SimplexNoise, Vector } from '../math/index.js'
 import { computeIfAbsent, Json } from '../util/index.js'
 import { WorldgenRegistries } from './WorldgenRegistries.js'
 
@@ -54,7 +54,11 @@ export namespace DensityFunction {
 		}
 	}
 
-	const NoiseParser = Holder.parser(WorldgenRegistries.NOISE, NoiseParameters.fromJson)
+	const noiseParser = Holder.parser(WorldgenRegistries.NOISE, NoiseParameters.fromJson)
+	const vectorParser = (obj: unknown): Vector => {
+		const arr = Json.readArray(obj, v => Json.readNumber(v) ?? 0) ?? []
+		return new Vector(arr[0] ?? 0, arr[1] ?? 0, arr[2] ?? 0)
+	}
 
 	export function fromJson(obj: unknown, inputParser: (obj: unknown) => DensityFunction = fromJson): DensityFunction {
 		if (typeof obj === 'string') {
@@ -77,17 +81,30 @@ export namespace DensityFunction {
 				Json.readNumber(root.y_factor) ?? 160, 
 				Json.readNumber(root.smear_scale_multiplier) ?? 8
 			)
-			case 'flat_cache': return new FlatCache(inputParser(root.argument))
-			case 'interpolated': return new Interpolated(inputParser(root.argument))
-			case 'cache_2d': return new Cache2D(inputParser(root.argument))
-			case 'cache_once': return new CacheOnce(inputParser(root.argument))
-			case 'cache_all_in_cell': return new CacheAllInCell(inputParser(root.argument))
-			case 'noise': return new Noise(
-				Json.readNumber(root.xz_scale) ?? 1,
-				Json.readNumber(root.y_scale) ?? 1,
-				NoiseParser(root.noise),
+			case 'flat_cache': return new FlatCache(inputParser(root.input ?? root.argument))
+			case 'interpolated': return new Interpolated(
+				inputParser(root.input ?? root.argument),
+				Json.readInt(root.cell_size_xz) ?? 4,
+				Json.readInt(root.cell_size_y) ?? 4,
 			)
-			case 'end_islands': return new EndIslands()
+			case 'cache_2d': return new Cache2D(inputParser(root.input ?? root.argument))
+			case 'cache':
+			case 'cache_once':
+				return new CacheOnce(inputParser(root.input ?? root.argument))
+			case 'cache_all_in_cell': return new CacheAllInCell(inputParser(root.input ?? root.argument))
+			case 'noise':
+			case 'shifted_noise':
+				return new Noise(
+					noiseParser(root.noise),
+					Json.readNumber(root.xz_scale) ?? 1,
+					Json.readNumber(root.y_scale) ?? 1,
+					root.shift_x ? inputParser(root.shift_x) : DensityFunction.Constant.ZERO,
+					root.shift_y ? inputParser(root.shift_y) : DensityFunction.Constant.ZERO,
+					root.shift_z ? inputParser(root.shift_z) : DensityFunction.Constant.ZERO,
+				)
+			case 'end_islands':
+			case 'end_outer_islands':
+				return new EndIslands()
 			case 'find_top_surface': return new FindTopSurface(
 				inputParser(root.density),
 				inputParser(root.upper_bound),
@@ -97,15 +114,7 @@ export namespace DensityFunction {
 			case 'weird_scaled_sampler': return new WeirdScaledSampler(
 				inputParser(root.input),
 				Json.readEnum(root.rarity_value_mapper, RarityValueMapper),
-				NoiseParser(root.noise),
-			)
-			case 'shifted_noise': return new ShiftedNoise(
-				inputParser(root.shift_x),
-				inputParser(root.shift_y),
-				inputParser(root.shift_z),
-				Json.readNumber(root.xz_scale) ?? 1,
-				Json.readNumber(root.y_scale) ?? 1,
-				NoiseParser(root.noise),
+				noiseParser(root.noise),
 			)
 			case 'range_choice': return new RangeChoice(
 				inputParser(root.input),
@@ -114,10 +123,10 @@ export namespace DensityFunction {
 				inputParser(root.when_in_range),
 				inputParser(root.when_out_of_range),
 			)
-			case 'shift_a': return new ShiftA(NoiseParser(root.argument))
-			case 'shift_b': return new ShiftB(NoiseParser(root.argument))
-			case 'shift': return new Shift(NoiseParser(root.argument))
-			case 'blend_density': return new BlendDensity(inputParser(root.argument))
+			case 'shift_a': return new ShiftA(noiseParser(root.noise ?? root.argument))
+			case 'shift_b': return new ShiftB(noiseParser(root.noise ?? root.argument))
+			case 'shift': return new Shift(noiseParser(root.noise ?? root.argument))
+			case 'blend_density': return new BlendDensity(inputParser(root.input ?? root.argument))
 			case 'clamp': return new Clamp(
 				inputParser(root.input),
 				Json.readNumber(root.min) ?? 0,
@@ -132,28 +141,67 @@ export namespace DensityFunction {
 			case 'abs':
 			case 'square':
 			case 'cube':
+			case 'sqrt':
 			case 'half_negative':
-			case 'invert':
 			case 'quarter_negative':
 			case 'squeeze':
-				return new Unary(type, inputParser(root.argument))
+			case 'invert':
+			case 'reciprocal':
+			case 'negate':
+			case 'log':
+			case 'sign':
+				return new Unary(type, inputParser(root.input ?? root.argument))
 			case 'add':
+			case 'sub':
 			case 'mul':
+			case 'div':
 			case 'min':
 			case 'max': return new Binary(
 				Json.readEnum(type, BinaryType),
-				inputParser(root.argument1),
-				inputParser(root.argument2),
+				inputParser(root.left ?? root.argument1),
+				inputParser(root.right ?? root.argument2),
 			)
 			case 'spline': return new Spline(
 				CubicSpline.fromJson(root.spline, inputParser)
 			)
-			case 'constant': return new Constant(Json.readNumber(root.argument) ?? 0)
+			case 'constant': return new Constant(Json.readNumber(root.value ?? root.argument) ?? 0)
 			case 'y_clamped_gradient': return new YClampedGradient(
 				Json.readInt(root.from_y) ?? -4064,
 				Json.readInt(root.to_y) ?? 4062,
 				Json.readNumber(root.from_value) ?? -4064,
 				Json.readNumber(root.to_value) ?? 4062,
+			)
+			case 'gradient': return new Gradient(
+				Json.readEnum(root.axis, AxisType),
+				Json.readEnum(root.tiling, TilingType),
+				Json.readInt(root.from_coordinate) ?? 0,
+				Json.readInt(root.to_coordinates) ?? 1,
+				Json.readNumber(root.from_value) ?? 0,
+				Json.readNumber(root.to_value) ?? 1,
+			)
+			case 'lerp': return new Lerp(
+				inputParser(root.alpha),
+				inputParser(root.first),
+				inputParser(root.second),
+			)
+			case 'floor':
+			case 'round':
+			case 'ceil':
+			case 'truncate':
+				return new Round(
+					type,
+					inputParser(root.input),
+					inputParser(root.multiple),
+				)
+			case 'pow': return new Pow(inputParser(root.base), inputParser(root.exponent))
+			case 'distance_to_point': return new DistanceToPoint(
+				vectorParser(root.point),
+				Json.readEnum(root.metric, DistanceMetric),
+			)
+			case 'slice': return new Slice(
+				Json.readEnum(root.axis, AxisType),
+				Json.readInt(root.coordinate) ?? 0,
+				inputParser(root.input),
 			)
 		}
 		return Constant.ZERO
@@ -327,8 +375,8 @@ export namespace DensityFunction {
 		private readonly values: Map<string, number>
 		constructor(
 			wrapped: DensityFunction,
-			private readonly cellWidth: number = 4,
-			private readonly cellHeight: number = 4,
+			private readonly cellWidth: number,
+			private readonly cellHeight: number,
 		) {
 			super(wrapped)
 			this.values = new Map()
@@ -358,7 +406,7 @@ export namespace DensityFunction {
 			})
 		}
 		public mapChildren(visitor: Visitor) {
-			return new Interpolated(visitor.apply(this.wrapped))
+			return new Interpolated(visitor.apply(this.wrapped), this.cellWidth, this.cellHeight)
 		}
 		public withCellSize(cellWidth: number, cellHeight: number) {
 			return new Interpolated(this.wrapped, cellWidth, cellHeight)
@@ -367,18 +415,24 @@ export namespace DensityFunction {
 
 	export class Noise extends DensityFunction {
 		constructor(
+			public readonly noiseData: Holder<NoiseParameters>,
 			public readonly xzScale: number,
 			public readonly yScale: number,
-			public readonly noiseData: Holder<NoiseParameters>,
+			public readonly shiftX: DensityFunction,
+			public readonly shiftY: DensityFunction,
+			public readonly shiftZ: DensityFunction,
 			public readonly noise?: NormalNoise,
 		) {
 			super()
 		}
 		public compute(context: Context) {
-			return this.noise?.sample(context.x * this.xzScale, context.y * this.yScale, context.z * this.xzScale) ?? 0
+			const x = context.x * this.xzScale + this.shiftX.compute(context)
+			const y = context.y * this.yScale + this.shiftY.compute(context)
+			const z = context.z * this.xzScale + this.shiftZ.compute(context)
+			return this.noise?.sample(x, y, z) ?? 0
 		}
 		public mapChildren(visitor: Visitor): DensityFunction {
-			return this
+			return new Noise(this.noiseData, this.xzScale, this.yScale, visitor.apply(this.shiftX), visitor.apply(this.shiftY), visitor.apply(this.shiftZ))
 		}
 		public range(): Interval {
 			if (!this.noise) {
@@ -514,29 +568,6 @@ export namespace DensityFunction {
 			} else {
 				return 3
 			}
-		}
-	}
-
-	export class ShiftedNoise extends Noise {
-		constructor(
-			public readonly shiftX: DensityFunction,
-			public readonly shiftY: DensityFunction,
-			public readonly shiftZ: DensityFunction,
-			xzScale: number,
-			yScale: number,
-			noiseData: Holder<NoiseParameters>,
-			noise?: NormalNoise
-		) {
-			super(xzScale, yScale, noiseData, noise)
-		}
-		public compute(context: Context) {
-			const xx = context.x * this.xzScale + this.shiftX.compute(context)
-			const yy = context.y * this.yScale + this.shiftY.compute(context)
-			const zz = context.z * this.xzScale + this.shiftZ.compute(context)
-			return this.noise?.sample(xx, yy, zz) ?? 0
-		}
-		public mapChildren(visitor: Visitor): DensityFunction {
-			return new ShiftedNoise(visitor.apply(this.shiftX), visitor.apply(this.shiftY), visitor.apply(this.shiftZ), this.xzScale, this.yScale, this.noiseData, this.noise)
 		}
 	}
 
@@ -692,7 +723,7 @@ export namespace DensityFunction {
 		}
 	}
 
-	const UnaryType = ['abs', 'square', 'cube', 'half_negative', 'quarter_negative', 'invert', 'squeeze'] as const
+	const UnaryType = ['abs', 'square', 'cube', 'sqrt', 'half_negative', 'quarter_negative', 'squeeze', 'invert', 'reciprocal', 'negate', 'log', 'sign'] as const
 
 	export class Unary extends Transformer {
 		constructor(
@@ -704,91 +735,94 @@ export namespace DensityFunction {
 		public transform(context: Context, density: number) {
 			return Unary.transform(this.type, density)
 		}
-		private static transform(type: typeof UnaryType[number], d: number) {
+		private static transform(type: typeof UnaryType[number], d: number): number {
 			switch (type) {
-				case 'abs':
-					return Math.abs(d)
-				case 'square':
-					return d * d
-				case 'cube':
-					return d * d * d
-				case 'half_negative':
-					return d > 0 ? d : d * 0.5
-				case 'quarter_negative':
-					return d > 0 ? d : d * 0.25
-				case 'invert':
-					return 1/d
+				case 'abs': return Math.abs(d)
+				case 'square': return d * d
+				case 'cube': return d * d * d
+				case 'half_negative': return d > 0 ? d : d * 0.5
+				case 'quarter_negative': return d > 0 ? d : d * 0.25
 				case 'squeeze':
 					const c = clamp(d, -1, 1)
 					return c / 2 - c * c * c / 24
+				case 'invert':
+				case 'reciprocal':
+					return 1/d
+				case 'negate': return -d
+				case 'sqrt': return Math.sqrt(d)
+				case 'log': return Math.log(d)
+				case 'sign': return Math.sign(d)
 			}
 		}
 		public mapChildren(visitor: Visitor): DensityFunction {
 			return new Unary(this.type, visitor.apply(this.input))
 		}
-		public range() {
+		public range(): Interval {
 			const inputRange = this.input.range()
 			switch (this.type) {
-				case 'abs':
-					return Interval.abs(inputRange)
-				case 'square':
-					return Interval.square(inputRange)
+				case 'abs': return Interval.abs(inputRange)
+				case 'square': return Interval.square(inputRange)
 				case 'cube':
 				case 'half_negative':
 				case 'quarter_negative':
 				case 'squeeze':
 					return Interval.mapMonotonic(inputRange, value => Unary.transform(this.type, value))
 				case 'invert':
+				case 'reciprocal':
 					return Interval.reciprocal(inputRange)
+				case 'negate': return Interval.sub(Interval.ofExact(0), inputRange)
+				case 'sqrt': return Interval.pow(inputRange, Interval.ofExact(0.5))
+				case 'log': return Interval.log(inputRange)
+				case 'sign': return Interval.sign(inputRange)
 			}
 		}
 	}
 
-	const BinaryType = ['add', 'mul', 'min', 'max'] as const
+	const BinaryType = ['add', 'sub', 'mul', 'div', 'min', 'max'] as const
 
 	export class Binary extends DensityFunction {
 		private readonly rightRange: Interval
 		constructor(
 			public readonly type: typeof BinaryType[number],
-			public readonly argument1: DensityFunction,
-			public readonly argument2: DensityFunction,
+			public readonly left: DensityFunction,
+			public readonly right: DensityFunction,
 		) {
 			super()
-			this.rightRange = argument2.range()
+			this.rightRange = right.range()
 		}
-		public compute(context: Context) {
-			const a = this.argument1.compute(context)
+		public compute(context: Context): number {
+			const a = this.left.compute(context)
 			switch (this.type) {
-				case 'add': return a + this.argument2.compute(context)
-				case 'mul': return a === 0 ? 0 : a * this.argument2.compute(context)
-				case 'min': return a < this.rightRange.min ? a : Math.min(a, this.argument2.compute(context))
-				case 'max': return a > this.rightRange.max ? a : Math.max(a, this.argument2.compute(context))
+				case 'add': return a + this.right.compute(context)
+				case 'sub': return a - this.right.compute(context)
+				case 'mul': return a === 0 ? 0 : a * this.right.compute(context)
+				case 'div': return a === 0 ? 0 : a / this.right.compute(context)
+				case 'min': return a < this.rightRange.min ? a : Math.min(a, this.right.compute(context))
+				case 'max': return a > this.rightRange.max ? a : Math.max(a, this.right.compute(context))
 			}
 		}
-		public mapChildren(visitor: Visitor) {
-			return new Binary(this.type, visitor.apply(this.argument1), visitor.apply(this.argument2))
+		public mapChildren(visitor: Visitor): DensityFunction {
+			return new Binary(this.type, visitor.apply(this.left), visitor.apply(this.right))
 		}
 		public range(): Interval {
-			const left = this.argument1.range()
-			const right = this.argument2.range()
+			const left = this.left.range()
+			const right = this.right.range()
 			switch (this.type) {
-				case 'add':
-					return Interval.add(left, right)
-				case 'mul':
-					return Interval.mul(left, right)
-				case 'min':
-					return Interval.min(left, right)
-				case 'max':
-					return Interval.max(left, right)
+				case 'add': return Interval.add(left, right)
+				case 'sub': return Interval.sub(left, right)
+				case 'mul': return Interval.mul(left, right)
+				case 'div': return Interval.div(left, right)
+				case 'min': return Interval.min(left, right)
+				case 'max': return Interval.max(left, right)
 			}
 		}
 		public trySimplify(): DensityFunction {
 			if (this.type === 'mul' || this.type === 'add') {
-				if (this.argument1 instanceof Constant) {
-					return new MulOrAdd(this.type, this.argument2, this.argument1.value)
+				if (this.left instanceof Constant) {
+					return new MulOrAdd(this.type, this.right, this.left.value)
 				}
-				if (this.argument2 instanceof Constant) {
-					return new MulOrAdd(this.type, this.argument1, this.argument2.value)
+				if (this.right instanceof Constant) {
+					return new MulOrAdd(this.type, this.left, this.right.value)
 				}
 			}
 			return this
@@ -805,12 +839,10 @@ export namespace DensityFunction {
 		) {
 			super(input)
 		}
-		public transform(context: Context, density: number) {
+		public transform(context: Context, density: number): number {
 			switch (this.type) {
-				case 'mul':
-					return density * this.value
-				case 'add':
-					return density + this.value
+				case 'mul': return density * this.value
+				case 'add': return density + this.value
 			}
 		}
 		public mapChildren(visitor: Visitor): DensityFunction {
@@ -818,10 +850,8 @@ export namespace DensityFunction {
 		}
 		public range(): Interval {
 			switch (this.type) {
-				case 'mul':
-					return Interval.mul(this.input.range(), Interval.ofExact(this.value))
-				case 'add':
-					return Interval.add(this.input.range(), Interval.ofExact(this.value))
+				case 'mul': return Interval.mul(this.input.range(), Interval.ofExact(this.value))
+				case 'add': return Interval.add(this.input.range(), Interval.ofExact(this.value))
 			}
 		}
 	}
@@ -832,7 +862,7 @@ export namespace DensityFunction {
 		) {
 			super()
 		}
-		public compute(context: Context) {
+		public compute(context: Context): number {
 			return this.spline.compute(context)
 		}
 		public mapChildren(visitor: Visitor): DensityFunction {
@@ -857,14 +887,178 @@ export namespace DensityFunction {
 		) {
 			super()
 		}
-		public compute(context: Context) {
+		public compute(context: Context): number {
 			return clampedMap(context.y, this.fromY, this.toY, this.fromValue, this.toValue)
 		}
 		public mapChildren(visitor: Visitor): DensityFunction {
 			return this
 		}
-		public range() {
+		public range(): Interval {
 			return Interval.of(Math.min(this.fromValue, this.toValue), Math.max(this.fromValue, this.toValue))
+		}
+	}
+
+	const AxisType = ['x', 'y', 'z'] as const
+	const TilingType = ['clamp_to_edge', 'repeat', 'mirrored_repeat'] as const
+
+	export class Gradient extends DensityFunction {
+		constructor(
+			public readonly axis: typeof AxisType[number],
+			public readonly tiling: typeof TilingType[number],
+			public readonly fromCoordinate: number,
+			public readonly toCoordinate: number,
+			public readonly fromValue: number,
+			public readonly toValue: number,
+		) {
+			super()
+		}
+		public compute(context: Context): number {
+			const range = this.toCoordinate - this.fromCoordinate
+			let coordinate = context[this.axis] - this.fromCoordinate 
+			switch (this.tiling) {
+				case 'clamp_to_edge':
+					break
+				case 'repeat':
+					coordinate = ((coordinate % range) + range) % range
+					break
+				case 'mirrored_repeat':
+					const tileIndex = Math.floor(coordinate / range)
+					const localCoordinate = coordinate - tileIndex * range
+					coordinate = (tileIndex & 1) == 0 ? localCoordinate : range - localCoordinate
+					break
+			}
+			return clampedLerp(coordinate / range, this.fromValue, this.toValue)
+		}
+		public mapChildren(visitor: Visitor): DensityFunction {
+			return this
+		}
+		public range(): Interval {
+			return Interval.between(this.fromValue, this.toValue)
+		}
+	}
+
+	export class Lerp extends DensityFunction {
+		constructor(
+			public readonly alpha: DensityFunction,
+			public readonly first: DensityFunction,
+			public readonly second: DensityFunction,
+		) {
+			super()
+		}	
+		public compute(context: Context): number {
+			const a = this.alpha.compute(context)
+			if (a === 0) {
+				return this.first.compute(context)
+			} else if (a === 1) {
+				return this.second.compute(context)
+			} else {
+				return floatLerp(a, this.first.compute(context), this.second.compute(context))
+			}
+		}
+		public mapChildren(visitor: Visitor): DensityFunction {
+			return new Lerp(visitor.apply(this.alpha), visitor.apply(this.first), visitor.apply(this.second))
+		}
+		public range(): Interval {
+			return Interval.lerp(this.alpha.range(), this.first.range(), this.second.range())
+		}
+	}
+
+	const RoundType = ['floor', 'round', 'ceil', 'truncate'] as const
+
+	export class Round extends DensityFunction {
+		constructor(
+			public readonly type: typeof RoundType[number],
+			public readonly input: DensityFunction,
+			public readonly multiple: DensityFunction,
+		) {
+			super()
+		}
+		public compute(context: Context): number {
+			const a = this.input.compute(context)
+			const m = this.multiple.compute(context)
+			return m === 0 ? a : this.roundToInteger(a / m) * m
+		}
+		private roundToInteger(value: number) {
+			switch (this.type) {
+				case 'floor': return Math.floor(value)
+				case 'round': return Math.round(value)
+				case 'ceil': return Math.ceil(value)
+				case 'truncate': return Math.trunc(value)
+			}
+		}
+		public mapChildren(visitor: Visitor): DensityFunction {
+			return new Round(this.type, visitor.apply(this.input), visitor.apply(this.multiple))
+		}
+		public range(): Interval {
+			const multipleRange = this.multiple.range()
+			return Interval.mul(Interval.mapMonotonic(Interval.div(this.input.range(), multipleRange), value => this.roundToInteger(value)), multipleRange)
+		}
+	}
+
+	export class Pow extends DensityFunction {
+		constructor(
+			public readonly base: DensityFunction,
+			public readonly exponent: DensityFunction,
+		) {
+			super()
+		}
+		public compute(context: Context): number {
+			return Math.pow(this.base.compute(context), this.exponent.compute(context))
+		}
+		public mapChildren(visitor: Visitor): DensityFunction {
+			return new Pow(visitor.apply(this.base), visitor.apply(this.exponent))
+		}
+		public range(): Interval {
+			return Interval.pow(this.base.range(), this.exponent.range())
+		}
+	}
+
+	const DistanceMetric = ['euclidean', 'euclidean_squared', 'manhattan', 'chebyshev'] as const
+
+	export class DistanceToPoint extends DensityFunction {
+		constructor(
+			public readonly point: Vector,
+			public readonly metric: typeof DistanceMetric[number],
+		) {
+			super()
+		}
+		public compute(context: Context): number {
+			const delta = this.point.sub(new Vector(context.x, context.y, context.z))
+			switch (this.metric) {
+				case 'euclidean': return delta.length()
+				case 'euclidean_squared': return delta.lengthSquared()
+				case 'manhattan': return Math.abs(delta.x) + Math.abs(delta.y) + Math.abs(delta.z)
+				case 'chebyshev': return Math.max(Math.abs(delta.x), Math.abs(delta.y), Math.abs(delta.z))
+			}
+		}
+		public mapChildren(visitor: Visitor): DensityFunction {
+			return this
+		}
+		public range(): Interval {
+			return Interval.of(0, Infinity)
+		}
+	}
+
+	export class Slice extends DensityFunction {
+		constructor(
+			public readonly axis: typeof AxisType[number],
+			public readonly coordinate: number,
+			public readonly input: DensityFunction,
+		) {
+			super()
+		}
+		public compute(context: Context): number {
+			switch (this.axis) {
+				case 'x': return this.input.compute({ x: 0, y: context.y, z: context.z })
+				case 'y': return this.input.compute({ x: 0, y: context.y, z: context.z })
+				case 'z': return this.input.compute({ x: 0, y: context.y, z: context.z })
+			}
+		}
+		public mapChildren(visitor: Visitor): DensityFunction {
+			return new Slice(this.axis, this.coordinate, visitor.apply(this.input))
+		}
+		public range(): Interval {
+			return this.input.range()
 		}
 	}
 }

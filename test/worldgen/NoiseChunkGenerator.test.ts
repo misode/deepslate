@@ -33,7 +33,7 @@ describe('NoiseChunkGenerator', () => {
 	})
 
 	it('fill', () => {
-		const finalDensity = new DF.Noise(1, 1, Holder.reference(WorldgenRegistries.NOISE, Identifier.create('offset')))
+		const finalDensity = new DF.Noise(Holder.reference(WorldgenRegistries.NOISE, Identifier.create('offset')), 1, 1, DF.Constant.ZERO, DF.Constant.ZERO, DF.Constant.ZERO)
 		const { generator, randomState } = setup(BigInt(123), {}, {}, { finalDensity })
 		const chunk = new Chunk(0, 64, ChunkPos.create(4, 1))
 		generator.fill(randomState, chunk)

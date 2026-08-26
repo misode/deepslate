@@ -24,8 +24,8 @@ describe('MultiNoise', () => {
 		const settings = NoiseGeneratorSettings.create({
 			noise: { minY: 0, height: 128, xzSize: 1, ySize: 2 },
 			noiseRouter: NoiseRouter.create({
-				temperature: new DF.Noise(0.25, 0, temperature),
-				vegetation: new DF.Noise(0.25, 0, vegetation),
+				temperature: new DF.Noise(temperature, 0.25, 0, DF.Constant.ZERO, DF.Constant.ZERO, DF.Constant.ZERO),
+				vegetation: new DF.Noise(vegetation, 0.25, 0, DF.Constant.ZERO, DF.Constant.ZERO, DF.Constant.ZERO),
 			}),
 		})
 		const randomState = new RandomState(settings, BigInt(123))

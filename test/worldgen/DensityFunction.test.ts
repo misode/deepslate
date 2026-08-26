@@ -42,14 +42,14 @@ describe('DensityFunction', () => {
 	})
 
 	it('Noise', () => {
-		const fn = wrap(new DF.Noise(1, 1, SHIFT))
+		const fn = wrap(new DF.Noise(SHIFT, 1, 1, DF.Constant.ZERO, DF.Constant.ZERO,  DF.Constant.ZERO))
 		expect(fn.compute(ContextA)).toEqual(0.3004295819443726)
 		expect(fn.compute(ContextB)).toEqual(0.3085235014681946)
 		expect(fn.compute(ContextC)).toEqual(-0.43773259014323784)
 	})
 
 	it('WeirdScaledSampler', () => {
-		const input = new DF.Noise(1, 1, SHIFT)
+		const input = new DF.Noise(SHIFT, 1, 1, DF.Constant.ZERO, DF.Constant.ZERO,  DF.Constant.ZERO)
 		const fn = wrap(new DF.WeirdScaledSampler(input, 'type_1', EROSION))
 		expect(fn.compute(ContextA)).toEqual(0.05986336811047935)
 		expect(fn.compute(ContextB)).toEqual(0.06476443600923233)
@@ -117,7 +117,7 @@ describe('DensityFunction', () => {
 	it('Add', () => {
 		const fn1 = wrap(new DF.Binary('add', new DF.Constant(2), new DF.Constant(3)))
 		expect(fn1.compute(ContextA)).toEqual(5)
-		const fn2 = wrap(new DF.Binary('add', new DF.Noise(16, 1, SHIFT), new DF.Constant(2)))
+		const fn2 = wrap(new DF.Binary('add', new DF.Noise(SHIFT, 16, 1, DF.Constant.ZERO, DF.Constant.ZERO,  DF.Constant.ZERO), new DF.Constant(2)))
 		expect(fn2.compute(ContextA)).toEqual(1.9594976210617139)
 		expect(fn2.compute(ContextB)).toEqual(1.9887069396954864)
 		expect(fn2.compute(ContextC)).toEqual(1.6672203651115742)
@@ -126,7 +126,7 @@ describe('DensityFunction', () => {
 	it('Mul', () => {
 		const fn1 = wrap(new DF.Binary('mul', new DF.Constant(2), new DF.Constant(3)))
 		expect(fn1.compute(ContextA)).toEqual(6)
-		const fn2 = wrap(new DF.Binary('mul', new DF.Noise(16, 1, SHIFT), new DF.Constant(20)))
+		const fn2 = wrap(new DF.Binary('mul', new DF.Noise(SHIFT, 16, 1, DF.Constant.ZERO, DF.Constant.ZERO,  DF.Constant.ZERO), new DF.Constant(20)))
 		expect(fn2.compute(ContextA)).toEqual(-0.8100475787657212)
 		expect(fn2.compute(ContextB)).toEqual(-0.2258612060902705)
 		expect(fn2.compute(ContextC)).toEqual(-6.655592697768515)
@@ -142,7 +142,7 @@ describe('DensityFunction', () => {
 	it('Min', () => {
 		const fn1 = wrap(new DF.Binary('min', new DF.Constant(2), new DF.Constant(3)))
 		expect(fn1.compute(ContextA)).toEqual(2)
-		const fn2 = wrap(new DF.Binary('min', new DF.Noise(16, 1, SHIFT), new DF.Constant(-0.3)))
+		const fn2 = wrap(new DF.Binary('min', new DF.Noise(SHIFT, 16, 1, DF.Constant.ZERO, DF.Constant.ZERO,  DF.Constant.ZERO), new DF.Constant(-0.3)))
 		expect(fn2.compute(ContextA)).toEqual(-0.3)
 		expect(fn2.compute(ContextB)).toEqual(-0.3)
 		expect(fn2.compute(ContextC)).toEqual(-0.33277963488842577)
@@ -151,7 +151,7 @@ describe('DensityFunction', () => {
 	it('Max', () => {
 		const fn1 = wrap(new DF.Binary('max', new DF.Constant(2), new DF.Constant(3)))
 		expect(fn1.compute(ContextA)).toEqual(3)
-		const fn2 = wrap(new DF.Binary('max', new DF.Noise(16, 1, SHIFT), new DF.Constant(-0.3)))
+		const fn2 = wrap(new DF.Binary('max', new DF.Noise(SHIFT, 16, 1, DF.Constant.ZERO, DF.Constant.ZERO,  DF.Constant.ZERO), new DF.Constant(-0.3)))
 		expect(fn2.compute(ContextA)).toEqual(-0.04050237893828606)
 		expect(fn2.compute(ContextB)).toEqual(-0.011293060304513524)
 		expect(fn2.compute(ContextC)).toEqual(-0.3)

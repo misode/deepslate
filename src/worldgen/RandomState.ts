@@ -70,11 +70,8 @@ export class RandomState {
 				if (fn instanceof DensityFunction.Interpolated) {
 					return fn.withCellSize(NoiseSettings.cellWidth(noiseSettings), NoiseSettings.cellHeight(noiseSettings))
 				}
-				if (fn instanceof DensityFunction.ShiftedNoise) {
-					return new DensityFunction.ShiftedNoise(fn.shiftX, fn.shiftY, fn.shiftZ, fn.xzScale, fn.yScale, fn.noiseData, getNoise(fn.noiseData))
-				}
 				if (fn instanceof DensityFunction.Noise) {
-					return new DensityFunction.Noise(fn.xzScale, fn.yScale, fn.noiseData, getNoise(fn.noiseData))
+					return new DensityFunction.Noise(fn.noiseData, fn.xzScale, fn.yScale, fn.shiftX, fn.shiftY, fn.shiftZ, getNoise(fn.noiseData))
 				}
 				if (fn instanceof DensityFunction.ShiftNoise) {
 					return fn.withNewNoise(getNoise(fn.noiseData))
