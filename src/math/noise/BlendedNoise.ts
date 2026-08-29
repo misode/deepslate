@@ -1,15 +1,20 @@
+import { Interval } from '../Interval.js'
 import type { Random } from '../random/index.js'
-import { clampedLerp } from '../Util.js'
-import type { ImprovedNoise } from './ImprovedNoise.js'
-import { PerlinNoise } from './PerlinNoise.js'
+import { clamp, floatLerp } from '../Util.js'
+import type { NoiseLayer } from './NoiseStack.js'
+import { NoiseStack } from './NoiseStack.js'
+import { SmearedPerlinNoise } from './SmearedPerlinNoise.js'
 
 export class BlendedNoise {
-	public readonly minLimitNoise: PerlinNoise
-	public readonly maxLimitNoise: PerlinNoise
-	public readonly mainNoise: PerlinNoise
+	private static readonly BASE_SCALE = 684.412
+	private static readonly LIMIT_FACTOR = 0.99998474
+	private static readonly MAIN_FACTOR = 12.75
+
+	public readonly minLimitNoise: NoiseStack
+	public readonly maxLimitNoise: NoiseStack
+	public readonly mainNoise: NoiseStack
 	private readonly xzMultiplier: number
 	private readonly yMultiplier: number
-	public readonly maxValue: number
 
 	constructor(
 		random: Random,
@@ -19,58 +24,44 @@ export class BlendedNoise {
 		public readonly yFactor: number,
 		public readonly smearScaleMultiplier: number
 	) {
-		this.minLimitNoise = new PerlinNoise(random, -15, [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0], true)
-		this.maxLimitNoise = new PerlinNoise(random, -15, [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0], true)
-		this.mainNoise = new PerlinNoise(random, -7, [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0], true)
-		this.xzMultiplier = 684.412 * xzScale
-		this.yMultiplier = 684.412 * yScale
-		this.maxValue = this.minLimitNoise.edgeValue(this.yMultiplier + 2)
+		this.xzMultiplier = BlendedNoise.BASE_SCALE * xzScale
+		this.yMultiplier = BlendedNoise.BASE_SCALE * yScale
+		const limitSmearScaleY = this.yMultiplier * smearScaleMultiplier
+		const mainSmearScaleY = limitSmearScaleY / yFactor
+		this.minLimitNoise = BlendedNoise.createNoise(random, -15, limitSmearScaleY, BlendedNoise.LIMIT_FACTOR)
+		this.maxLimitNoise = BlendedNoise.createNoise(random, -15, limitSmearScaleY, BlendedNoise.LIMIT_FACTOR)
+		this.mainNoise = BlendedNoise.createNoise(random, -7, mainSmearScaleY, BlendedNoise.MAIN_FACTOR)
+	}
+
+	private static createNoise(random: Random, firstOctave: number, smearScaleY: number, valueFactor: number) {
+		const octaves = -firstOctave + 1
+		let factor = 1
+		valueFactor /= Math.pow(2, octaves) - 1
+		const layers: NoiseLayer[] = []
+		for (let i = octaves - 1; i >= 0; i -= 1) {
+			layers.push({ noise: new SmearedPerlinNoise(random, smearScaleY * factor), frequency: factor, amplitude: valueFactor })
+			factor /= 2
+			valueFactor *= 2
+		}
+		return new NoiseStack(layers)
+	}
+
+	public range(): Interval {
+		return Interval.lerp(Interval.of(0, 1), this.minLimitNoise.range(), this.maxLimitNoise.range())
 	}
 
 	public sample(x: number, y: number, z: number) {
-		const scaledX = x * this.xzMultiplier
-		const scaledY = y * this.yMultiplier
-		const scaledZ = z * this.xzMultiplier
-
-		const factoredX = scaledX / this.xzFactor
-		const factoredY = scaledY / this.yFactor
-		const factoredZ = scaledZ / this.xzFactor
-
-		const smear = this.yMultiplier * this.smearScaleMultiplier
-		const factoredSmear = smear / this.yFactor
-
-		let noise: ImprovedNoise | undefined
-		let value = 0
-		let factor = 1
-		for (let i = 0; i < 8; i += 1) {
-			noise = this.mainNoise.getOctaveNoise(i)
-			if (noise) {
-				const xx = PerlinNoise.wrap(factoredX * factor)
-				const yy = PerlinNoise.wrap(factoredY * factor)
-				const zz = PerlinNoise.wrap(factoredZ * factor)
-				value += noise.sample(xx, yy, zz, factoredSmear * factor, factoredY * factor) / factor
-			}
-			factor /= 2
+		const xx = x * this.xzMultiplier
+		const yy = y * this.yMultiplier
+		const zz = z * this.xzMultiplier
+		let mainValue = this.mainNoise.get3D(xx / this.xzFactor, yy / this.yFactor, zz / this.xzFactor)
+		mainValue = clamp(mainValue + 0.5, 0, 1)
+		if (mainValue === 0) {
+			return this.minLimitNoise.get3D(xx, yy, zz)
+		} else if (mainValue === 1) {
+			return this.maxLimitNoise.get3D(xx, yy, zz)
+		} else {
+			return floatLerp(mainValue, this.minLimitNoise.get3D(xx, yy, zz), this.maxLimitNoise.get3D(xx, yy, zz))
 		}
-
-		value = (value / 10 + 1) / 2
-		factor = 1
-		let min = 0
-		let max = 0
-		for (let i = 0; i < 16; i += 1) {
-			const xx = PerlinNoise.wrap(scaledX * factor)
-			const yy = PerlinNoise.wrap(scaledY * factor)
-			const zz = PerlinNoise.wrap(scaledZ * factor)
-			const smearsmear = smear * factor
-			if (value < 1 && (noise = this.minLimitNoise.getOctaveNoise(i))) {
-				min += noise.sample(xx, yy, zz, smearsmear, scaledY * factor) / factor
-			}
-			if (value > 0 && (noise = this.maxLimitNoise.getOctaveNoise(i))) {
-				max += noise.sample(xx, yy, zz, smearsmear, scaledY * factor) / factor
-			}
-			factor /= 2
-		}
-
-		return clampedLerp(min / 512, max / 512, value) / 128
 	}
 }

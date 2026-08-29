@@ -1,6 +1,6 @@
 import { Holder, Identifier } from '../core/index.js'
-import type { BlendedNoise, NormalNoise } from '../math/index.js'
-import { clamp, clampedLerp, clampedMap, CubicSpline, floatLerp, Interval, lazyLerp3, LegacyRandom, NoiseParameters, SimplexNoise, Vector } from '../math/index.js'
+import type { BlendedNoise, Noise } from '../math/index.js'
+import { clamp, clampedLerp, clampedMap, CubicSpline, floatLerp, Interval, lazyLerp3, LegacyRandom, NormalNoise, SimplexNoise, Vector } from '../math/index.js'
 import { computeIfAbsent, Json } from '../util/index.js'
 import { WorldgenRegistries } from './WorldgenRegistries.js'
 
@@ -54,7 +54,7 @@ export namespace DensityFunction {
 		}
 	}
 
-	const noiseParser = Holder.parser(WorldgenRegistries.NOISE, NoiseParameters.fromJson)
+	const noiseParser = Holder.parser(WorldgenRegistries.NOISE, NormalNoise.fromJson)
 	const vectorParser = (obj: unknown): Vector => {
 		const arr = Json.readArray(obj, v => Json.readNumber(v) ?? 0) ?? []
 		return new Vector(arr[0] ?? 0, arr[1] ?? 0, arr[2] ?? 0)
@@ -94,7 +94,7 @@ export namespace DensityFunction {
 			case 'cache_all_in_cell': return new CacheAllInCell(inputParser(root.input ?? root.argument))
 			case 'noise':
 			case 'shifted_noise':
-				return new Noise(
+				return new NoiseFunction(
 					noiseParser(root.noise),
 					Json.readNumber(root.xz_scale) ?? 1,
 					Json.readNumber(root.y_scale) ?? 1,
@@ -275,7 +275,7 @@ export namespace DensityFunction {
 			if (!this.blendedNoise) {
 				return Interval.INFINITE
 			}
-			return Interval.ofSymmetric(this.blendedNoise.maxValue)
+			return this.blendedNoise.range()
 		}
 	}
 
@@ -413,15 +413,15 @@ export namespace DensityFunction {
 		}
 	}
 
-	export class Noise extends DensityFunction {
+	export class NoiseFunction extends DensityFunction {
 		constructor(
-			public readonly noiseData: Holder<NoiseParameters>,
+			public readonly noise: Holder<NormalNoise>,
 			public readonly xzScale: number,
 			public readonly yScale: number,
 			public readonly shiftX: DensityFunction,
 			public readonly shiftY: DensityFunction,
 			public readonly shiftZ: DensityFunction,
-			public readonly noise?: NormalNoise,
+			public readonly noiseSampler?: Noise,
 		) {
 			super()
 		}
@@ -429,16 +429,16 @@ export namespace DensityFunction {
 			const x = context.x * this.xzScale + this.shiftX.compute(context)
 			const y = context.y * this.yScale + this.shiftY.compute(context)
 			const z = context.z * this.xzScale + this.shiftZ.compute(context)
-			return this.noise?.sample(x, y, z) ?? 0
+			return this.noiseSampler?.get3D(x, y, z) ?? 0
 		}
 		public mapChildren(visitor: Visitor): DensityFunction {
-			return new Noise(this.noiseData, this.xzScale, this.yScale, visitor.apply(this.shiftX), visitor.apply(this.shiftY), visitor.apply(this.shiftZ))
+			return new NoiseFunction(this.noise, this.xzScale, this.yScale, visitor.apply(this.shiftX), visitor.apply(this.shiftY), visitor.apply(this.shiftZ), this.noiseSampler)
 		}
 		public range(): Interval {
-			if (!this.noise) {
+			if (!this.noiseSampler) {
 				return Interval.INFINITE
 			}
-			return Interval.ofSymmetric(this.noise.maxValue)
+			return this.noiseSampler.range()
 		}
 	}
 
@@ -461,7 +461,7 @@ export namespace DensityFunction {
 				for (let j = -12; j <= 12; j += 1) {
 					const x2 = x0 + i
 					const z2 = z0 + j
-					if (x2 * x2 + z2 * z2 <= 4096 || this.islandNoise.sample2D(x2, z2) >= -0.9) {
+					if (x2 * x2 + z2 * z2 <= 4096 || this.islandNoise.get2D(x2, z2) >= -0.9) {
 						continue
 					}
 					const f1 = (Math.abs(x2) * 3439 + Math.abs(z2) * 147) % 13 + 9
@@ -526,21 +526,21 @@ export namespace DensityFunction {
 		constructor(
 			input: DensityFunction,
 			public readonly rarityValueMapper: typeof RarityValueMapper[number],
-			public readonly noiseData: Holder<NoiseParameters>,
-			public readonly noise?: NormalNoise,
+			public readonly noise: Holder<NormalNoise>,
+			public readonly noiseSampler?: Noise,
 		) {
 			super(input)
 			this.mapper = WeirdScaledSampler.ValueMapper[this.rarityValueMapper]
 		}
 		public transform(context: Context, density: number) {
-			if (!this.noise) {
+			if (!this.noiseSampler) {
 				return 0
 			}
 			const rarity = this.mapper(density)
-			return rarity * Math.abs(this.noise.sample(context.x / rarity, context.y / rarity, context.z / rarity))
+			return rarity * Math.abs(this.noiseSampler.get3D(context.x / rarity, context.y / rarity, context.z / rarity))
 		}
 		public mapChildren(visitor: Visitor) {
-			return new WeirdScaledSampler(visitor.apply(this.input), this.rarityValueMapper, this.noiseData, this.noise)
+			return new WeirdScaledSampler(visitor.apply(this.input), this.rarityValueMapper, this.noise, this.noiseSampler)
 		}
 		public range(): Interval {
 			return Interval.of(0, this.rarityValueMapper === 'type_1' ? 2 : 3)
@@ -597,65 +597,65 @@ export namespace DensityFunction {
 
 	export abstract class ShiftNoise extends DensityFunction {
 		constructor(
-			public readonly noiseData: Holder<NoiseParameters>,
-			public readonly offsetNoise?: NormalNoise,
+			public readonly noise: Holder<NormalNoise>,
+			public readonly noiseSampler?: Noise,
 		) {
 			super()
 		}
 		public compute(context: Context) {
-			return (this.offsetNoise?.sample(context.x * 0.25, context.y * 0.25, context.z * 0.25) ?? 0) * 4
+			return (this.noiseSampler?.get3D(context.x * 0.25, context.y * 0.25, context.z * 0.25) ?? 0) * 4
 		}
 		public mapChildren(visitor: Visitor): DensityFunction {
 			return this
 		}
 		public range(): Interval {
-			if (!this.offsetNoise) {
+			if (!this.noiseSampler) {
 				return Interval.INFINITE
 			}
-			return Interval.mul(Interval.ofSymmetric(this.offsetNoise.maxValue), Interval.ofExact(4))
+			return Interval.mul(this.noiseSampler.range(), Interval.ofExact(4))
 		}
-		public abstract withNewNoise(noise: NormalNoise): ShiftNoise
+		public abstract withNewNoise(noiseSampler: Noise): ShiftNoise
 	}
 
 	export class ShiftA extends ShiftNoise {
 		constructor(
-			noiseData: Holder<NoiseParameters>,
-			offsetNoise?: NormalNoise,
+			noise: Holder<NormalNoise>,
+			noiseSampler?: Noise,
 		) {
-			super(noiseData, offsetNoise)
+			super(noise, noiseSampler)
 		}
 		public compute(context: Context) {
 			return super.compute(DensityFunction.context(context.x, 0, context.z))
 		}
-		public withNewNoise(newNoise: NormalNoise) {
-			return new ShiftA(this.noiseData, newNoise)
+		public withNewNoise(noiseSampler: Noise) {
+			return new ShiftA(this.noise, noiseSampler)
 		}
 	}
 
 	export class ShiftB extends ShiftNoise {
 		constructor(
-			noiseData: Holder<NoiseParameters>,
-			offsetNoise?: NormalNoise,
+			noise: Holder<NormalNoise>,
+			noiseSampler?: Noise,
 		) {
-			super(noiseData, offsetNoise)
+			super(noise, noiseSampler)
 		}
 		public compute(context: Context) {
 			return super.compute(DensityFunction.context(context.z, context.x, 0))
 		}
-		public withNewNoise(newNoise: NormalNoise) {
-			return new ShiftB(this.noiseData, newNoise)
+		public withNewNoise(noiseSampler: Noise) {
+			return new ShiftB(this.noise, noiseSampler)
 		}
 	}
 
 	export class Shift extends ShiftNoise {
 		constructor(
-			noiseData: Holder<NoiseParameters>,
-			offsetNoise?: NormalNoise,
+			noise: Holder<NormalNoise>,
+			noiseSampler?: Noise,
 		) {
-			super(noiseData, offsetNoise)
+			super(noise, noiseSampler)
 		}
-		public withNewNoise(newNoise: NormalNoise) {
-			return new Shift(this.noiseData, newNoise)
+		public withNewNoise(noiseSampler: Noise) {
+			return new Shift(this.noise, noiseSampler)
 		}
 	}
 
@@ -781,14 +781,13 @@ export namespace DensityFunction {
 	const BinaryType = ['add', 'sub', 'mul', 'div', 'min', 'max'] as const
 
 	export class Binary extends DensityFunction {
-		private readonly rightRange: Interval
+		private rightRange: Interval = Interval.INFINITE
 		constructor(
 			public readonly type: typeof BinaryType[number],
 			public readonly left: DensityFunction,
 			public readonly right: DensityFunction,
 		) {
 			super()
-			this.rightRange = right.range()
 		}
 		public compute(context: Context): number {
 			const a = this.left.compute(context)
@@ -825,6 +824,7 @@ export namespace DensityFunction {
 					return new MulOrAdd(this.type, this.left, this.right.value)
 				}
 			}
+			this.rightRange = this.right.range()
 			return this
 		}
 	}

@@ -1,29 +1,29 @@
 
 import type { Chunk } from '../core/index.js'
-import { BlockPos, BlockState, ChunkPos } from '../core/index.js'
-import type { NormalNoise, PositionalRandom, Random } from '../math/index.js'
+import { BlockPos, BlockState, ChunkPos, Identifier } from '../core/index.js'
+import type { Noise, PositionalRandom, Random } from '../math/index.js'
 import { lerp2, map, XoroshiroRandom } from '../math/index.js'
 import { computeIfAbsent, Json, lazy } from '../util/index.js'
 import type { NoiseChunk } from './NoiseChunk.js'
-import { NoiseRouter } from './NoiseRouter.js'
 import type { NoiseSettings } from './NoiseSettings.js'
+import type { RandomState } from './RandomState.js'
 import { VerticalAnchor } from './VerticalAnchor.js'
-import { WorldgenRegistries } from './WorldgenRegistries.js'
 
 export class SurfaceSystem {
-	private readonly surfaceNoise: NormalNoise
-	private readonly surfaceSecondaryNoise: NormalNoise
+	private readonly surfaceNoise: Noise
+	private readonly surfaceSecondaryNoise: Noise
 	private readonly random: PositionalRandom
 	private readonly positionalRandoms: Map<string, Random>
 
 	constructor(
+		randomState: RandomState,
 		private readonly rule: SurfaceRule,
 		private readonly defaultBlock: BlockState,
 		seed: bigint,
 	) {
 		this.random = XoroshiroRandom.create(seed).forkPositional()
-		this.surfaceNoise = NoiseRouter.instantiate(this.random, WorldgenRegistries.SURFACE_NOISE)
-		this.surfaceSecondaryNoise = NoiseRouter.instantiate(this.random, WorldgenRegistries.SURFACE_SECONDARY_NOISE)
+		this.surfaceNoise = randomState.getOrCreateNoise(Identifier.create('surface'))
+		this.surfaceSecondaryNoise = randomState.getOrCreateNoise(Identifier.create('surface_secondary'))
 		this.positionalRandoms = new Map()
 	}
 
@@ -83,13 +83,13 @@ export class SurfaceSystem {
 	}
 
 	public getSurfaceDepth(x: number, z: number) {
-		const noise = this.surfaceNoise.sample(x, 0, z)
+		const noise = this.surfaceNoise.get3D(x, 0, z)
 		const offset = this.random.at(x, 0, z).nextDouble() * 0.25
 		return noise * 2.75 + 3 + offset
 	}
 
 	public getSurfaceSecondary(x: number, z: number) {
-		return this.surfaceSecondaryNoise.sample(x, 0, z)
+		return this.surfaceSecondaryNoise.get3D(x, 0, z)
 	}
 
 	public getRandom(name: string): Random {

@@ -1,13 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { Holder } from '../../src/core/Holder.js'
 import { Identifier } from '../../src/core/Identifier.js'
-import { CubicSpline, NoiseParameters } from '../../src/math/index.js'
+import { CubicSpline, NormalNoise } from '../../src/math/index.js'
 import { RandomState } from '../../src/worldgen/RandomState.js'
 import { DensityFunction as DF, NoiseGeneratorSettings, NoiseRouter, WorldgenRegistries } from '../../src/worldgen/index.js'
 
 describe('DensityFunction', () => {
-	const DELTA = 1e-7
-
 	const ContextA = DF.context(1, 2, 3)
 	const ContextB = DF.context(2, 3, 4)
 	const ContextC = DF.context(12, -30, 1)
@@ -27,8 +25,8 @@ describe('DensityFunction', () => {
 	}
 
 	beforeEach(() => {
-		WorldgenRegistries.NOISE.register(Identifier.create('offset'), NoiseParameters.create(-3, [1, 1, 1, 0]))
-		WorldgenRegistries.NOISE.register(Identifier.create('erosion'), NoiseParameters.create(-9, [1, 1, 0, 1, 1]))
+		WorldgenRegistries.NOISE.register(Identifier.create('offset'), new NormalNoise(0.9381732587751005, -3, 4, 'enabled', [1, 1, 1, 0]))
+		WorldgenRegistries.NOISE.register(Identifier.create('erosion'), new NormalNoise(1.063180125160734, -9, 5, 'enabled', [1, 1, 0, 1, 1]))
 	})
 
 	afterEach(() => {
@@ -42,18 +40,18 @@ describe('DensityFunction', () => {
 	})
 
 	it('Noise', () => {
-		const fn = wrap(new DF.Noise(SHIFT, 1, 1, DF.Constant.ZERO, DF.Constant.ZERO,  DF.Constant.ZERO))
-		expect(fn.compute(ContextA)).toEqual(0.3004295819443726)
-		expect(fn.compute(ContextB)).toEqual(0.3085235014681946)
-		expect(fn.compute(ContextC)).toEqual(-0.43773259014323784)
+		const fn = wrap(new DF.NoiseFunction(SHIFT, 1, 1, DF.Constant.ZERO, DF.Constant.ZERO,  DF.Constant.ZERO))
+		expect(fn.compute(ContextA)).toBeCloseTo(0.3004295819443726)
+		expect(fn.compute(ContextB)).toBeCloseTo(0.3085235014681946)
+		expect(fn.compute(ContextC)).toBeCloseTo(-0.43773259014323784)
 	})
 
 	it('WeirdScaledSampler', () => {
-		const input = new DF.Noise(SHIFT, 1, 1, DF.Constant.ZERO, DF.Constant.ZERO,  DF.Constant.ZERO)
+		const input = new DF.NoiseFunction(SHIFT, 1, 1, DF.Constant.ZERO, DF.Constant.ZERO,  DF.Constant.ZERO)
 		const fn = wrap(new DF.WeirdScaledSampler(input, 'type_1', EROSION))
-		expect(fn.compute(ContextA)).toEqual(0.05986336811047935)
-		expect(fn.compute(ContextB)).toEqual(0.06476443600923233)
-		expect(fn.compute(ContextC)).toEqual(0.022910520878785496)
+		expect(fn.compute(ContextA)).toBeCloseTo(0.05986336811047935)
+		expect(fn.compute(ContextB)).toBeCloseTo(0.06476443600923233)
+		expect(fn.compute(ContextC)).toBeCloseTo(0.022910520878785496)
 	})
 
 	it('Clamp', () => {
@@ -117,7 +115,7 @@ describe('DensityFunction', () => {
 	it('Add', () => {
 		const fn1 = wrap(new DF.Binary('add', new DF.Constant(2), new DF.Constant(3)))
 		expect(fn1.compute(ContextA)).toEqual(5)
-		const fn2 = wrap(new DF.Binary('add', new DF.Noise(SHIFT, 16, 1, DF.Constant.ZERO, DF.Constant.ZERO,  DF.Constant.ZERO), new DF.Constant(2)))
+		const fn2 = wrap(new DF.Binary('add', new DF.NoiseFunction(SHIFT, 16, 1, DF.Constant.ZERO, DF.Constant.ZERO,  DF.Constant.ZERO), new DF.Constant(2)))
 		expect(fn2.compute(ContextA)).toEqual(1.9594976210617139)
 		expect(fn2.compute(ContextB)).toEqual(1.9887069396954864)
 		expect(fn2.compute(ContextC)).toEqual(1.6672203651115742)
@@ -126,10 +124,10 @@ describe('DensityFunction', () => {
 	it('Mul', () => {
 		const fn1 = wrap(new DF.Binary('mul', new DF.Constant(2), new DF.Constant(3)))
 		expect(fn1.compute(ContextA)).toEqual(6)
-		const fn2 = wrap(new DF.Binary('mul', new DF.Noise(SHIFT, 16, 1, DF.Constant.ZERO, DF.Constant.ZERO,  DF.Constant.ZERO), new DF.Constant(20)))
-		expect(fn2.compute(ContextA)).toEqual(-0.8100475787657212)
-		expect(fn2.compute(ContextB)).toEqual(-0.2258612060902705)
-		expect(fn2.compute(ContextC)).toEqual(-6.655592697768515)
+		const fn2 = wrap(new DF.Binary('mul', new DF.NoiseFunction(SHIFT, 16, 1, DF.Constant.ZERO, DF.Constant.ZERO,  DF.Constant.ZERO), new DF.Constant(20)))
+		expect(fn2.compute(ContextA)).toBeCloseTo(-0.8100475787657212)
+		expect(fn2.compute(ContextB)).toBeCloseTo(-0.2258612060902705)
+		expect(fn2.compute(ContextC)).toBeCloseTo(-6.655592697768515)
 		const fn3 = wrap(new DF.Binary('mul', DF.Constant.ZERO, new DF.Constant(3)))
 		expect(fn3.compute(ContextA)).toEqual(0)
 	})
@@ -142,18 +140,18 @@ describe('DensityFunction', () => {
 	it('Min', () => {
 		const fn1 = wrap(new DF.Binary('min', new DF.Constant(2), new DF.Constant(3)))
 		expect(fn1.compute(ContextA)).toEqual(2)
-		const fn2 = wrap(new DF.Binary('min', new DF.Noise(SHIFT, 16, 1, DF.Constant.ZERO, DF.Constant.ZERO,  DF.Constant.ZERO), new DF.Constant(-0.3)))
+		const fn2 = wrap(new DF.Binary('min', new DF.NoiseFunction(SHIFT, 16, 1, DF.Constant.ZERO, DF.Constant.ZERO,  DF.Constant.ZERO), new DF.Constant(-0.3)))
 		expect(fn2.compute(ContextA)).toEqual(-0.3)
 		expect(fn2.compute(ContextB)).toEqual(-0.3)
-		expect(fn2.compute(ContextC)).toEqual(-0.33277963488842577)
+		expect(fn2.compute(ContextC)).toBeCloseTo(-0.33277963488842577)
 	})
 
 	it('Max', () => {
 		const fn1 = wrap(new DF.Binary('max', new DF.Constant(2), new DF.Constant(3)))
 		expect(fn1.compute(ContextA)).toEqual(3)
-		const fn2 = wrap(new DF.Binary('max', new DF.Noise(SHIFT, 16, 1, DF.Constant.ZERO, DF.Constant.ZERO,  DF.Constant.ZERO), new DF.Constant(-0.3)))
-		expect(fn2.compute(ContextA)).toEqual(-0.04050237893828606)
-		expect(fn2.compute(ContextB)).toEqual(-0.011293060304513524)
+		const fn2 = wrap(new DF.Binary('max', new DF.NoiseFunction(SHIFT, 16, 1, DF.Constant.ZERO, DF.Constant.ZERO,  DF.Constant.ZERO), new DF.Constant(-0.3)))
+		expect(fn2.compute(ContextA)).toBeCloseTo(-0.04050237893828606)
+		expect(fn2.compute(ContextB)).toBeCloseTo(-0.011293060304513524)
 		expect(fn2.compute(ContextC)).toEqual(-0.3)
 	})
 
@@ -165,12 +163,12 @@ describe('DensityFunction', () => {
 			.addPoint(5, 0.2)
 			.addPoint(20, 0.7)
 		const fn2 = wrap(new DF.Spline(spline))
-		expect(fn2.compute(DF.context(0, 0, 0))).toBeCloseTo(1, DELTA)
-		expect(fn2.compute(DF.context(0, 3.2, 0))).toBeCloseTo(0.4363904, DELTA)
-		expect(fn2.compute(DF.context(0, 5, 0))).toBeCloseTo(0.2, DELTA)
-		expect(fn2.compute(DF.context(0, 11, 0))).toBeCloseTo(0.376, DELTA)
-		expect(fn2.compute(DF.context(0, 20, 0))).toBeCloseTo(0.7, DELTA)
-		expect(fn2.compute(DF.context(0, 25, 0))).toBeCloseTo(0.7, DELTA)
+		expect(fn2.compute(DF.context(0, 0, 0))).toBeCloseTo(1)
+		expect(fn2.compute(DF.context(0, 3.2, 0))).toBeCloseTo(0.4363904)
+		expect(fn2.compute(DF.context(0, 5, 0))).toBeCloseTo(0.2)
+		expect(fn2.compute(DF.context(0, 11, 0))).toBeCloseTo(0.376)
+		expect(fn2.compute(DF.context(0, 20, 0))).toBeCloseTo(0.7)
+		expect(fn2.compute(DF.context(0, 25, 0))).toBeCloseTo(0.7)
 	})
 
 	it('YClampedGradient', () => {

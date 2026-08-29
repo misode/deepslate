@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { BlockState, Chunk, ChunkPos, Holder, Identifier } from '../../src/core/index.js'
-import { NoiseParameters } from '../../src/math/index.js'
+import { NormalNoise } from '../../src/math/index.js'
 import type { NoiseSettings } from '../../src/worldgen/index.js'
 import { DensityFunction as DF, FixedBiomeSource, NoiseChunkGenerator, NoiseGeneratorSettings, NoiseRouter, WorldgenRegistries } from '../../src/worldgen/index.js'
 import { RandomState } from '../../src/worldgen/RandomState.js'
@@ -25,7 +25,7 @@ describe('NoiseChunkGenerator', () => {
 	}
 
 	beforeEach(() => {
-		WorldgenRegistries.NOISE.register(Identifier.create('offset'), NoiseParameters.create(-3, [1, 1, 1, 0]))
+		WorldgenRegistries.NOISE.register(Identifier.create('offset'), new NormalNoise(0.9381732587751005, -3, 4, 'enabled', [1, 1, 1, 0]))
 	})
 
 	afterEach(() => {
@@ -33,7 +33,7 @@ describe('NoiseChunkGenerator', () => {
 	})
 
 	it('fill', () => {
-		const finalDensity = new DF.Noise(Holder.reference(WorldgenRegistries.NOISE, Identifier.create('offset')), 1, 1, DF.Constant.ZERO, DF.Constant.ZERO, DF.Constant.ZERO)
+		const finalDensity = new DF.NoiseFunction(Holder.reference(WorldgenRegistries.NOISE, Identifier.create('offset')), 1, 1, DF.Constant.ZERO, DF.Constant.ZERO, DF.Constant.ZERO)
 		const { generator, randomState } = setup(BigInt(123), {}, {}, { finalDensity })
 		const chunk = new Chunk(0, 64, ChunkPos.create(4, 1))
 		generator.fill(randomState, chunk)

@@ -1,6 +1,4 @@
 import { Holder } from '../core/index.js'
-import type { NoiseParameters, PositionalRandom } from '../math/index.js'
-import { NormalNoise } from '../math/index.js'
 import { Json } from '../util/index.js'
 import { DensityFunction } from './DensityFunction.js'
 import { WorldgenRegistries } from './WorldgenRegistries.js'
@@ -86,23 +84,5 @@ export namespace NoiseRouter {
 			veinRidged: router.veinRidged.mapAll(visitor),
 			veinGap: router.veinGap.mapAll(visitor),
 		}
-	}
-
-	const noiseCache = new Map<string, [bigint | number, bigint | number, NormalNoise]>()
-
-	export function instantiate(random: PositionalRandom, noise: Holder<NoiseParameters>): NormalNoise {
-		const key = noise.key()?.toString()
-		if (!key) {
-			throw new Error('Cannot instantiate noise from direct holder')
-		}
-
-		const randomKey = random.seedKey()
-		const cached = noiseCache.get(key)
-		if (cached && cached[0] === randomKey[0] && cached[1] === randomKey[1]) {
-			return cached[2]
-		}
-		const result = new NormalNoise(random.fromHashOf(key), noise.value())
-		noiseCache.set(key, [randomKey[0], randomKey[1], result])
-		return result
 	}
 }

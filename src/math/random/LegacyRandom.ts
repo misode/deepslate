@@ -1,5 +1,4 @@
-import md5 from 'md5'
-import { getSeed, longfromBytes } from '../Util.js'
+import { getSeed, hashCode } from '../Util.js'
 import type { PositionalRandom, Random } from './Random.js'
 
 export class LegacyRandom implements Random {
@@ -96,9 +95,8 @@ export class LegacyPositionalRandom implements PositionalRandom {
 	}
 
 	public fromHashOf(name: string) {
-		const hash = md5(name, { asBytes: true })
-		const seed = longfromBytes(hash[0], hash[1], hash[2], hash[3], hash[4], hash[5], hash[6], hash[7])
-		return new LegacyRandom(seed ^ this.seed)
+		const positionalSeed = hashCode(name)
+		return new LegacyRandom(BigInt(positionalSeed) ^ this.seed)
 	}
 
 	seedKey(): [bigint, bigint] {

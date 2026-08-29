@@ -1,5 +1,5 @@
 import { mat4 } from 'gl-matrix'
-import type { ItemRendererResources, ItemRenderingContext, NbtTag, Resources, Voxel } from '../src/index.js'
+import type { Color, ItemRendererResources, ItemRenderingContext, NbtTag, Resources, Voxel } from '../src/index.js'
 import { BlockDefinition, BlockModel, Identifier, ItemRenderer, ItemStack, jsonToNbt, NormalNoise, Structure, StructureRenderer, TextureAtlas, upperPowerOfTwo, VoxelRenderer, XoroshiroRandom } from '../src/index.js'
 import { } from '../src/nbt/Util.js'
 import { ItemModel } from '../src/render/ItemModel.js'
@@ -200,14 +200,16 @@ Promise.all([
 
 	const voxels: Voxel[] = []
 	const random = XoroshiroRandom.create(BigInt(123))
-	const noise = new NormalNoise(random, { firstOctave: -5, amplitudes: [1, 1, 1] })
+	const normalNoise = new NormalNoise(1, -5, 3, 'enabled', [])
+	const noise = normalNoise.create(random)
 	const sampleRegion = 50
 	for (let x = -sampleRegion; x <= sampleRegion; x += 1) {
 		for (let y = -sampleRegion; y <= sampleRegion; y += 1) {
 			for (let z = -sampleRegion; z <= sampleRegion; z += 1) {
-				const d = noise.sample(x, y, z)
+				const d = noise.get3D(x, y, z)
 				if (d > 0) {
-					voxels.push({ x, y, z, color: [200, 200, 200] })
+					const color: Color = d < 0.2 ? [200, 200, 200] : [120, 30, 180]
+					voxels.push({ x, y, z, color })
 				}
 			}
 		}
