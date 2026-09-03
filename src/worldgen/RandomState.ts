@@ -1,7 +1,7 @@
 import type { Holder } from '../core/index.js'
 import { Registry } from '../core/index.js'
-import type { NormalNoise } from '../index.js'
-import { BlendedNoise, computeIfAbsent, DensityFunction, Identifier, LegacyRandom, NoiseSettings, XoroshiroRandom } from '../index.js'
+import type { NoiseSettings, NormalNoise } from '../index.js'
+import { BlendedNoise, computeIfAbsent, DensityFunction, Identifier, LegacyRandom, XoroshiroRandom } from '../index.js'
 import type { Noise, PositionalRandom, Random } from '../math/index.js'
 import { Climate } from './biome/index.js'
 import type { NoiseGeneratorSettings } from './NoiseGeneratorSettings.js'
@@ -13,8 +13,6 @@ export class RandomState {
 	private readonly randomCache: Map<string, PositionalRandom>
 
 	public readonly random: PositionalRandom
-	public readonly aquiferRandom: PositionalRandom
-	public readonly oreRandom: PositionalRandom
 	public readonly surfaceSystem: SurfaceSystem
 	public readonly router: NoiseRouter
 	public readonly sampler: Climate.Sampler
@@ -27,10 +25,9 @@ export class RandomState {
 		this.randomCache = new Map()
 
 		this.random = (settings.legacyRandomSource ? new LegacyRandom(seed) : XoroshiroRandom.create(seed)).forkPositional()
-		this.aquiferRandom = this.random.fromHashOf(Identifier.create('aquifer').toString()).forkPositional()
-		this.oreRandom = this.random.fromHashOf(Identifier.create('ore').toString()).forkPositional()
-		this.surfaceSystem = new SurfaceSystem(this, settings.surfaceRule, settings.defaultBlock, seed)
 		this.router = NoiseRouter.mapAll(settings.noiseRouter, this.createVisitor(settings.noise, settings.legacyRandomSource))
+		const preliminarySurface = this.router.chunkSurfaceLevel
+		this.surfaceSystem = new SurfaceSystem(this, settings.materialRule, settings.defaultBlock, preliminarySurface, seed)
 		this.sampler = Climate.Sampler.fromRouter(this.router)
 	}
 
@@ -65,24 +62,18 @@ export class RandomState {
 						return value
 					}
 				}
-				if (fn instanceof DensityFunction.Interpolated) {
-					return fn.withCellSize(NoiseSettings.cellWidth(noiseSettings), NoiseSettings.cellHeight(noiseSettings))
-				}
 				if (fn instanceof DensityFunction.NoiseFunction) {
 					return new DensityFunction.NoiseFunction(fn.noise, fn.xzScale, fn.yScale, fn.shiftX, fn.shiftY, fn.shiftZ, getNoiseSampler(fn.noise))
 				}
 				if (fn instanceof DensityFunction.ShiftNoise) {
 					return fn.withNewNoise(getNoiseSampler(fn.noise))
 				}
-				if (fn instanceof DensityFunction.WeirdScaledSampler) {
-					return new DensityFunction.WeirdScaledSampler(fn.input, fn.rarityValueMapper, fn.noise, getNoiseSampler(fn.noise))
-				}
 				if (fn instanceof DensityFunction.OldBlendedNoise) {
 					const oldBlendedNoiseRandom: Random = legacyRandom ? new LegacyRandom(this.seed + BigInt(0)) : this.random.fromHashOf(Identifier.create('terrain').toString())
 					return new DensityFunction.OldBlendedNoise(fn.xzScale, fn.yScale, fn.xzFactor, fn.yFactor, fn.smearScaleMultiplier, new BlendedNoise(oldBlendedNoiseRandom, fn.xzScale, fn.yScale, fn.xzFactor, fn.yFactor, fn.smearScaleMultiplier))
 				}
-				if (fn instanceof DensityFunction.EndIslands) {
-					return new DensityFunction.EndIslands(this.seed)
+				if (fn instanceof DensityFunction.EndOuterIslands) {
+					return new DensityFunction.EndOuterIslands(this.seed)
 				}
 				if (fn instanceof DensityFunction.Binary) {
 					return fn.trySimplify()

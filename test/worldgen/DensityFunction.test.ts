@@ -15,7 +15,7 @@ describe('DensityFunction', () => {
 
 	const wrap = (fn: DF) => {
 		const settings = NoiseGeneratorSettings.create({
-			noise: { minY: -64, height: 384, xzSize: 1, ySize: 2 },
+			noise: { minY: -64, height: 384 },
 			noiseRouter: NoiseRouter.create({
 				finalDensity: fn,
 			}),
@@ -46,16 +46,8 @@ describe('DensityFunction', () => {
 		expect(fn.compute(ContextC)).toBeCloseTo(-0.43773259014323784)
 	})
 
-	it('WeirdScaledSampler', () => {
-		const input = new DF.NoiseFunction(SHIFT, 1, 1, DF.Constant.ZERO, DF.Constant.ZERO,  DF.Constant.ZERO)
-		const fn = wrap(new DF.WeirdScaledSampler(input, 'type_1', EROSION))
-		expect(fn.compute(ContextA)).toBeCloseTo(0.05986336811047935)
-		expect(fn.compute(ContextB)).toBeCloseTo(0.06476443600923233)
-		expect(fn.compute(ContextC)).toBeCloseTo(0.022910520878785496)
-	})
-
 	it('Clamp', () => {
-		const fn = wrap(new DF.Clamp(new DF.YClampedGradient(0, 128, 0, 128), 2, 5))
+		const fn = wrap(new DF.Clamp(new DF.Gradient('y', 'clamp_to_edge', 0, 128, 0, 128), 2, 5))
 		expect(fn.compute(DF.context(0, 0, 0))).toEqual(2)
 		expect(fn.compute(DF.context(0, 3, 0))).toEqual(3)
 		expect(fn.compute(DF.context(0, 7, 0))).toEqual(5)
@@ -105,10 +97,10 @@ describe('DensityFunction', () => {
 		expect(fn3.compute(ContextA)).toEqual(-0.33570833333333333)
 	})
 
-	it('Invert', () => {
-		const fn1 = wrap(new DF.Unary('invert', new DF.Constant(2)))
+	it('Reciprocal', () => {
+		const fn1 = wrap(new DF.Unary('reciprocal', new DF.Constant(2)))
 		expect(fn1.compute(ContextA)).toEqual(0.5)
-		const fn2 = wrap(new DF.Unary('invert', new DF.Constant(0)))
+		const fn2 = wrap(new DF.Unary('reciprocal', new DF.Constant(0)))
 		expect(fn2.compute(ContextA)).toEqual(Number.POSITIVE_INFINITY)
 	})
 
@@ -133,7 +125,7 @@ describe('DensityFunction', () => {
 	})
 
 	it('Mul 0*Infinity+5', () => {
-		const fn = wrap(new DF.Binary('add', new DF.Binary('mul', DF.Constant.ZERO, new DF.Unary('invert', DF.Constant.ZERO)), new DF.Constant(5)))
+		const fn = wrap(new DF.Binary('add', new DF.Binary('mul', DF.Constant.ZERO, new DF.Unary('reciprocal', DF.Constant.ZERO)), new DF.Constant(5)))
 		expect(fn.compute(ContextA)).toEqual(Number.NaN)
 	})
 
@@ -158,7 +150,7 @@ describe('DensityFunction', () => {
 	it('Spline', () => {
 		const fn1 = wrap(new DF.Spline(new CubicSpline.Constant(0.8)))
 		expect(fn1.compute(ContextA)).toEqual(0.8)
-		const spline = new CubicSpline.MultiPoint(new DF.YClampedGradient(0, 128, 0, 128))
+		const spline = new CubicSpline.MultiPoint(new DF.Gradient('y', 'clamp_to_edge', 0, 128, 0, 128))
 			.addPoint(0, 1)
 			.addPoint(5, 0.2)
 			.addPoint(20, 0.7)
@@ -171,39 +163,39 @@ describe('DensityFunction', () => {
 		expect(fn2.compute(DF.context(0, 25, 0))).toBeCloseTo(0.7)
 	})
 
-	it('YClampedGradient', () => {
-		const fn1 = wrap(new DF.YClampedGradient(0, 128, 0, 128))
-		expect(fn1.compute(DF.context(0, -5, 0))).toEqual(0)
-		expect(fn1.compute(DF.context(0, 0, 0))).toEqual(0)
-		expect(fn1.compute(DF.context(0, 4, 0))).toEqual(4)
-		expect(fn1.compute(DF.context(0, 127, 0))).toEqual(127)
-		expect(fn1.compute(DF.context(0, 128, 0))).toEqual(128)
-		expect(fn1.compute(DF.context(0, 129, 0))).toEqual(128)
-		const fn2 = wrap(new DF.YClampedGradient(0, 128, -16, 0))
-		expect(fn2.compute(DF.context(0, -200, 0))).toEqual(-16)
-		expect(fn2.compute(DF.context(0, 0, 0))).toEqual(-16)
-		expect(fn2.compute(DF.context(0, 5, 0))).toEqual(-15.375)
-		expect(fn2.compute(DF.context(0, 64, 0))).toEqual(-8)
-		expect(fn2.compute(DF.context(0, 128, 0))).toEqual(0)
-		expect(fn2.compute(DF.context(0, 129, 0))).toEqual(0)
-	})
-
 	it('FindTopSurface', () => {
-		const fn1 = wrap(new DF.FindTopSurface(new DF.YClampedGradient(128, -128, -1, 1), new DF.Constant(128), -128, 1))
+		const fn1 = wrap(new DF.FindTopSurface(new DF.Gradient('y', 'clamp_to_edge', 128, -128, -1, 1), new DF.Constant(128), -128, 1))
 		expect(fn1.compute(ContextA)).toEqual(-1)
-		const fn2 = wrap(new DF.FindTopSurface(new DF.YClampedGradient(128, -128, -1, 1), new DF.Constant(-20), -128, 1))
+		const fn2 = wrap(new DF.FindTopSurface(new DF.Gradient('y', 'clamp_to_edge', 128, -128, -1, 1), new DF.Constant(-20), -128, 1))
 		expect(fn2.compute(ContextA)).toEqual(-20)
-		const fn3 = wrap(new DF.FindTopSurface(new DF.YClampedGradient(128, -128, -1, 1), new DF.Constant(50), 128, 1))
+		const fn3 = wrap(new DF.FindTopSurface(new DF.Gradient('y', 'clamp_to_edge', 128, -128, -1, 1), new DF.Constant(50), 128, 1))
 		expect(fn3.compute(ContextA)).toEqual(128)
 	})
 
 	it('IntervalSelect', () => {
-		const fn = wrap(new DF.IntervalSelect(new DF.YClampedGradient(0, 128, 0, 128), [4, 7, 15], [new DF.Constant(-1), new DF.Constant(0), new DF.Constant(1)]))
+		const fn = wrap(new DF.IntervalSelect(new DF.Gradient('y', 'clamp_to_edge', 0, 128, 0, 128), [4, 7, 15], [new DF.Constant(-1), new DF.Constant(0), new DF.Constant(1)]))
 		expect(fn.compute(DF.context(0, 0, 0))).toEqual(-1)
 		expect(fn.compute(DF.context(0, 3, 0))).toEqual(-1)
 		expect(fn.compute(DF.context(0, 4, 0))).toEqual(0)
 		expect(fn.compute(DF.context(0, 6, 0))).toEqual(0)
 		expect(fn.compute(DF.context(0, 12, 0))).toEqual(1)
 		expect(fn.compute(DF.context(0, 18, 0))).toEqual(1)
+	})
+
+	it('Gradient', () => {
+		const fn1 = wrap(new DF.Gradient('y', 'clamp_to_edge', 0, 128, 0, 128))
+		expect(fn1.compute(DF.context(0, -5, 0))).toEqual(0)
+		expect(fn1.compute(DF.context(0, 0, 0))).toEqual(0)
+		expect(fn1.compute(DF.context(0, 4, 0))).toEqual(4)
+		expect(fn1.compute(DF.context(0, 127, 0))).toEqual(127)
+		expect(fn1.compute(DF.context(0, 128, 0))).toEqual(128)
+		expect(fn1.compute(DF.context(0, 129, 0))).toEqual(128)
+		const fn2 = wrap(new DF.Gradient('y', 'clamp_to_edge', -64, 320, 1.5, -1.5))
+		expect(fn2.compute(DF.context(0, -70, 0))).toEqual(1.5)
+		expect(fn2.compute(DF.context(0, -25, 0))).toEqual(1.1953125)
+		expect(fn2.compute(DF.context(0, 75, 0))).toEqual(0.4140625)
+		expect(fn2.compute(DF.context(0, 137, 0))).toEqual(-0.0703125)
+		expect(fn2.compute(DF.context(0, 256, 0))).toEqual(-1)
+		expect(fn2.compute(DF.context(0, 335, 0))).toEqual(-1.5)
 	})
 })

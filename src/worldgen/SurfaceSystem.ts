@@ -2,8 +2,9 @@
 import type { Chunk } from '../core/index.js'
 import { BlockPos, BlockState, ChunkPos, Identifier } from '../core/index.js'
 import type { Noise, PositionalRandom, Random } from '../math/index.js'
-import { lerp2, map, XoroshiroRandom } from '../math/index.js'
+import { map, XoroshiroRandom } from '../math/index.js'
 import { computeIfAbsent, Json, lazy } from '../util/index.js'
+import { DensityFunction } from './DensityFunction.js'
 import type { NoiseChunk } from './NoiseChunk.js'
 import type { NoiseSettings } from './NoiseSettings.js'
 import type { RandomState } from './RandomState.js'
@@ -19,6 +20,7 @@ export class SurfaceSystem {
 		randomState: RandomState,
 		private readonly rule: SurfaceRule,
 		private readonly defaultBlock: BlockState,
+		private readonly preliminarySurface: DensityFunction,
 		seed: bigint,
 	) {
 		this.random = XoroshiroRandom.create(seed).forkPositional()
@@ -137,14 +139,7 @@ export class SurfaceContext {
 	}
 
 	private calculateMinSurfaceLevel(x: number, z: number) {
-		const cellX = x >> 4
-		const cellZ = z >> 4
-		const level00 = this.noiseChunk.getPreliminarySurfaceLevel(cellX << 4, cellZ << 4)
-		const level10 = this.noiseChunk.getPreliminarySurfaceLevel((cellX + 1) << 4, cellZ << 4)
-		const level01 = this.noiseChunk.getPreliminarySurfaceLevel(cellX << 4, (cellZ + 1) << 4)
-		const level11 = this.noiseChunk.getPreliminarySurfaceLevel((cellX + 1) << 4, (cellZ + 1) << 4)
-		const level = Math.floor(lerp2((x & 0xF) / 16, (z & 0xF) / 16, level00, level10, level01, level11))
-		return level + this.surfaceDepth - 8
+		return this.noiseChunk.randomState.router.chunkSurfaceLevel.compute(DensityFunction.context(x, 0, z))
 	}
 }
 

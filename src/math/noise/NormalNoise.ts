@@ -60,7 +60,7 @@ export class NormalNoise {
 	public createForLegacyNetherBiome(random: Random) {
 		let amplitudes = this.amplitudeModifiers
 		if (amplitudes.length === 0) {
-			amplitudes = new Array(this.octaveCount).map(() => 1)
+			amplitudes = Array(this.octaveCount).fill(1)
 		}
 		const first = NormalNoise.createLegacyNoiseLayers(random, this.baseOctave, amplitudes)
 		const second = NormalNoise.createLegacyNoiseLayers(random, this.baseOctave, amplitudes)
@@ -74,7 +74,7 @@ export class NormalNoise {
 	private static createLegacyNoiseLayers(random: Random, firstOctave: number, amplitudes: number[]): NoiseLayer[] {
 		const octaves = amplitudes.length
 		const zeroOctaveIndex = -firstOctave
-		const noiseLevels = new Array<PerlinNoise | undefined>(octaves)
+		const noiseLevels = Array<PerlinNoise | undefined>(octaves).fill(undefined)
 		const zeroOctave = new PerlinNoise(random)
 		if (zeroOctaveIndex	>= 0 && zeroOctaveIndex < octaves && amplitudes[zeroOctaveIndex] != 0) {
 			noiseLevels[zeroOctaveIndex] = zeroOctave

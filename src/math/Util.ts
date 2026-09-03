@@ -44,12 +44,12 @@ export function lazyLerp3(a: number, b: number, c: number, d: () => number, e: (
 }
 
 export function clampedLerp(a: number, b: number, c: number): number {
-	if (c < 0) {
-		return a
-	} else if (c > 1) {
+	if (a < 0) {
 		return b
+	} else if (a > 1) {
+		return c
 	} else {
-		return lerp(c, a, b)
+		return lerp(a, b, c)
 	}
 }
 
@@ -66,7 +66,7 @@ export function map(a: number, b: number, c: number, d: number, e: number) {
 }
 
 export function clampedMap(a: number, b: number, c: number, d: number, e: number) {
-	return clampedLerp(d, e, inverseLerp(a, b, c))
+	return clampedLerp(inverseLerp(a, b, c), d, e)
 }
 
 export function intFloor(a: number) {
@@ -75,6 +75,10 @@ export function intFloor(a: number) {
 
 export function longFloor(a: number) {
 	return clamp(Math.floor(a), MIN_LONG, MAX_LONG)
+}
+
+export function quantize(value: number, resolution: number) {
+	return intFloor(value / resolution) * resolution
 }
 
 export function binarySearch(n: number, n2: number, predicate: (value: number) => boolean) {
