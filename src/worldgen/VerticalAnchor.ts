@@ -1,7 +1,12 @@
 import { Json } from '../util/index.js'
-import type { NoiseSettings } from './NoiseSettings.js'
 
-export type VerticalAnchor = (context: NoiseSettings) => number
+export interface WorldgenContext {
+	minY: number,
+	height: number,
+	seaLevel: number,
+}
+
+export type VerticalAnchor = (context: WorldgenContext) => number
 
 export namespace VerticalAnchor {
 	export function fromJson(obj: unknown): VerticalAnchor {
@@ -12,20 +17,26 @@ export namespace VerticalAnchor {
 			return aboveBottom(Json.readNumber(root.above_bottom) ?? 0)
 		} else if (root.below_top !== undefined) {
 			return belowTop(Json.readNumber(root.below_top) ?? 0)
+		} else if (root.relative_to_sea_level !== undefined) {
+			return relativeToSeaLevel(Json.readNumber(root.relative_to_sea_level) ?? 0)
 		}
 		return () => 0
 	}
 
-	export function absolute(value: number): VerticalAnchor {
-		return () => value
+	export function absolute(y: number): VerticalAnchor {
+		return () => y
 	}
 
-	export function aboveBottom(value: number): VerticalAnchor {
-		return context => context.minY + value
+	export function aboveBottom(offset: number): VerticalAnchor {
+		return context => context.minY + offset
 	}
 
-	export function belowTop(value: number): VerticalAnchor {
-		return context => context.minY + context.height - 1 - value
+	export function belowTop(offset: number): VerticalAnchor {
+		return context => context.minY + context.height - 1 - offset
+	}
+
+	export function relativeToSeaLevel(offset: number): VerticalAnchor {
+		return context => context.seaLevel + offset
 	}
 }
 

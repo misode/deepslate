@@ -1,37 +1,37 @@
 import type { Holder } from '../core/index.js'
 import { Registry } from '../core/index.js'
-import type { NoiseSettings, NormalNoise } from '../index.js'
+import type { NormalNoise } from '../index.js'
 import { BlendedNoise, computeIfAbsent, DensityFunction, Identifier, LegacyRandom, XoroshiroRandom } from '../index.js'
 import type { Noise, PositionalRandom, Random } from '../math/index.js'
 import { Climate } from './biome/index.js'
+import { MaterialSystem } from './MaterialSystem.js'
 import type { NoiseGeneratorSettings } from './NoiseGeneratorSettings.js'
 import { NoiseRouter } from './NoiseRouter.js'
-import { SurfaceSystem } from './SurfaceSystem.js'
 
 export class RandomState {
 	private readonly noiseInstances: Map<string, Noise>
-	private readonly randomCache: Map<string, PositionalRandom>
+	private readonly positionalRandoms: Map<string, PositionalRandom>
 
 	public readonly random: PositionalRandom
-	public readonly surfaceSystem: SurfaceSystem
+	public readonly surfaceSystem: MaterialSystem
 	public readonly router: NoiseRouter
 	public readonly sampler: Climate.Sampler
 
-	constructor (
+	constructor(
 		settings: NoiseGeneratorSettings,
 		public readonly seed: bigint,
 	) {
 		this.noiseInstances = new Map()
-		this.randomCache = new Map()
+		this.positionalRandoms = new Map()
 
 		this.random = (settings.legacyRandomSource ? new LegacyRandom(seed) : XoroshiroRandom.create(seed)).forkPositional()
-		this.router = NoiseRouter.mapAll(settings.noiseRouter, this.createVisitor(settings.noise, settings.legacyRandomSource))
+		this.router = NoiseRouter.mapAll(settings.noiseRouter, this.createVisitor(settings.legacyRandomSource))
 		const preliminarySurface = this.router.chunkSurfaceLevel
-		this.surfaceSystem = new SurfaceSystem(this, settings.materialRule, settings.defaultBlock, preliminarySurface, seed)
+		this.surfaceSystem = new MaterialSystem(this, settings.defaultBlock, settings.seaLevel, preliminarySurface, this.random)
 		this.sampler = Climate.Sampler.fromRouter(this.router)
 	}
 
-	public createVisitor(noiseSettings: NoiseSettings, legacyRandom: boolean) {
+	public createVisitor(legacyRandom: boolean) {
 		const mapped = new Map<string, DensityFunction>()
 		const getNoiseSampler = (noise: Holder<NormalNoise>): Noise => {
 			const key = noise.key()
@@ -92,7 +92,7 @@ export class RandomState {
 	}
 
 	public getOrCreateRandom(id: Identifier) {
-		return computeIfAbsent(this.randomCache, id.toString(), key =>
+		return computeIfAbsent(this.positionalRandoms, id.toString(), key =>
 			this.random.fromHashOf(key).forkPositional()
 		)
 	}

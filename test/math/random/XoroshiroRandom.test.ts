@@ -43,7 +43,7 @@ describe('XoroshiroRandom', () => {
 		expect(random.nextInt(0x7FFFFFFF)).toEqual(383715241)
 	})
 
-	it ('nextFloat', () => {
+	it('nextFloat', () => {
 		const random = XoroshiroRandom.create(BigInt(1))
 		const actual = [...Array(10)].map(() => random.nextFloat())
 		const expected = [0.9439647, 0.34974587, 0.9012351, 0.04825169, 0.4388219, 0.15067255, 0.88325465, 0.14266795, 0.07273072, 0.8435429]
@@ -52,12 +52,26 @@ describe('XoroshiroRandom', () => {
 		})
 	})
 
-	it ('nextDouble', () => {
+	it('nextDouble', () => {
 		const random = XoroshiroRandom.create(BigInt(1))
 		const actual = [...Array(10)].map(() => random.nextDouble())
 		const expected = [0.9439647613102243, 0.34974587038035987, 0.9012351308931007, 0.048251694223845565, 0.4388219188383503, 0.15067259677004097, 0.8832547054297483, 0.1426679927905259, 0.07273074380408129, 0.84354291349029] 
 		actual.forEach((a, i) => {
 			expect(a).toBeCloseTo(expected[i], 1e-8)
 		})
+	})
+
+	it('forkPositional', () => {
+		const random = XoroshiroRandom.create(BigInt(124))
+		const positionalRandom = random.forkPositional()
+		const namedRandom = positionalRandom.fromHashOf('minecraft:deepslate').forkPositional()
+		const randomAt8 = namedRandom.at(15, 8, 0)
+		expect(randomAt8.nextFloat()).toEqual(0.9723014235496521)
+		const randomAt7 = namedRandom.at(15, 7, 0)
+		expect(randomAt7.nextFloat()).toEqual(0.9699087142944336)
+		const randomAt6 = namedRandom.at(15, 6, 0)
+		expect(randomAt6.nextFloat()).toEqual(0.9694857001304626)
+		const randomAt5 = namedRandom.at(15, 5, 0)
+		expect(randomAt5.nextFloat()).toEqual(0.9666962623596191)
 	})
 })

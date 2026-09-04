@@ -5,13 +5,16 @@ import { Json } from '../../util/Json.js'
 import type { BiomeSource } from '../biome/index.js'
 import { Heightmap } from '../Heightmap.js'
 import { HeightProvider } from '../HeightProvider.js'
-import type { LevelHeight } from '../LevelHeight.js'
-import { NoiseChunkGenerator } from '../NoiseChunkGenerator.js'
-import type { NoiseGeneratorSettings } from '../NoiseGeneratorSettings.js'
-import { RandomState } from '../RandomState.js'
+import type { NoiseChunkGenerator } from '../NoiseChunkGenerator.js'
+import type { RandomState } from '../RandomState.js'
 import { WorldgenRegistries } from '../WorldgenRegistries.js'
 import { StructurePoolElement } from './StructurePoolElement.js'
 import { StructureTemplatePool } from './StructureTemplatePool.js'
+
+export interface LevelHeight {
+	minY: number,
+	height: number,
+}
 
 export type SufaceLevelAccessor = (posX: number, posZ: number, heightmap: Heightmap) => number
 
@@ -80,19 +83,12 @@ export namespace WorldgenStructure {
 		}
 	}
 
-	export class GenerationContext {
-		public readonly chunkGenerator: NoiseChunkGenerator
-		public readonly randomState: RandomState
-
-		constructor(
-			public readonly seed: bigint,
-			public readonly biomeSource: BiomeSource,
-			public readonly settings: NoiseGeneratorSettings,
-			public readonly levelHeight: LevelHeight,
-		) {
-			this.randomState = new RandomState(settings, seed)
-			this.chunkGenerator = new NoiseChunkGenerator(biomeSource, settings)
-		}
+	export interface GenerationContext {
+		chunkGenerator: NoiseChunkGenerator
+		biomeSource: BiomeSource,
+		levelHeight: LevelHeight,
+		randomState: RandomState
+		seed: bigint
 	}
 
 	const structurePoolParser = Holder.parser(StructureTemplatePool.REGISTRY, StructureTemplatePool.fromJson)
@@ -164,8 +160,8 @@ export namespace WorldgenStructure {
 		}
 
 		public findGenerationPoint(chunkX: number, chunkZ: number, random: Random, context: WorldgenStructure.GenerationContext): BlockPos | undefined {
-			var y = this.startHeight(random, context.settings.noise)
-			const pos = BlockPos.create(chunkX << 4, y, chunkZ << 4)
+			const height = this.startHeight(random, context.chunkGenerator.getWorldgenContext())
+			const pos = BlockPos.create(chunkX << 4, height, chunkZ << 4)
 			
 			const rotation = Rotation.getRandom(random)
 			const startingPool = this.startingPoolHolder.value()
@@ -174,7 +170,7 @@ export namespace WorldgenStructure {
 			if (startingElement instanceof StructurePoolElement.EmptyPoolElement){
 				return undefined
 			} else {
-				var startJigsawOffset: BlockPos
+				let startJigsawOffset: BlockPos
 				if (this.startJigsawName){
 					const offset = JigsawStructure.getRandomNamedJigsaw(startingElement, this.startJigsawName, rotation, random)
 					if (offset === undefined){
@@ -190,7 +186,7 @@ export namespace WorldgenStructure {
 
 				const x = ((boundingBox[1][0] + boundingBox[0][0]) / 2)^0
 				const z = ((boundingBox[1][2] + boundingBox[0][2]) / 2)^0
-				var y: number
+				let y: number
 				if (this.projectStartToHeightmap){
 					y = pos[1] + context.chunkGenerator.getBaseHeight(x, z, this.projectStartToHeightmap, context.randomState)
 				} else {
@@ -271,7 +267,7 @@ export namespace WorldgenStructure {
 		}
 
 		public findGenerationPoint(chunkX: number, chunkZ: number, _: Random, context: WorldgenStructure.GenerationContext): BlockPos | undefined {
-			if (this.getLowestY(context, chunkX << 4, chunkZ << 4, this.width, this.depth) < context.settings.seaLevel) {
+			if (this.getLowestY(context, chunkX << 4, chunkZ << 4, this.width, this.depth) < context.chunkGenerator.getWorldgenContext().seaLevel) {
 				return undefined
 			} else {
 				return this.onTopOfChunkCenter(context, chunkX, chunkZ)

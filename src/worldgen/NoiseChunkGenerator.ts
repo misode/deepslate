@@ -1,5 +1,5 @@
 import type { Chunk } from '../core/index.js'
-import { BlockState, ChunkPos } from '../core/index.js'
+import { BlockState, ChunkPos, Identifier } from '../core/index.js'
 import type { FluidPicker } from './Aquifer.js'
 import { FluidStatus } from './Aquifer.js'
 import type { BiomeSource } from './biome/index.js'
@@ -8,6 +8,7 @@ import type { Heightmap } from './Heightmap.js'
 import { NoiseChunk } from './NoiseChunk.js'
 import type { NoiseGeneratorSettings } from './NoiseGeneratorSettings.js'
 import type { RandomState } from './RandomState.js'
+import type { WorldgenContext } from './VerticalAnchor.js'
 
 export class NoiseChunkGenerator {
 	private readonly globalFluidPicker: FluidPicker
@@ -58,13 +59,13 @@ export class NoiseChunkGenerator {
 		return undefined
 	}
 
-	public buildTerrain(randomState: RandomState, chunk: Chunk, onlyFirstZ?: boolean, /** @deprecated */ biome?: string) {
+	public buildTerrain(randomState: RandomState, chunk: Chunk, onlyFirstZ?: boolean, /** @deprecated */ biome?: Identifier) {
 		const noiseChunk = this.createNoiseChunk(randomState, chunk, onlyFirstZ)
 		this.doFill(chunk, noiseChunk)
 		this.buildSurface(chunk, noiseChunk, biome)
 	}
 
-	private doFill(chunk: Chunk, noiseChunk: NoiseChunk, onlyFirstZ?: boolean) {
+	private doFill(chunk: Chunk, noiseChunk: NoiseChunk) {
 		const volume = noiseChunk.volume
 		const finalDensity = noiseChunk.randomState.router.finalDensity
 		const densityBuffer = finalDensity.computeVolume(volume)
@@ -83,8 +84,14 @@ export class NoiseChunkGenerator {
 		}
 	}
 
-	private buildSurface(chunk: Chunk, noiseChunk: NoiseChunk, /** @deprecated */ biome: string = 'minecraft:plains') {
-		noiseChunk.randomState.surfaceSystem.buildSurface(chunk, noiseChunk, this.settings.noise, () => biome)
+	private buildSurface(chunk: Chunk, noiseChunk: NoiseChunk, /** @deprecated */ biome?: Identifier) {
+		const surfaceBiome = biome ?? Identifier.create('plains')
+		const context: WorldgenContext = {
+			minY: this.settings.noise.minY,
+			height: this.settings.noise.height,
+			seaLevel: this.settings.seaLevel,
+		}
+		noiseChunk.randomState.surfaceSystem.buildSurface(chunk, noiseChunk, this.settings.materialRule, context, () => surfaceBiome)
 	}
 
 	public computeBiome(randomState: RandomState, quartX: number, quartY: number, quartZ: number) {
@@ -94,5 +101,13 @@ export class NoiseChunkGenerator {
 	private createNoiseChunk(randomState: RandomState, chunk: Chunk, onlyFirstZ?: boolean) {
 		const volume = new DensityVolume(16, this.settings.noise.height, onlyFirstZ ? 1 : 16, ChunkPos.minBlockX(chunk.pos), this.settings.noise.minY, ChunkPos.minBlockZ(chunk.pos))
 		return new NoiseChunk(randomState, this.settings, this.globalFluidPicker, volume)
+	}
+
+	public getWorldgenContext(): WorldgenContext {
+		return {
+			minY: this.settings.noise.minY,
+			height: this.settings.noise.height,
+			seaLevel: this.settings.seaLevel,
+		}
 	}
 }

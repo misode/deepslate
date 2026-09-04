@@ -97,8 +97,8 @@ export function binarySearch(n: number, n2: number, predicate: (value: number) =
 }
 
 export function getSeed(x: number, y: number, z: number) {
-	let seed = BigInt(x * 3129871) ^ BigInt(z) * BigInt(116129781) ^ BigInt(y)
-	seed = seed * seed * BigInt(42317861) + seed * BigInt(11)
+	let seed = BigInt.asIntN(64, BigInt(x) * BigInt(3129871) ^ BigInt(z) * BigInt(116129781) ^ BigInt(y))
+	seed = BigInt.asIntN(64, BigInt.asIntN(64, seed * seed * BigInt(42317861)) + BigInt.asIntN(64, seed * BigInt(11)))
 	return seed >> BigInt(16)
 }
 
