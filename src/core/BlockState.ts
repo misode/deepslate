@@ -1,4 +1,4 @@
-import type { NbtTag } from '../nbt/index.js'
+import { NbtCompound, type NbtTag } from '../nbt/index.js'
 import { Json } from '../util/index.js'
 import { Identifier } from './Identifier.js'
 
@@ -45,8 +45,8 @@ export class BlockState {
 			return false
 		}
 		if (Object.keys(this.properties).length !== Object.keys(other.properties).length) {
-            return false
-        }
+			return false
+		}
 		return Object.keys(this.properties).every(p => {
 			return other.properties[p] === this.properties[p]
 		})
@@ -85,19 +85,20 @@ export class BlockState {
 		if (nbt.isString()) {
 			return new BlockState(nbt.getAsString())
 		}
-		if (!nbt.isCompound()) {
-			throw new Error(`Invalid block state format ${nbt.toString()}`)
-		}
-		const name = Identifier.parse(nbt.hasString('id') ? nbt.getString('id') : nbt.getString('Name'))
-		const properties = (nbt.hasCompound('properties') ? nbt.getCompound('properties') : nbt.getCompound('Properties'))
+		const root = nbt.isCompound() ? nbt : new NbtCompound()
+		const name = Identifier.parse(root.hasString('id') ? root.getString('id') : root.getString('Name'))
+		const properties = (root.hasCompound('properties') ? root.getCompound('properties') : root.getCompound('Properties'))
 			.map((key, value) => [key, value.getAsString()])
 		return new BlockState(name, properties)
 	}
 
 	public static fromJson(obj: unknown) {
+		if (typeof obj === 'string') {
+			return new BlockState(obj)
+		}
 		const root = Json.readObject(obj) ?? {}
-		const name = Identifier.parse(Json.readString(root.Name) ?? BlockState.STONE.name.toString())
-		const properties = Json.readMap(root.Properties, p => Json.readString(p) ?? '')
+		const name = Identifier.parse(Json.readString(root.id ?? root.Name) ?? '')
+		const properties = Json.readMap(root.properties ?? root.Properties, p => Json.readString(p) ?? '')
 		return new BlockState(name, properties)
 	}
 }

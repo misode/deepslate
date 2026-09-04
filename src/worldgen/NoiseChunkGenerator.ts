@@ -1,145 +1,113 @@
 import type { Chunk } from '../core/index.js'
-import { BlockState, ChunkPos } from '../core/index.js'
-import { computeIfAbsent } from '../util/index.js'
+import { BlockState, ChunkPos, Identifier } from '../core/index.js'
 import type { FluidPicker } from './Aquifer.js'
 import { FluidStatus } from './Aquifer.js'
 import type { BiomeSource } from './biome/index.js'
+import { DensityVolume } from './DensityVolume.js'
 import type { Heightmap } from './Heightmap.js'
 import { NoiseChunk } from './NoiseChunk.js'
 import type { NoiseGeneratorSettings } from './NoiseGeneratorSettings.js'
-import { NoiseSettings } from './NoiseSettings.js'
 import type { RandomState } from './RandomState.js'
+import type { WorldgenContext } from './VerticalAnchor.js'
 
 export class NoiseChunkGenerator {
-	private readonly noiseChunkCache: Map<bigint, NoiseChunk>
 	private readonly globalFluidPicker: FluidPicker
 
 	constructor(
 		private readonly biomeSource: BiomeSource,
 		private readonly settings: NoiseGeneratorSettings,
 	) {
-		this.noiseChunkCache = new Map()
-
-		const lavaFluid = new FluidStatus(-54, BlockState.LAVA)
-		const defaultFluid = new FluidStatus(settings.seaLevel, settings.defaultFluid)
+		const lavaStatus = new FluidStatus(-54, BlockState.LAVA)
+		const seaStatus = new FluidStatus(settings.seaLevel, settings.defaultFluid)
 		this.globalFluidPicker = (x, y, z) => {
 			if (y < Math.min(-54, settings.seaLevel)) {
-				return lavaFluid
+				return lavaStatus
 			}
-			return defaultFluid
+			return seaStatus
 		}
 	}
 
-	public getBaseHeight(blockX: number, blockZ: number, heightmap: Heightmap, randomState: RandomState){
+	public getBaseHeight(blockX: number, blockZ: number, heightmap: Heightmap, randomState: RandomState) {
 		let predicate: (state: BlockState) => boolean
 		if (heightmap === 'OCEAN_FLOOR' || heightmap === 'OCEAN_FLOOR_WG'){
-			predicate = (state: BlockState) => state.equals(BlockState.STONE)
+			predicate = (state: BlockState) => !state.equals(BlockState.AIR) && !state.isFluid()
 		} else {
 			predicate = (state: BlockState) => !state.equals(BlockState.AIR)
 		}
-		return this.iterateNoiseColumn(randomState, blockX, blockZ, undefined, predicate, BlockState.STONE) ?? this.settings.noise.minY
+		return this.iterateNoiseColumn(randomState, blockX, blockZ, undefined, predicate) ?? this.settings.noise.minY
 	}
 
-	private iterateNoiseColumn(randomState: RandomState, blockX: number, blockZ: number, fillArray?: BlockState[], predicate?: (blockState: BlockState) => boolean, defaultBlock?: BlockState ){
-		const minY = this.settings.noise.minY
-		const cellHeight = NoiseSettings.cellHeight(this.settings.noise)
-		const minCellY = Math.floor(minY / cellHeight)
-		const cellCountY = Math.floor(this.settings.noise.height / cellHeight)
-
-		if (cellCountY <= 0){
+	private iterateNoiseColumn(randomState: RandomState, blockX: number, blockZ: number, fillArray?: BlockState[], predicate?: (blockState: BlockState) => boolean): number | undefined {
+		if (this.settings.noise.height <= 0) {
 			return undefined
 		}
+		const volume = new DensityVolume(1, this.settings.noise.height, 1, blockX, this.settings.noise.minY, blockZ)
+		const noiseChunk = new NoiseChunk(randomState, this.settings, this.globalFluidPicker, volume)
+		const finalDensity = randomState.router.finalDensity
+		const densityBuffer = finalDensity.computeVolume(volume)
+		for (let y = volume.sizeY - 1; y >= 0; y -= 1) {
+			const density = densityBuffer[volume.indexUnchecked(0, y, 0)]
+			const blockY = volume.blockY(y)
+			const state = noiseChunk.aquifer.computeSubstance(blockX, blockY, blockZ, density) ?? this.settings.defaultBlock
+			if (fillArray !== undefined){
+				fillArray[y] = state
+			}
+			if (predicate !== undefined && predicate(state)){
+				return blockY + 1
+			}
+		}
+		return undefined
+	}
 
-		const cellWidth = NoiseSettings.cellWidth(this.settings.noise)
-		const cellX = Math.floor(blockX / cellWidth)
-		
-		const cellZ = Math.floor(blockZ / cellWidth)		
+	public buildTerrain(randomState: RandomState, chunk: Chunk, onlyFirstZ?: boolean, /** @deprecated */ biome?: Identifier) {
+		const noiseChunk = this.createNoiseChunk(randomState, chunk, onlyFirstZ)
+		this.doFill(chunk, noiseChunk)
+		this.buildSurface(chunk, noiseChunk, biome)
+	}
 
-		const noiseChunk = new NoiseChunk(1, cellCountY, minCellY, randomState, cellX, cellZ, this.settings.noise, this.settings.aquifersEnabled, this.globalFluidPicker)
-
-		for (let cellY = cellCountY - 1; cellY >= 0; cellY -= 1) {
-			for (let offY = cellHeight - 1; offY >= 0; offY -= 1) {
-				const blockY = (minCellY + cellY) * cellHeight + offY
-				const state = noiseChunk.getFinalState(blockX, blockY, blockZ) ?? defaultBlock ?? this.settings.defaultBlock
-				if (fillArray !== undefined){
-					fillArray[blockY + minY] = state
-				}
-
-				if (predicate !== undefined && predicate(state)){
-					return blockY + 1
+	private doFill(chunk: Chunk, noiseChunk: NoiseChunk) {
+		const volume = noiseChunk.volume
+		const finalDensity = noiseChunk.randomState.router.finalDensity
+		const densityBuffer = finalDensity.computeVolume(volume)
+		for (let z = 0; z < volume.sizeZ; z += 1) {
+			const blockZ = volume.blockZ(z)
+			for (let x = 0; x < volume.sizeX; x += 1) {
+				const blockX = volume.blockX(x)
+				for (let y = volume.sizeY - 1; y >= 0; y -= 1) {
+					const blockY = volume.blockY(y)
+					const section = chunk.getOrCreateSection(chunk.getSectionIndex(blockY))
+					const density = densityBuffer[volume.indexUnchecked(x, y, z)]
+					const state = noiseChunk.aquifer.computeSubstance(blockX, blockY, blockZ, density) ?? this.settings.defaultBlock
+					section.setBlockState(x, blockY & 15, z, state)
 				}
 			}
 		}
 	}
 
-	public fill(randomState: RandomState, chunk: Chunk, onlyFirstZ: boolean = false) {
-		const minY = Math.max(chunk.minY, this.settings.noise.minY)
-		const maxY = Math.min(chunk.maxY, this.settings.noise.minY + this.settings.noise.height)
-
-		const cellWidth = NoiseSettings.cellWidth(this.settings.noise)
-		const cellHeight = NoiseSettings.cellHeight(this.settings.noise)
-		const cellCountXZ = Math.floor(16 / cellWidth)
-
-		const minCellY = Math.floor(minY / cellHeight)
-		const cellCountY = Math.floor((maxY - minY) / cellHeight)
-
-		const minX = ChunkPos.minBlockX(chunk.pos)
-		const minZ = ChunkPos.minBlockZ(chunk.pos)
-
-		const noiseChunk = this.getOrCreateNoiseChunk(randomState, chunk)
-
-		for (let cellX = 0; cellX < cellCountXZ; cellX += 1) {
-			for (let cellZ = 0; cellZ < (onlyFirstZ ? 1 : cellCountXZ); cellZ += 1) {
-				let section = chunk.getOrCreateSection(chunk.sectionsCount - 1)
-				for (let cellY = cellCountY - 1; cellY >= 0; cellY -= 1) {
-					for (let offY = cellHeight - 1; offY >= 0; offY -= 1) {
-						const blockY = (minCellY + cellY) * cellHeight + offY
-						const sectionY = blockY & 0xF
-						const sectionIndex = chunk.getSectionIndex(blockY)
-						if (chunk.getSectionIndex(section.minBlockY) !== sectionIndex) {
-							section = chunk.getOrCreateSection(sectionIndex)
-						}
-						for (let offX = 0; offX < cellWidth; offX += 1) {
-							const blockX = minX + cellX * cellWidth + offX
-							const sectionX = blockX & 0xF
-							for (let offZ = 0; offZ < (onlyFirstZ ? 1 : cellWidth); offZ += 1) {
-								const blockZ = minZ + cellZ * cellWidth + offZ
-								const sectionZ = blockZ & 0xF
-								const state = noiseChunk.getFinalState(blockX, blockY, blockZ) ?? this.settings.defaultBlock
-								section.setBlockState(sectionX, sectionY, sectionZ, state)
-							}
-						}
-					}
-				}
-			}
+	private buildSurface(chunk: Chunk, noiseChunk: NoiseChunk, /** @deprecated */ biome?: Identifier) {
+		const surfaceBiome = biome ?? Identifier.create('plains')
+		const context: WorldgenContext = {
+			minY: this.settings.noise.minY,
+			height: this.settings.noise.height,
+			seaLevel: this.settings.seaLevel,
 		}
-	}
-
-	public buildSurface(randomState: RandomState, chunk: Chunk, /** @deprecated */ biome: string = 'minecraft:plains') {
-		const noiseChunk = this.getOrCreateNoiseChunk(randomState, chunk)
-		const context = this.settings.noise
-		randomState.surfaceSystem.buildSurface(chunk, noiseChunk, context, () => biome)
+		noiseChunk.randomState.surfaceSystem.buildSurface(chunk, noiseChunk, this.settings.materialRule, context, () => surfaceBiome)
 	}
 
 	public computeBiome(randomState: RandomState, quartX: number, quartY: number, quartZ: number) {
 		return this.biomeSource.getBiome(quartX, quartY, quartZ, randomState.sampler)
 	}
 
-	private getOrCreateNoiseChunk(randomState: RandomState, chunk: Chunk) {
-		return computeIfAbsent(this.noiseChunkCache, ChunkPos.toLong(chunk.pos), () => {
-			const minY = Math.max(chunk.minY, this.settings.noise.minY)
-			const maxY = Math.min(chunk.maxY, this.settings.noise.minY + this.settings.noise.height)
-	
-			const cellWidth = NoiseSettings.cellWidth(this.settings.noise)
-			const cellHeight = NoiseSettings.cellHeight(this.settings.noise)
-			const cellCountXZ = Math.floor(16 / cellWidth)
-	
-			const minCellY = Math.floor(minY / cellHeight)
-			const cellCountY = Math.floor((maxY - minY) / cellHeight)
-			const minX = ChunkPos.minBlockX(chunk.pos)
-			const minZ = ChunkPos.minBlockZ(chunk.pos)
-	
-			return new NoiseChunk(cellCountXZ, cellCountY, minCellY, randomState, minX, minZ, this.settings.noise, this.settings.aquifersEnabled, this.globalFluidPicker)
-		})
+	private createNoiseChunk(randomState: RandomState, chunk: Chunk, onlyFirstZ?: boolean) {
+		const volume = new DensityVolume(16, this.settings.noise.height, onlyFirstZ ? 1 : 16, ChunkPos.minBlockX(chunk.pos), this.settings.noise.minY, ChunkPos.minBlockZ(chunk.pos))
+		return new NoiseChunk(randomState, this.settings, this.globalFluidPicker, volume)
+	}
+
+	public getWorldgenContext(): WorldgenContext {
+		return {
+			minY: this.settings.noise.minY,
+			height: this.settings.noise.height,
+			seaLevel: this.settings.seaLevel,
+		}
 	}
 }

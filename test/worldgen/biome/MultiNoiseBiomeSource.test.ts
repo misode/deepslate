@@ -1,8 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { Identifier } from '../../../src/core/index.js'
-import { NoiseParameters } from '../../../src/math/index.js'
-import { Climate, DensityFunction as DF, MultiNoiseBiomeSource, NoiseGeneratorSettings, NoiseRouter, WorldgenRegistries } from '../../../src/worldgen/index.js'
-import { RandomState } from '../../../src/worldgen/RandomState.js'
+import { NormalNoise } from '../../../src/math/index.js'
+import { Climate, DensityFunction as DF, MultiNoiseBiomeSource, NoiseGeneratorSettings, NoiseRouter, RandomState, WorldgenRegistries } from '../../../src/worldgen/index.js'
 
 describe('MultiNoise', () => {
 	afterEach(() => {
@@ -19,13 +18,13 @@ describe('MultiNoise', () => {
 		]
 		const nether = new MultiNoiseBiomeSource(netherBiomes)
 
-		const temperature = WorldgenRegistries.NOISE.register(Identifier.create('temperature'), NoiseParameters.create(-10, [1.5, 0, 1, 0, 0, 0]))
-		const vegetation = WorldgenRegistries.NOISE.register(Identifier.create('vegetation'), NoiseParameters.create(-8, [1, 1, 0, 0, 0, 0]))
+		const temperature = WorldgenRegistries.NOISE.register(Identifier.create('temperature'), new NormalNoise(1.2453007926713473, -10, 6, 'enabled', [1.5, 0, 1, 0, 0, 0]))
+		const vegetation = WorldgenRegistries.NOISE.register(Identifier.create('vegetation'), new NormalNoise(0.9494731054427978, -8, 6, 'enabled', [1, 1, 0, 0, 0, 0]))
 		const settings = NoiseGeneratorSettings.create({
-			noise: { minY: 0, height: 128, xzSize: 1, ySize: 2 },
+			noise: { minY: 0, height: 128 },
 			noiseRouter: NoiseRouter.create({
-				temperature: new DF.Noise(0.25, 0, temperature),
-				vegetation: new DF.Noise(0.25, 0, vegetation),
+				temperature: new DF.NoiseFunction(temperature, 0.25, 0, DF.Constant.ZERO, DF.Constant.ZERO, DF.Constant.ZERO),
+				vegetation: new DF.NoiseFunction(vegetation, 0.25, 0, DF.Constant.ZERO, DF.Constant.ZERO, DF.Constant.ZERO),
 			}),
 		})
 		const randomState = new RandomState(settings, BigInt(123))
@@ -70,7 +69,7 @@ describe('MultiNoise', () => {
 		})
 
 		const settings = NoiseGeneratorSettings.create({
-			noise: { minY: 0, height: 128, xzSize: 1, ySize: 2 },
+			noise: { minY: 0, height: 128 },
 			noiseRouter: NoiseRouter.create({
 				temperature: new DF.Constant(0.3),
 			}),

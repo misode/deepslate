@@ -25,6 +25,18 @@ export class Interval {
 		return Interval.of(value, value)
 	}
 
+	public static between(first: number, second: number) {
+		if (isNaN(first) && isNaN(second)) {
+			return Interval.NaI
+		} else if (isNaN(first)) {
+			return Interval.ofExact(second)
+		} else if (isNaN(second)) {
+			return Interval.ofExact(first)
+		} else {
+			return Interval.of(Math.min(first, second), Math.max(first, second))
+		}
+	}
+
 	public static encapsulating(...intervals: Interval[]) {
 		let min = Infinity
 		let max = -Infinity
@@ -131,6 +143,38 @@ export class Interval {
 		}
 	}
 
+	public static pow(base: Interval, exponent: Interval) {
+		if (base.isNaI() || exponent.isNaI()) {
+			return Interval.NaI
+		}
+		if (base.min == base.max) {
+			return Interval.powNum(base.min, exponent)
+		}
+		let result = Interval.encapsulating(Interval.powNum(base.min, exponent), Interval.powNum(base.max, exponent))
+		if (base.contains(0)) {
+			if (base.max > 0) {
+				result = Interval.encapsulating(result, Interval.powNum(0, exponent))
+			}
+			if (base.min < 0) {
+				result = Interval.encapsulating(result, Interval.powNum(-0, exponent))
+			}
+		}
+		return result
+	}
+
+	private static powNum(base: number, exponent: Interval) {
+		// TODO: Implement this
+		return Interval.INFINITE
+	}
+
+	public static log(input: Interval) {
+		if (input.max < 0) {
+			return Interval.NaI
+		}
+		const clipped = Interval.max(input, Interval.ofExact(0))
+		return Interval.mapMonotonic(clipped, Math.log)
+	}
+
 	public static mapMonotonic(input: Interval, op: (value: number) => number) {
 		if (input.isNaI()) {
 			return Interval.NaI
@@ -138,6 +182,66 @@ export class Interval {
 		const mappedMin = op(input.min)
 		const mappedMax = op(input.max)
 		return Interval.of(Math.min(mappedMin, mappedMax), Math.max(mappedMin, mappedMax))
+	}
+
+	public static lerp(alpha: Interval, first: Interval, second: Interval) {
+		if (alpha.isNaI() || first.isNaI() || second.isNaI()) {
+			return Interval.NaI
+		}
+		return Interval.encapsulating(Interval.lerpNums(alpha, first.min, second.min), Interval.lerpNums(alpha, first.max, second.min), Interval.lerpNums(alpha, first.min, second.max), Interval.lerpNums(alpha, first.max, second.max))
+	}
+
+	public static lerpNums(alpha: Interval, first: number, second: number) {
+		if (alpha.isNaI() || isNaN(first) || isNaN(second)) {
+			return Interval.NaI
+		}
+		if (isFinite(first) && isFinite(second)) {
+			return Interval.between(Interval.lerpFiniteBound(alpha.min, first, second), Interval.lerpFiniteBound(alpha.max, first, second))
+		}
+		if (first === second) {
+			return Interval.ofExact(first)
+		}
+		const newMin = Interval.lerpInfiniteBound(alpha.min, first, second)
+		const newMax = Interval.lerpInfiniteBound(alpha.max, first, second)
+		if (isNaN(newMin) || isNaN(newMax)) {
+			return Interval.NaI
+		}
+		return Interval.between(newMin, newMax)
+	}
+
+	private static lerpFiniteBound(alpha: number, first: number, second: number) {
+		return first + Interval.mulBound(alpha, second - first)
+	}
+
+	private static lerpInfiniteBound(alpha: number, first: number, second: number) {
+		const firstPart = Interval.mulBound(1 - alpha, first)
+		const secondPart = Interval.mulBound(alpha, second)
+		if (isFinite(firstPart) || isFinite(secondPart)) {
+			return firstPart + secondPart
+		} else if (alpha <= 0) {
+			return second > first ? -Infinity : Infinity
+		} else if (alpha >= 1) {
+			return second > first ? Infinity : -Infinity
+		} else {
+			return NaN
+		}
+	}
+
+	public static sign(input: Interval) {
+		if (input.isNaI()) {
+			return Interval.NaI
+		}
+		if (input.min === input.max) {
+			return Interval.ofExact(Math.sign(input.min))
+		} else if (!input.contains(0)) {
+			return Interval.ofExact(input.min > 0 ? 1 : -1)
+		} else if (input.min === 0) {
+			return Interval.of(0, 1)
+		} else if (input.max === 0) {
+			return Interval.of(-1, 0)
+		} else {
+			return Interval.of(-1, 1)
+		}
 	}
 
 	public contains(value: number) {

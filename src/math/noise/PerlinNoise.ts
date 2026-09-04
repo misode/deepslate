@@ -1,85 +1,55 @@
+import { Interval } from '../Interval.js'
 import type { Random } from '../random/index.js'
-import { XoroshiroRandom } from '../random/index.js'
-import { longFloor } from '../Util.js'
-import { ImprovedNoise } from './ImprovedNoise.js'
+import { intFloor, lerp3, smoothstep } from '../Util.js'
+import { GradientNoise } from './GradientNoise.js'
 
-export class PerlinNoise {
-	public readonly noiseLevels: ImprovedNoise[]
-	public readonly amplitudes: number[]
-	public readonly lowestFreqInputFactor: number
-	public readonly lowestFreqValueFactor: number
-	public readonly maxValue: number
+export class PerlinNoise extends GradientNoise{
+	public static readonly RANGE = Interval.ofSymmetric(2)
+	public static readonly STANDARD_DEVIATION = 0.2702247831245211
 
-	constructor(random: Random, firstOctave: number, amplitudes: number[], forceLegacy: boolean = false) {
-		if (random instanceof XoroshiroRandom && !forceLegacy){
-			const forkedRandom = random.forkPositional()
-
-			this.noiseLevels = Array(amplitudes.length)
-			for(let i = 0; i < amplitudes.length; i++) {
-				if (amplitudes[i] !== 0.0) {
-					const octave = firstOctave + i
-					this.noiseLevels[i] = new ImprovedNoise(forkedRandom.fromHashOf('octave_' + octave))
-				}
-			}
-		} else {
-			if (1 - firstOctave < amplitudes.length) {
-				throw new Error('Positive octaves are not allowed when using LegacyRandom')
-			}
-
-			this.noiseLevels = Array(amplitudes.length)
-			for (let i = -firstOctave; i >= 0; i -= 1) {
-				if (i < amplitudes.length && amplitudes[i] !== 0) {
-					this.noiseLevels[i] = new ImprovedNoise(random)
-				} else {
-					random.consume(262)
-				}
-			}
-		}
-
-		this.amplitudes = amplitudes
-		this.lowestFreqInputFactor = Math.pow(2, firstOctave)
-		this.lowestFreqValueFactor = Math.pow(2, (amplitudes.length - 1)) / (Math.pow(2, amplitudes.length) - 1)
-		this.maxValue = this.edgeValue(2)
+	constructor(random: Random) {
+		super(random)
 	}
 
-	public sample(x: number, y: number, z: number, yScale = 0, yLimit = 0, fixY = false) {
-		let value = 0
-		let inputF = this.lowestFreqInputFactor
-		let valueF = this.lowestFreqValueFactor
-		for (let i = 0; i < this.noiseLevels.length; i += 1) {
-			const noise = this.noiseLevels[i]
-			if (noise) {
-				value += this.amplitudes[i] * valueF * noise.sample(
-					PerlinNoise.wrap(x * inputF),
-					fixY ? -noise.yo : PerlinNoise.wrap(y * inputF),
-					PerlinNoise.wrap(z * inputF),
-					yScale * inputF,
-					yLimit * inputF,
-				)
-			}
-			inputF *= 2
-			valueF /= 2
-		}
-		return value
+	public range(): Interval {
+		return PerlinNoise.RANGE
 	}
 
-	public getOctaveNoise(i: number): ImprovedNoise | undefined {
-		return this.noiseLevels[this.noiseLevels.length - 1 - i]
+	public get2D(x: number, y: number): number {
+		return this.get3D(GradientNoise.wrap(x), 0, GradientNoise.wrap(y))
 	}
 
-	public edgeValue(x: number) {
-		let value = 0
-		let valueF = this.lowestFreqValueFactor
-		for (let i = 0; i < this.noiseLevels.length; i += 1) {
-			if (this.noiseLevels[i]) {
-				value += this.amplitudes[i] * x * valueF
-			}
-			valueF /= 2
-		}
-		return value
+	public get3D(x: number, y: number, z: number): number {
+		const x1 = GradientNoise.wrap(x) + this.offsetX
+		const y1 = GradientNoise.wrap(y) + this.offsetY
+		const z1 = GradientNoise.wrap(z) + this.offsetZ
+		const floorX = intFloor(x1)
+		const floorY = intFloor(y1)
+		const floorZ = intFloor(z1)
+		const relativeX = x1 - floorX
+		const relativeY = y1 - floorY
+		const relativeZ = z1 - floorZ
+		return this.sampleAndLerp(floorX, floorY, floorZ, relativeX, relativeY, relativeZ, relativeY)
 	}
 
-	public static wrap(value: number) {
-		return value - longFloor(value / 3.3554432E7 + 0.5) * 3.3554432E7
+	public sampleAndLerp(x: number, y: number, z: number, relativeX: number, relativeY: number, relativeZ: number, originalRelativeY: number) {
+		const x0 = this.permute(x)
+		const x1 = this.permute(x + 1)
+		const xy00 = this.permute(x0 + y)
+		const xy01 = this.permute(x0 + y + 1)
+		const xy10 = this.permute(x1 + y)
+		const xy11 = this.permute(x1 + y + 1)
+		const d000 = GradientNoise.gradDot(this.permute(xy00 + z), relativeX, relativeY, relativeZ)
+		const d100 = GradientNoise.gradDot(this.permute(xy10 + z), relativeX - 1.0, relativeY, relativeZ)
+		const d010 = GradientNoise.gradDot(this.permute(xy01 + z), relativeX, relativeY - 1.0, relativeZ)
+		const d110 = GradientNoise.gradDot(this.permute(xy11 + z), relativeX - 1.0, relativeY - 1.0, relativeZ)
+		const d001 = GradientNoise.gradDot(this.permute(xy00 + z + 1), relativeX, relativeY, relativeZ - 1.0)
+		const d101 = GradientNoise.gradDot(this.permute(xy10 + z + 1), relativeX - 1.0, relativeY, relativeZ - 1.0)
+		const d011 = GradientNoise.gradDot(this.permute(xy01 + z + 1), relativeX, relativeY - 1.0, relativeZ - 1.0)
+		const d111 = GradientNoise.gradDot(this.permute(xy11 + z + 1), relativeX - 1.0, relativeY - 1.0, relativeZ - 1.0)
+		const xAlpha = smoothstep(relativeX)
+		const yAlpha = smoothstep(originalRelativeY)
+		const zAlpha = smoothstep(relativeZ)
+		return lerp3(xAlpha, yAlpha, zAlpha, d000, d100, d010, d110, d001, d101, d011, d111)
 	}
 }

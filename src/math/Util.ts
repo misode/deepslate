@@ -44,12 +44,12 @@ export function lazyLerp3(a: number, b: number, c: number, d: () => number, e: (
 }
 
 export function clampedLerp(a: number, b: number, c: number): number {
-	if (c < 0) {
-		return a
-	} else if (c > 1) {
+	if (a < 0) {
 		return b
+	} else if (a > 1) {
+		return c
 	} else {
-		return lerp(c, a, b)
+		return lerp(a, b, c)
 	}
 }
 
@@ -66,7 +66,7 @@ export function map(a: number, b: number, c: number, d: number, e: number) {
 }
 
 export function clampedMap(a: number, b: number, c: number, d: number, e: number) {
-	return clampedLerp(d, e, inverseLerp(a, b, c))
+	return clampedLerp(inverseLerp(a, b, c), d, e)
 }
 
 export function intFloor(a: number) {
@@ -75,6 +75,10 @@ export function intFloor(a: number) {
 
 export function longFloor(a: number) {
 	return clamp(Math.floor(a), MIN_LONG, MAX_LONG)
+}
+
+export function quantize(value: number, resolution: number) {
+	return intFloor(value / resolution) * resolution
 }
 
 export function binarySearch(n: number, n2: number, predicate: (value: number) => boolean) {
@@ -93,8 +97,8 @@ export function binarySearch(n: number, n2: number, predicate: (value: number) =
 }
 
 export function getSeed(x: number, y: number, z: number) {
-	let seed = BigInt(x * 3129871) ^ BigInt(z) * BigInt(116129781) ^ BigInt(y)
-	seed = seed * seed * BigInt(42317861) + seed * BigInt(11)
+	let seed = BigInt.asIntN(64, BigInt(x) * BigInt(3129871) ^ BigInt(z) * BigInt(116129781) ^ BigInt(y))
+	seed = BigInt.asIntN(64, BigInt.asIntN(64, seed * seed * BigInt(42317861)) + BigInt.asIntN(64, seed * BigInt(11)))
 	return seed >> BigInt(16)
 }
 
@@ -140,4 +144,10 @@ export function shuffle(array: unknown[], random: Random) {
 		array[switchIndex] = array[i - 1]
 		array[i - 1] = tmp
 	}
+}
+
+export function hashCode(s: string) {
+	for(var i = 0, h = 0; i < s.length; i++)
+		h = Math.imul(31, h) + s.charCodeAt(i) | 0
+	return h
 }
