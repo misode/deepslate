@@ -110,7 +110,7 @@ export class NormalNoise {
 				max = Math.max(max, i)
 			}
 		}
-		const parityExpectedDeviation = 0.1 * 1 + 1 / (max - min + 1)
+		const parityExpectedDeviation = 0.1 * (1 + 1 / (max - min + 1))
 		return baseAmplitude * 0.5 * NormalNoise.TARGET_DEVIATION / parityExpectedDeviation
 	}
 
