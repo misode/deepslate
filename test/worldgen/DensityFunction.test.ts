@@ -173,13 +173,15 @@ describe('DensityFunction', () => {
 	})
 
 	it('IntervalSelect', () => {
-		const fn = wrap(new DF.IntervalSelect(new DF.Gradient('y', 'clamp_to_edge', 0, 128, 0, 128), [4, 7, 15], [new DF.Constant(-1), new DF.Constant(0), new DF.Constant(1)]))
-		expect(fn.compute(DF.context(0, 0, 0))).toEqual(-1)
-		expect(fn.compute(DF.context(0, 3, 0))).toEqual(-1)
-		expect(fn.compute(DF.context(0, 4, 0))).toEqual(0)
-		expect(fn.compute(DF.context(0, 6, 0))).toEqual(0)
-		expect(fn.compute(DF.context(0, 12, 0))).toEqual(1)
-		expect(fn.compute(DF.context(0, 18, 0))).toEqual(1)
+		const fn1 = wrap(new DF.IntervalSelect(new DF.Gradient('y', 'clamp_to_edge', 0, 128, 0, 128), [4, 7, 15], [new DF.Constant(-1), new DF.Constant(0), new DF.Constant(1), new DF.Constant(2)]))
+		expect(fn1.compute(DF.context(0, 0, 0))).toEqual(-1)
+		expect(fn1.compute(DF.context(0, 3, 0))).toEqual(-1)
+		expect(fn1.compute(DF.context(0, 4, 0))).toEqual(0)
+		expect(fn1.compute(DF.context(0, 6, 0))).toEqual(0)
+		expect(fn1.compute(DF.context(0, 12, 0))).toEqual(1)
+		expect(fn1.compute(DF.context(0, 18, 0))).toEqual(2)
+		const fn2 = new DF.IntervalSelect(DF.Constant.ZERO, [], [])
+		expect(fn2.compute(ContextA)).toEqual(0)
 	})
 
 	it('Gradient', () => {

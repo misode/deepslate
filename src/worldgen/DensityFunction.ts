@@ -572,9 +572,12 @@ export namespace DensityFunction {
 			public readonly functions: DensityFunction[],
 		) {
 			super()
-			const minLength = Math.min(thresholds.length, functions.length)
-			this.thresholds = this.thresholds.slice(0, minLength)
-			this.functions = this.functions.slice(0, minLength)
+			if (this.functions.length === 0) {
+				this.functions = [Constant.ZERO]
+			}
+			const thresholdCount = Math.min(this.thresholds.length, this.functions.length - 1)
+			this.thresholds = this.thresholds.slice(0, thresholdCount)
+			this.functions = this.functions.slice(0, thresholdCount + 1)
 		}
 		public compute(context: Context) {
 			const input = this.input.compute(context)
