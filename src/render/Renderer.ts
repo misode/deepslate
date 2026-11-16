@@ -78,10 +78,15 @@ export class Renderer {
 	protected initialize() {
 		this.gl.enable(this.gl.DEPTH_TEST)
 		this.gl.depthFunc(this.gl.LEQUAL)
-
+		
 		this.gl.enable(this.gl.BLEND)
-		this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA)
-
+		this.gl.blendFuncSeparate(
+		  this.gl.SRC_ALPHA, // RGB src factor
+		  this.gl.ONE_MINUS_SRC_ALPHA, // RGB dst factor
+		  this.gl.ONE, // Alpha src factor: take full αf
+		  this.gl.ONE_MINUS_SRC_ALPHA // Alpha dst factor
+		);
+		
 		this.gl.enable(this.gl.CULL_FACE)
 		this.gl.cullFace(this.gl.BACK)
 	}
