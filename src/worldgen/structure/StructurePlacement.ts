@@ -1,5 +1,4 @@
-import type { ChunkPos } from '../../core/index.js'
-import { BlockPos, Holder, HolderSet, Identifier } from '../../core/index.js'
+import { BlockPos, ChunkPos, Holder, HolderSet, Identifier } from '../../core/index.js'
 import type { Random } from '../../math/index.js'
 import { LegacyRandom } from '../../math/index.js'
 import { Json } from '../../util/index.js'
@@ -9,18 +8,13 @@ import { WorldgenRegistries } from '../WorldgenRegistries.js'
 import { StructureSet } from './StructureSet.js'
 
 export abstract class StructurePlacement {
-	protected constructor(
-		protected readonly locateOffset: BlockPos,
-		protected readonly frequencyReductionMethod: StructurePlacement.FrequencyReducer,
-		public readonly frequency: number,
-		protected readonly salt: number,
-		protected readonly exclusionZone: StructurePlacement.ExclusionZone | undefined) {
-
-	}
-
 	public static fromJson(obj: unknown): StructurePlacement {
 		const root = Json.readObject(obj) ?? {}
 		const type = Json.readString(root.type)?.replace(/^minecraft:/, '')
+
+		if (type === 'dimension_origin') {
+			return new StructurePlacement.DimensionOriginStructurePlacement()
+		}
 
 		const locateOffset = BlockPos.fromJson(root.locate_offset)
 		const frequencyReductionMethod = StructurePlacement.FrequencyReducer.fromType(Json.readString(root.frequency_reduction_method) ?? 'default')
@@ -47,19 +41,7 @@ export abstract class StructurePlacement {
 		return new StructurePlacement.RandomSpreadStructurePlacement([0,0,0], StructurePlacement.FrequencyReducer.ProbabilityReducer, 1, 0, undefined, 1, 1, 'linear')
 	}
 
-	protected abstract isPlacementChunk(seed: bigint, chunkX: number, chunkZ: number): boolean
-
-	public isStructureChunk(seed: bigint, chunkX: number, chunkZ: number): boolean {
-		if (!this.isPlacementChunk(seed, chunkX, chunkZ)) {
-			return false
-		} else if (this.frequency < 1.0 && !this.frequencyReductionMethod(seed, this.salt, chunkX, chunkZ, this.frequency)) {
-			return false
-		} else if (this.exclusionZone && this.exclusionZone.isPlacementForbidden(seed, chunkX, chunkZ)) {
-			return false
-		} else {
-			return true
-		}
-	}
+	public abstract isStructureChunk(seed: bigint, chunkX: number, chunkZ: number): boolean
 
 	public abstract getPotentialStructureChunks(seed: bigint, minChunkX: number, minChunkZ: number, maxChunkX: number, maxChunkZ: number): ChunkPos[]
 
@@ -132,7 +114,33 @@ export namespace StructurePlacement {
 		}
 	}
 
-	export class RandomSpreadStructurePlacement extends StructurePlacement {
+	export abstract class AbstractSpreadingStructurePlacement extends StructurePlacement {
+		protected constructor(
+			protected readonly locateOffset: BlockPos,
+			protected readonly frequencyReductionMethod: StructurePlacement.FrequencyReducer,
+			public readonly frequency: number,
+			protected readonly salt: number,
+			protected readonly exclusionZone: StructurePlacement.ExclusionZone | undefined,
+		) {
+			super()
+		}
+
+		public abstract isPlacementChunk(seed: bigint, chunkX: number, chunkZ: number): boolean
+
+		public isStructureChunk(seed: bigint, chunkX: number, chunkZ: number): boolean {
+			if (!this.isPlacementChunk(seed, chunkX, chunkZ)) {
+				return false
+			} else if (this.frequency < 1.0 && !this.frequencyReductionMethod(seed, this.salt, chunkX, chunkZ, this.frequency)) {
+				return false
+			} else if (this.exclusionZone && this.exclusionZone.isPlacementForbidden(seed, chunkX, chunkZ)) {
+				return false
+			} else {
+				return true
+			}
+		}
+	}
+
+	export class RandomSpreadStructurePlacement extends AbstractSpreadingStructurePlacement {
 		constructor(
 			locateOffset: BlockPos,
 			frequencyReductionMethod: StructurePlacement.FrequencyReducer,
@@ -165,7 +173,7 @@ export namespace StructurePlacement {
 			return [x * this.spacing + offsetX, z * this.spacing + offsetZ]
 		}
 
-		protected isPlacementChunk(seed: bigint, chunkX: number, chunkZ: number): boolean {
+		public isPlacementChunk(seed: bigint, chunkX: number, chunkZ: number): boolean {
 			const [placementX, palcementZ] = this.getPotentialStructureChunk(seed, chunkX, chunkZ)
 			return placementX === chunkX && palcementZ === chunkZ
 		}
@@ -183,7 +191,7 @@ export namespace StructurePlacement {
 	}
 
 	const SEARCH_RANGE = 112
-	export class ConcentricRingsStructurePlacement extends StructurePlacement {
+	export class ConcentricRingsStructurePlacement extends AbstractSpreadingStructurePlacement {
 
 		private positions?: {center: ChunkPos, real: (() => ChunkPos) | ChunkPos}[]
 
@@ -253,7 +261,7 @@ export namespace StructurePlacement {
 
 		}
 
-		protected isPlacementChunk(seed: bigint, chunkX: number, chunkZ: number): boolean {
+		public isPlacementChunk(seed: bigint, chunkX: number, chunkZ: number): boolean {
 			if (this.positions === undefined){
 				console.warn('trying to access concentric rings placement before position calculation')
 				return false
@@ -283,5 +291,15 @@ export namespace StructurePlacement {
 			return results
 		}
 
+	}
+
+	export class DimensionOriginStructurePlacement extends StructurePlacement {
+		public isStructureChunk(seed: bigint, chunkX: number, chunkZ: number): boolean {
+			return chunkX === 0 && chunkZ === 0
+		}
+
+		public getPotentialStructureChunks(seed: bigint, minChunkX: number, minChunkZ: number, maxChunkX: number, maxChunkZ: number): ChunkPos[] {
+			return [ChunkPos.create(0, 0)]
+		}
 	}
 }

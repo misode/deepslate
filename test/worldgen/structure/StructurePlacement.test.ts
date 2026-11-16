@@ -140,6 +140,15 @@ describe('StructurePlacement', () => {
 		})
 	})
 
+	describe('DimensionOriginStructurePlacement', () => {
+		it('isStructureChunk', () => {
+			const placement = new StructurePlacement.DimensionOriginStructurePlacement()
+			expect(placement.isStructureChunk(seed, 0, 0)).toBeTruthy()
+			expect(placement.isStructureChunk(seed, 0, 23)).toBeFalsy()
+			expect(placement.isStructureChunk(seed, -21, 23)).toBeFalsy()
+		})
+	})
+
 	describe('isStructureChunk', () => {
 		it('ProbabilityReducer', () => {
 			const placement = new StructurePlacement.RandomSpreadStructurePlacement(
